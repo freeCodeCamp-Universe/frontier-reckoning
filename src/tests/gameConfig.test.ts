@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '@game/config';
-import { BootScene } from '@game/scenes/BootScene';
+import { TrailMapScene } from '@game/scenes/TrailMapScene';
 
 describe('gameConfig', () => {
   it('exports the Phaser game config', () => {
@@ -8,7 +8,11 @@ describe('gameConfig', () => {
       width: 960,
       height: 540,
       backgroundColor: '#1b1b32',
-      scene: [BootScene],
+      scene: [TrailMapScene],
     });
+  });
+
+  it('creates the trail map scene without throwing', () => {
+    expect(() => new TrailMapScene()).not.toThrow();
   });
 });
