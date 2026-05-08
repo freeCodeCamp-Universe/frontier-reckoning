@@ -1,10 +1,11 @@
 import { PhaserGame } from '@components/PhaserGame';
+import { ResourceDashboard } from '@components/ResourceDashboard';
 import { Button } from '@components/ui/Button';
 import { useExpeditionStore } from '@stores/expeditionStore';
 
 export function App() {
-  const started = useExpeditionStore((state) => state.started);
-  const startExpedition = useExpeditionStore((state) => state.startExpedition);
+  const gameStatus = useExpeditionStore((state) => state.gameStatus);
+  const startGame = useExpeditionStore((state) => state.startGame);
 
   return (
     <main className="min-h-screen bg-canvas px-5 py-8 text-foreground sm:px-8">
@@ -17,11 +18,15 @@ export function App() {
         </header>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Button onClick={startExpedition}>Start Expedition</Button>
+          <Button onClick={startGame}>Start Expedition</Button>
           <p className="font-mono text-base text-muted" aria-live="polite">
-            {started ? 'Expedition initialized' : 'Awaiting launch command'}
+            {gameStatus === 'not_started'
+              ? 'Awaiting launch command'
+              : 'Expedition initialized'}
           </p>
         </div>
+
+        <ResourceDashboard />
 
         <PhaserGame />
       </section>
