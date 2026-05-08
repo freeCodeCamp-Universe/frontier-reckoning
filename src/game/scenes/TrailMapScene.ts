@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import { riverCrossings } from '@game/data/riverCrossings';
 import { towns } from '@game/data/towns';
-import { calculateTrailMapX } from '@game/systems/mapProgress';
+import {
+  calculateTrailMapX,
+  calculateWagonPosition,
+  shouldAnimateWagon,
+} from '@game/systems/mapProgress';
 
 export type TrailMapState = {
   distanceTraveled: number;
@@ -11,11 +15,17 @@ export type TrailMapState = {
 const TRAIL_START_X = 80;
 const TRAIL_END_X = 880;
 const TRAIL_Y = 280;
+const WAGON_Y_OFFSET = -34;
+const WAGON_MOVE_DURATION_MS = 450;
 
 export class TrailMapScene extends Phaser.Scene {
   private wagon?: Phaser.GameObjects.Container;
   private progressLine?: Phaser.GameObjects.Rectangle;
   private distanceLabel?: Phaser.GameObjects.Text;
+  private wagonMoveTween?: Phaser.Tweens.Tween;
+  private wagonIdleTween?: Phaser.Tweens.Tween;
+  private wagonBounceTween?: Phaser.Tweens.Tween;
+  private reducedMotion = false;
   private mapState: TrailMapState = {
     distanceTraveled: 0,
     totalDistance: 2000,
@@ -26,6 +36,7 @@ export class TrailMapScene extends Phaser.Scene {
   }
 
   create() {
+    this.reducedMotion = getPrefersReducedMotion();
     this.cameras.main.setBackgroundColor('#1b1b32');
 
     this.add
@@ -40,6 +51,7 @@ export class TrailMapScene extends Phaser.Scene {
     this.drawTrail();
     this.drawMilestoneMarkers();
     this.wagon = this.createWagon();
+    this.startIdleAnimation();
     this.distanceLabel = this.add.text(32, 492, '', {
       color: '#d0d0d5',
       fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
@@ -50,16 +62,19 @@ export class TrailMapScene extends Phaser.Scene {
   }
 
   updateMapProgress(nextState: TrailMapState) {
+    const previousDistance = this.mapState.distanceTraveled;
     this.mapState = nextState;
-    const wagonX = calculateTrailMapX({
+    const wagonPosition = calculateWagonPosition({
       distanceTraveled: this.mapState.distanceTraveled,
       totalDistance: this.mapState.totalDistance,
       startX: TRAIL_START_X,
       endX: TRAIL_END_X,
+      trailY: TRAIL_Y,
+      wagonYOffset: WAGON_Y_OFFSET,
     });
-    const progressWidth = Math.max(0, wagonX - TRAIL_START_X);
+    const progressWidth = Math.max(0, wagonPosition.x - TRAIL_START_X);
 
-    this.wagon?.setPosition(wagonX, TRAIL_Y - 34);
+    this.moveWagon(wagonPosition, previousDistance !== nextState.distanceTraveled);
     this.progressLine?.setSize(progressWidth, 8);
     this.distanceLabel?.setText(
       `${Math.round(this.mapState.distanceTraveled)} / ${this.mapState.totalDistance} miles`,
@@ -75,22 +90,28 @@ export class TrailMapScene extends Phaser.Scene {
   }
 
   private drawTrail() {
-    this.add.rectangle(TRAIL_START_X, TRAIL_Y, TRAIL_END_X - TRAIL_START_X, 8, 0x3b3b4f).setOrigin(0, 0.5);
+    this.add
+      .rectangle(TRAIL_START_X, TRAIL_Y, TRAIL_END_X - TRAIL_START_X, 8, 0x3b3b4f)
+      .setOrigin(0, 0.5);
     this.progressLine = this.add
       .rectangle(TRAIL_START_X, TRAIL_Y, 0, 8, 0xf1be32)
       .setOrigin(0, 0.5);
 
-    this.add.text(TRAIL_START_X, TRAIL_Y + 42, 'Start', {
-      color: '#acd157',
-      fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
-      fontSize: '16px',
-    }).setOrigin(0.5, 0);
+    this.add
+      .text(TRAIL_START_X, TRAIL_Y + 42, 'Start', {
+        color: '#acd157',
+        fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
+        fontSize: '16px',
+      })
+      .setOrigin(0.5, 0);
 
-    this.add.text(TRAIL_END_X, TRAIL_Y + 42, 'Destination', {
-      color: '#ffadad',
-      fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
-      fontSize: '16px',
-    }).setOrigin(0.5, 0);
+    this.add
+      .text(TRAIL_END_X, TRAIL_Y + 42, 'Destination', {
+        color: '#ffadad',
+        fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
+        fontSize: '16px',
+      })
+      .setOrigin(0.5, 0);
 
     this.add.circle(TRAIL_START_X, TRAIL_Y, 10, 0xacd157);
     this.add.circle(TRAIL_END_X, TRAIL_Y, 10, 0xffadad);
@@ -135,19 +156,85 @@ export class TrailMapScene extends Phaser.Scene {
   }
 
   private createWagon() {
-    const wagon = this.add.container(TRAIL_START_X, TRAIL_Y - 34);
+    const wagon = this.add.container(TRAIL_START_X, TRAIL_Y + WAGON_Y_OFFSET);
     const body = this.add.rectangle(0, 0, 46, 24, 0xf1be32);
     const cover = this.add.arc(0, -8, 20, 180, 360, false, 0xffffff);
     const leftWheel = this.add.circle(-16, 14, 6, 0x0a0a23);
     const rightWheel = this.add.circle(16, 14, 6, 0x0a0a23);
-    const label = this.add.text(0, -38, 'Wagon', {
-      color: '#ffffff',
-      fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
-      fontSize: '14px',
-    }).setOrigin(0.5);
+    const label = this.add
+      .text(0, -38, 'Wagon', {
+        color: '#ffffff',
+        fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
+        fontSize: '14px',
+      })
+      .setOrigin(0.5);
 
     wagon.add([body, cover, leftWheel, rightWheel, label]);
 
     return wagon;
   }
+
+  private moveWagon(position: { x: number; y: number }, distanceChanged: boolean) {
+    if (!this.wagon) {
+      return;
+    }
+
+    this.wagonMoveTween?.stop();
+    this.wagonBounceTween?.stop();
+
+    if (!shouldAnimateWagon(this.reducedMotion)) {
+      this.wagon.setPosition(position.x, position.y);
+      return;
+    }
+
+    if (!distanceChanged) {
+      this.wagon.setPosition(position.x, position.y);
+      this.startIdleAnimation();
+      return;
+    }
+
+    this.wagonIdleTween?.stop();
+    this.wagonBounceTween = this.tweens.add({
+      targets: this.wagon,
+      y: position.y - 5,
+      duration: 120,
+      yoyo: true,
+      repeat: Math.max(1, Math.floor(WAGON_MOVE_DURATION_MS / 240)),
+      ease: 'Sine.easeInOut',
+    });
+    this.wagonMoveTween = this.tweens.add({
+      targets: this.wagon,
+      x: position.x,
+      duration: WAGON_MOVE_DURATION_MS,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        this.wagon?.setPosition(position.x, position.y);
+        this.startIdleAnimation();
+      },
+    });
+  }
+
+  private startIdleAnimation() {
+    if (!this.wagon || !shouldAnimateWagon(this.reducedMotion)) {
+      return;
+    }
+
+    this.wagonIdleTween?.stop();
+    this.wagonIdleTween = this.tweens.add({
+      targets: this.wagon,
+      y: this.wagon.y - 2,
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+}
+
+function getPrefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 }

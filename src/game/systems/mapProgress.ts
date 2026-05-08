@@ -5,6 +5,11 @@ export type TrailProgressInput = {
   endX: number;
 };
 
+export type WagonPositionInput = TrailProgressInput & {
+  trailY: number;
+  wagonYOffset: number;
+};
+
 export function clampProgress(distanceTraveled: number, totalDistance: number) {
   if (totalDistance <= 0) {
     return 0;
@@ -20,4 +25,19 @@ export function calculateTrailMapX({
   endX,
 }: TrailProgressInput) {
   return startX + (endX - startX) * clampProgress(distanceTraveled, totalDistance);
+}
+
+export function calculateWagonPosition({
+  trailY,
+  wagonYOffset,
+  ...progressInput
+}: WagonPositionInput) {
+  return {
+    x: calculateTrailMapX(progressInput),
+    y: trailY + wagonYOffset,
+  };
+}
+
+export function shouldAnimateWagon(prefersReducedMotion: boolean) {
+  return !prefersReducedMotion;
 }
