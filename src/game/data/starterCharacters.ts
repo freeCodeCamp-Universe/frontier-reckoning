@@ -69,12 +69,6 @@ export const starterCharacters: Character[] = [
   },
 ];
 
-const cloneCharacter = (character: Character): Character => ({
-  ...character,
-  skills: [...character.skills],
-  traits: [...character.traits],
-});
-
 export function createStartingParty(characterIds?: string[]) {
   const selectedCharacters = characterIds
     ? characterIds
@@ -88,5 +82,3 @@ export function createStartingParty(characterIds?: string[]) {
     traits: [...character.traits],
   }));
 }
-
-export { cloneCharacter };
