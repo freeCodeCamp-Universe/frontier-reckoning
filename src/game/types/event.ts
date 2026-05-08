@@ -15,6 +15,7 @@ export type EventEffects = {
   morale?: number;
   health?: number;
   wagonParts?: number;
+  wagonCondition?: number;
   distance?: number;
   delayDays?: number;
   targetCharacterId?: string;

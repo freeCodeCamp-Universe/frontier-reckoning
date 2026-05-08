@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { riverCrossings } from '@game/data/riverCrossings';
 import { starterEvents } from '@game/data/starterEvents';
 import { createStartingParty } from '@game/data/starterCharacters';
 import {
@@ -16,15 +17,22 @@ import {
   shouldTriggerTravelEvent,
 } from '@game/systems/eventSystem';
 import { huntAtCamp, type HuntingAmmoAmount } from '@game/systems/huntingSystem';
+import {
+  crossRiver,
+  getPendingRiverCrossing,
+  type RiverCrossingResult,
+} from '@game/systems/riverSystem';
 import { applyDailyTravel } from '@game/systems/travelSystem';
 import type { Character } from '@game/types/character';
 import type { GameEvent } from '@game/types/event';
+import type { RiverCrossing, RiverCrossingOptionId } from '@game/types/river';
 
 export type GameStatus =
   | 'not_started'
   | 'traveling'
   | 'event'
   | 'camp'
+  | 'river'
   | 'game_over'
   | 'victory';
 
@@ -54,6 +62,10 @@ export type FrontierReckoningState = {
   eventResolved: boolean;
   eventOutcomeText: string | null;
   campOutcomeText: string | null;
+  currentRiver: RiverCrossing | null;
+  riverResolved: boolean;
+  riverOutcomeText: string | null;
+  crossedRiverIds: string[];
   daysSinceLastEvent: number;
   rationingDays: number;
   gameStatus: GameStatus;
@@ -67,6 +79,8 @@ export type FrontierReckoningState = {
   rationFoodAtCamp: () => void;
   huntAtCamp: (ammoSpent: HuntingAmmoAmount) => void;
   resumeTravel: () => void;
+  resolveRiverCrossing: (optionId: RiverCrossingOptionId) => void;
+  continueFromRiver: () => void;
   resolveCurrentEvent: (choiceId?: string) => void;
   continueFromEvent: () => void;
   updateResource: (resourceName: ResourceName, amount: number) => void;
@@ -90,6 +104,8 @@ export type FrontierReckoningData = Omit<
   | 'rationFoodAtCamp'
   | 'huntAtCamp'
   | 'resumeTravel'
+  | 'resolveRiverCrossing'
+  | 'continueFromRiver'
   | 'resolveCurrentEvent'
   | 'continueFromEvent'
   | 'updateResource'
@@ -121,6 +137,10 @@ export const initialGameState: FrontierReckoningData = {
   eventResolved: false,
   eventOutcomeText: null,
   campOutcomeText: null,
+  currentRiver: null,
+  riverResolved: false,
+  riverOutcomeText: null,
+  crossedRiverIds: [],
   daysSinceLastEvent: 0,
   rationingDays: 0,
   gameStatus: 'not_started',
@@ -148,6 +168,17 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
   advanceDay: () =>
     set((state) => {
       const nextState = applyDailyTravel(state);
+      const pendingRiver = getPendingRiverCrossing(nextState, riverCrossings);
+
+      if (pendingRiver && nextState.gameStatus === 'traveling') {
+        return {
+          ...nextState,
+          currentRiver: pendingRiver,
+          riverResolved: false,
+          riverOutcomeText: null,
+          gameStatus: 'river',
+        };
+      }
 
       if (shouldTriggerTravelEvent(nextState)) {
         return {
@@ -247,6 +278,37 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
           }
         : state,
     ),
+  resolveRiverCrossing: (optionId) =>
+    set((state) => {
+      if (state.gameStatus !== 'river' || !state.currentRiver || state.riverResolved) {
+        return state;
+      }
+
+      const result: RiverCrossingResult = crossRiver(
+        state,
+        state.currentRiver,
+        optionId,
+      );
+
+      return {
+        ...result.state,
+        riverOutcomeText: result.outcomeText,
+      };
+    }),
+  continueFromRiver: () =>
+    set((state) => {
+      if (state.gameStatus !== 'river' || !state.riverResolved) {
+        return state;
+      }
+
+      return {
+        ...state,
+        currentRiver: null,
+        riverResolved: false,
+        riverOutcomeText: null,
+        gameStatus: 'traveling',
+      };
+    }),
   resolveCurrentEvent: (choiceId) =>
     set((state) => {
       if (!state.currentEvent || state.eventResolved) {
