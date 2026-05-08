@@ -49,4 +49,20 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Start Custom Expedition' }),
     ).toHaveAccessibleDescription('Select exactly 4 party members before starting.');
   });
+
+  it('exposes important setup controls with accessible names', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Expedition' }));
+
+    expect(screen.getByLabelText('Expedition name')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Greenhorn/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Trailwise/ })).toBeChecked();
+    expect(
+      screen.getByRole('button', { name: 'Remove Elias Reed, Scout' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      screen.getByRole('button', { name: 'Select Nell Carter, Child' }),
+    ).toBeDisabled();
+  });
 });

@@ -90,13 +90,19 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
                     onClick={() => toggleCharacter(character.id)}
                     disabled={disabled}
                     aria-pressed={selected}
-                    className={`border p-4 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-highlight disabled:cursor-not-allowed disabled:opacity-60 ${
+                    aria-label={`${selected ? 'Remove' : 'Select'} ${character.name}, ${character.role}`}
+                    className={`border p-4 text-left motion-safe:transition-colors focus:outline-none focus:ring-2 focus:ring-highlight disabled:cursor-not-allowed disabled:opacity-60 ${
                       selected
                         ? 'border-cta bg-panel text-foreground'
                         : 'border-border bg-surface text-muted hover:border-highlight'
                     }`}
                   >
-                    <span className="font-bold text-foreground">{character.name}</span>
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="font-bold text-foreground">{character.name}</span>
+                      <span className="font-mono text-base text-muted">
+                        {selected ? 'Selected' : 'Available'}
+                      </span>
+                    </span>
                     <span className="mt-1 block font-mono text-base text-highlight">
                       {character.role}
                     </span>

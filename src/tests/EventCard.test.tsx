@@ -23,7 +23,7 @@ describe('EventCard', () => {
     render(<EventCard />);
 
     expect(screen.getByRole('button', { name: /Buy food/ })).toBeDisabled();
-    expect(screen.getByText('Requires at least $30.')).toBeInTheDocument();
+    expect(screen.getAllByText('Requires at least $30.')).toHaveLength(2);
   });
 
   it('shows outcome text after choosing', () => {
@@ -42,5 +42,31 @@ describe('EventCard', () => {
     expect(
       screen.getByText('The supply sacks look better, and dinner has weight again.'),
     ).toBeInTheDocument();
+  });
+
+  it('traps focus and resolves the event from the focused control', () => {
+    const event = starterEvents.find((starterEvent) => starterEvent.id === 'broken-axle');
+
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      currentEvent: event,
+      eventResolved: false,
+      gameStatus: 'event',
+    });
+
+    render(<EventCard />);
+
+    const dialog = screen.getByRole('dialog', { name: 'Broken Axle' });
+    const resolveButton = screen.getByRole('button', { name: 'Resolve Event' });
+
+    expect(resolveButton).toHaveFocus();
+
+    fireEvent.keyDown(dialog, { key: 'Tab' });
+    expect(resolveButton).toHaveFocus();
+
+    fireEvent.click(document.activeElement as HTMLElement);
+
+    expect(screen.getByText('Event resolved')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveFocus();
   });
 });
