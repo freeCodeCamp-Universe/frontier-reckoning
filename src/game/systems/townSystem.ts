@@ -2,6 +2,7 @@ import { starterCharacters } from '@game/data/starterCharacters';
 import type { Character } from '@game/types/character';
 import type { ShopResource, Town } from '@game/types/town';
 import type { FrontierReckoningData } from '@stores/expeditionStore';
+import { getDifficultyConfig } from '@game/data/difficulties';
 
 export type TownActionResult = {
   state: FrontierReckoningData;
@@ -29,6 +30,16 @@ const getShopItem = (town: Town, resource: ShopResource) => {
   return item;
 };
 
+export function getDifficultyPrice(
+  state: Pick<FrontierReckoningData, 'difficulty'>,
+  price: number,
+) {
+  return Math.max(
+    1,
+    Math.round(price * getDifficultyConfig(state.difficulty).shopPriceMultiplier),
+  );
+}
+
 export function buyTownSupply(
   state: FrontierReckoningData,
   town: Town,
@@ -36,7 +47,9 @@ export function buyTownSupply(
 ): TownActionResult {
   const item = getShopItem(town, resource);
 
-  if (state.money < item.buyPrice) {
+  const buyPrice = getDifficultyPrice(state, item.buyPrice);
+
+  if (state.money < buyPrice) {
     return {
       state,
       outcomeText: `Not enough money to buy ${item.label.toLowerCase()}.`,
@@ -47,10 +60,10 @@ export function buyTownSupply(
   return {
     state: {
       ...state,
-      money: state.money - item.buyPrice,
+      money: state.money - buyPrice,
       [resource]: state[resource] + item.quantity,
     },
-    outcomeText: `Bought ${item.quantity} ${item.label.toLowerCase()} for $${item.buyPrice}.`,
+    outcomeText: `Bought ${item.quantity} ${item.label.toLowerCase()} for $${buyPrice}.`,
     succeeded: true,
   };
 }
@@ -81,11 +94,10 @@ export function sellTownSupply(
   };
 }
 
-export function restAtInn(
-  state: FrontierReckoningData,
-  town: Town,
-): TownActionResult {
-  if (state.money < town.innCost) {
+export function restAtInn(state: FrontierReckoningData, town: Town): TownActionResult {
+  const innCost = getDifficultyPrice(state, town.innCost);
+
+  if (state.money < innCost) {
     return {
       state,
       outcomeText: 'Not enough money to rest at the inn.',
@@ -97,7 +109,7 @@ export function restAtInn(
     state: {
       ...state,
       currentDay: state.currentDay + 1,
-      money: state.money - town.innCost,
+      money: state.money - innCost,
       health: clamp(state.health + 15, 0, 100),
       morale: clamp(state.morale + 6, 0, 100),
       party: state.party.map((character) =>
@@ -110,7 +122,7 @@ export function restAtInn(
             },
       ),
     },
-    outcomeText: `The party rests at the inn for $${town.innCost}.`,
+    outcomeText: `The party rests at the inn for $${innCost}.`,
     succeeded: true,
   };
 }
@@ -119,7 +131,9 @@ export function repairWagonInTown(
   state: FrontierReckoningData,
   town: Town,
 ): TownActionResult {
-  if (state.money < town.repairCost) {
+  const repairCost = getDifficultyPrice(state, town.repairCost);
+
+  if (state.money < repairCost) {
     return {
       state,
       outcomeText: 'Not enough money for town repairs.',
@@ -130,10 +144,10 @@ export function repairWagonInTown(
   return {
     state: {
       ...state,
-      money: state.money - town.repairCost,
+      money: state.money - repairCost,
       wagonCondition: clamp(state.wagonCondition + 35, 0, 100),
     },
-    outcomeText: `Town mechanics improve the wagon for $${town.repairCost}.`,
+    outcomeText: `Town mechanics improve the wagon for $${repairCost}.`,
     succeeded: true,
   };
 }
@@ -148,7 +162,9 @@ export function recruitPartyMember(
   state: FrontierReckoningData,
   town: Town,
 ): TownActionResult {
-  if (state.money < town.recruitCost) {
+  const recruitCost = getDifficultyPrice(state, town.recruitCost);
+
+  if (state.money < recruitCost) {
     return {
       state,
       outcomeText: 'Not enough money to recruit a traveler.',
@@ -171,10 +187,10 @@ export function recruitPartyMember(
   return {
     state: {
       ...state,
-      money: state.money - town.recruitCost,
+      money: state.money - recruitCost,
       party: [...state.party, cloneRecruit(recruit)],
     },
-    outcomeText: `${recruit.name} joins the caravan for $${town.recruitCost}.`,
+    outcomeText: `${recruit.name} joins the caravan for $${recruitCost}.`,
     succeeded: true,
   };
 }

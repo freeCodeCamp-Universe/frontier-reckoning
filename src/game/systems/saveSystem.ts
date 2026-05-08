@@ -19,6 +19,8 @@ export type LoadSaveResult =
   | { status: 'unsupported'; saveVersion: number };
 
 const dataKeys = [
+  'expeditionName',
+  'difficulty',
   'currentDay',
   'distanceTraveled',
   'totalDistance',
@@ -147,6 +149,15 @@ export function validateGameSave(value: unknown): LoadSaveResult {
   }
 
   if (typeof state.gameStatus !== 'string' || !validStatuses.has(state.gameStatus)) {
+    return { status: 'invalid' };
+  }
+
+  if (
+    typeof state.expeditionName !== 'string' ||
+    (state.difficulty !== 'greenhorn' &&
+      state.difficulty !== 'trailwise' &&
+      state.difficulty !== 'reckoning')
+  ) {
     return { status: 'invalid' };
   }
 

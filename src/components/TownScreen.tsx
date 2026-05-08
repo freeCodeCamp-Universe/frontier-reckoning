@@ -1,5 +1,6 @@
 import { Button } from '@components/ui/Button';
 import { useExpeditionStore } from '@stores/expeditionStore';
+import { getDifficultyPrice } from '@game/systems/townSystem';
 
 export function TownScreen() {
   const currentTown = useExpeditionStore((state) => state.currentTown);
@@ -16,6 +17,7 @@ export function TownScreen() {
   const medicine = useExpeditionStore((state) => state.medicine);
   const ammo = useExpeditionStore((state) => state.ammo);
   const wagonParts = useExpeditionStore((state) => state.wagonParts);
+  const difficulty = useExpeditionStore((state) => state.difficulty);
   const resources = { food, medicine, ammo, wagonParts };
 
   if (!currentTown) {
@@ -48,32 +50,39 @@ export function TownScreen() {
             </tr>
           </thead>
           <tbody>
-            {currentTown.shop.map((item) => (
-              <tr key={item.resource} className="border-b border-border last:border-b-0">
-                <td className="p-3 font-bold">{item.label}</td>
-                <td className="p-3 font-mono text-base text-muted">{item.quantity}</td>
-                <td className="p-3 font-mono text-base">${item.buyPrice}</td>
-                <td className="p-3 font-mono text-base">${item.sellPrice}</td>
-                <td className="flex gap-2 p-3">
-                  <Button
-                    onClick={() => buySupplyInTown(item.resource)}
-                    disabled={money < item.buyPrice}
-                    disabledReason={`Buying ${item.label.toLowerCase()} requires $${item.buyPrice}.`}
-                    className="min-h-10 px-3 py-2"
-                  >
-                    Buy
-                  </Button>
-                  <Button
-                    onClick={() => sellSupplyInTown(item.resource)}
-                    disabled={resources[item.resource] < item.quantity}
-                    disabledReason={`Selling ${item.label.toLowerCase()} requires ${item.quantity} available.`}
-                    className="min-h-10 px-3 py-2"
-                  >
-                    Sell
-                  </Button>
-                </td>
-              </tr>
-            ))}
+            {currentTown.shop.map((item) => {
+              const buyPrice = getDifficultyPrice({ difficulty }, item.buyPrice);
+
+              return (
+                <tr
+                  key={item.resource}
+                  className="border-b border-border last:border-b-0"
+                >
+                  <td className="p-3 font-bold">{item.label}</td>
+                  <td className="p-3 font-mono text-base text-muted">{item.quantity}</td>
+                  <td className="p-3 font-mono text-base">${buyPrice}</td>
+                  <td className="p-3 font-mono text-base">${item.sellPrice}</td>
+                  <td className="flex gap-2 p-3">
+                    <Button
+                      onClick={() => buySupplyInTown(item.resource)}
+                      disabled={money < buyPrice}
+                      disabledReason={`Buying ${item.label.toLowerCase()} requires $${buyPrice}.`}
+                      className="min-h-10 px-3 py-2"
+                    >
+                      Buy
+                    </Button>
+                    <Button
+                      onClick={() => sellSupplyInTown(item.resource)}
+                      disabled={resources[item.resource] < item.quantity}
+                      disabledReason={`Selling ${item.label.toLowerCase()} requires ${item.quantity} available.`}
+                      className="min-h-10 px-3 py-2"
+                    >
+                      Sell
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -81,24 +90,24 @@ export function TownScreen() {
       <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         <Button
           onClick={restAtInn}
-          disabled={money < currentTown.innCost}
-          disabledReason={`Resting at the inn requires $${currentTown.innCost}.`}
+          disabled={money < getDifficultyPrice({ difficulty }, currentTown.innCost)}
+          disabledReason={`Resting at the inn requires $${getDifficultyPrice({ difficulty }, currentTown.innCost)}.`}
         >
-          Rest at inn ${currentTown.innCost}
+          Rest at inn ${getDifficultyPrice({ difficulty }, currentTown.innCost)}
         </Button>
         <Button
           onClick={repairWagonInTown}
-          disabled={money < currentTown.repairCost}
-          disabledReason={`Town wagon repair requires $${currentTown.repairCost}.`}
+          disabled={money < getDifficultyPrice({ difficulty }, currentTown.repairCost)}
+          disabledReason={`Town wagon repair requires $${getDifficultyPrice({ difficulty }, currentTown.repairCost)}.`}
         >
-          Repair wagon ${currentTown.repairCost}
+          Repair wagon ${getDifficultyPrice({ difficulty }, currentTown.repairCost)}
         </Button>
         <Button
           onClick={recruitPartyMember}
-          disabled={money < currentTown.recruitCost}
-          disabledReason={`Recruiting requires $${currentTown.recruitCost}.`}
+          disabled={money < getDifficultyPrice({ difficulty }, currentTown.recruitCost)}
+          disabledReason={`Recruiting requires $${getDifficultyPrice({ difficulty }, currentTown.recruitCost)}.`}
         >
-          Recruit ${currentTown.recruitCost}
+          Recruit ${getDifficultyPrice({ difficulty }, currentTown.recruitCost)}
         </Button>
         <Button onClick={hearTownRumor}>Hear rumors</Button>
         <Button onClick={resumeTrailFromTown}>Resume trail</Button>

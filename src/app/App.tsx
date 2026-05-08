@@ -1,21 +1,51 @@
+import { useState } from 'react';
 import { CampScreen } from '@components/CampScreen';
 import { EventCard } from '@components/EventCard';
 import { EndingScreen } from '@components/EndingScreen';
 import { PhaserGame } from '@components/PhaserGame';
 import { GameLogPanel } from '@components/GameLogPanel';
+import { MainMenu } from '@components/MainMenu';
+import { NewExpeditionSetup } from '@components/NewExpeditionSetup';
 import { PartyPanel } from '@components/PartyPanel';
 import { ResourceDashboard } from '@components/ResourceDashboard';
 import { RiverEventScreen } from '@components/RiverEventScreen';
 import { SaveControls } from '@components/SaveControls';
 import { TownScreen } from '@components/TownScreen';
 import { Button } from '@components/ui/Button';
-import { useExpeditionStore } from '@stores/expeditionStore';
+import { useExpeditionStore, type StartExpeditionOptions } from '@stores/expeditionStore';
+
+type AppScreen = 'main_menu' | 'setup' | 'active_game';
 
 export function App() {
+  const [appScreen, setAppScreen] = useState<AppScreen>('main_menu');
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const startGame = useExpeditionStore((state) => state.startGame);
   const advanceDay = useExpeditionStore((state) => state.advanceDay);
   const enterCamp = useExpeditionStore((state) => state.enterCamp);
+
+  const handleStart = (options: StartExpeditionOptions) => {
+    startGame(options);
+    setAppScreen('active_game');
+  };
+
+  if (gameStatus === 'not_started' && appScreen !== 'setup') {
+    return (
+      <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
+        <MainMenu onNewExpedition={() => setAppScreen('setup')} />
+      </main>
+    );
+  }
+
+  if (gameStatus === 'not_started' && appScreen === 'setup') {
+    return (
+      <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
+        <NewExpeditionSetup
+          onBack={() => setAppScreen('main_menu')}
+          onStart={handleStart}
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
@@ -35,7 +65,6 @@ export function App() {
           <div className="border border-border bg-surface p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button onClick={startGame}>Start Expedition</Button>
                 <Button
                   onClick={advanceDay}
                   disabled={gameStatus !== 'traveling'}
@@ -56,7 +85,11 @@ export function App() {
               <p className="font-mono text-base text-muted" aria-live="polite">
                 {gameStatus === 'not_started'
                   ? 'Awaiting launch command'
-                  : 'Expedition initialized'}
+                  : gameStatus === 'victory'
+                    ? 'Victory screen'
+                    : gameStatus === 'game_over'
+                      ? 'Game over screen'
+                      : 'Active game'}
               </p>
             </div>
           </div>

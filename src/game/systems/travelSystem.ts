@@ -1,6 +1,7 @@
 import type { Character } from '@game/types/character';
 import type { FrontierReckoningData } from '@stores/expeditionStore';
 import type { Rng } from '@utils/rng';
+import { getDifficultyConfig } from '@game/data/difficulties';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
@@ -27,8 +28,12 @@ export function calculateDailyDistance(state: FrontierReckoningData) {
   return Math.max(10, 24 + scoutBonus - wagonPenalty - moralePenalty - healthPenalty);
 }
 
-export function calculateFoodConsumption(party: Character[], isRationing = false) {
-  return livingCharacters(party).length * (isRationing ? 1 : 1.5);
+export function calculateFoodConsumption(
+  party: Character[],
+  isRationing = false,
+  consumptionMultiplier = 1,
+) {
+  return livingCharacters(party).length * (isRationing ? 1 : 1.5) * consumptionMultiplier;
 }
 
 export function applyDailyTravel(
@@ -48,7 +53,12 @@ export function applyDailyTravel(
     };
   }
 
-  const foodConsumption = calculateFoodConsumption(state.party, state.rationingDays > 0);
+  const difficultyConfig = getDifficultyConfig(state.difficulty);
+  const foodConsumption = calculateFoodConsumption(
+    state.party,
+    state.rationingDays > 0,
+    difficultyConfig.resourceConsumptionMultiplier,
+  );
   const food = Math.max(0, state.food - foodConsumption);
   const isOutOfFood = food === 0;
   const suppliesExhaustedDays = isOutOfFood ? state.suppliesExhaustedDays + 1 : 0;

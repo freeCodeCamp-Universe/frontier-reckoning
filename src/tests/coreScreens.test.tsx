@@ -90,7 +90,9 @@ describe('core screens', () => {
 
     render(<GameLogPanel />);
 
-    expect(screen.getByText('Expedition started.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Frontier Expedition started on Trailwise.'),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('Traveled to day 2.')).toHaveLength(2);
   });
 });

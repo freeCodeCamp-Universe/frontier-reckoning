@@ -1,4 +1,5 @@
 import { useExpeditionStore, type ResourceName } from '@stores/expeditionStore';
+import { getDifficultyConfig } from '@game/data/difficulties';
 
 const resources: Array<{ label: string; key: ResourceName }> = [
   { label: 'Food', key: 'food' },
@@ -16,6 +17,9 @@ export function ResourceDashboard() {
   const totalDistance = useExpeditionStore((state) => state.totalDistance);
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const wagonCondition = useExpeditionStore((state) => state.wagonCondition);
+  const expeditionName = useExpeditionStore((state) => state.expeditionName);
+  const difficulty = useExpeditionStore((state) => state.difficulty);
+  const difficultyLabel = getDifficultyConfig(difficulty).label;
   const progressPercentage = Math.floor((distanceTraveled / totalDistance) * 100);
   const clampedProgress = Math.min(Math.max(progressPercentage, 0), 100);
 
@@ -26,7 +30,12 @@ export function ResourceDashboard() {
     >
       <div className="mb-4">
         <div className="mb-2 flex items-center justify-between gap-4">
-          <h2 className="text-2xl font-bold">Trail Dashboard</h2>
+          <div>
+            <h2 className="text-2xl font-bold">Trail Dashboard</h2>
+            <p className="mt-1 font-mono text-base text-muted">
+              {expeditionName || 'Frontier Expedition'} / {difficultyLabel}
+            </p>
+          </div>
           <p className="font-mono text-base text-muted">{clampedProgress}% complete</p>
         </div>
         <div

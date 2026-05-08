@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getDifficultyConfig, type Difficulty } from '@game/data/difficulties';
 import { riverCrossings } from '@game/data/riverCrossings';
 import { starterEvents } from '@game/data/starterEvents';
 import { createStartingParty } from '@game/data/starterCharacters';
@@ -58,7 +59,15 @@ export type ResourceName =
   | 'morale'
   | 'health';
 
+export type StartExpeditionOptions = {
+  expeditionName: string;
+  partyMemberIds: string[];
+  difficulty: Difficulty;
+};
+
 export type FrontierReckoningState = {
+  expeditionName: string;
+  difficulty: Difficulty;
   currentDay: number;
   distanceTraveled: number;
   totalDistance: number;
@@ -88,7 +97,7 @@ export type FrontierReckoningState = {
   gameOverReason: GameOverReason | null;
   gameLog: string[];
   gameStatus: GameStatus;
-  startGame: () => void;
+  startGame: (options?: StartExpeditionOptions) => void;
   advanceDay: () => void;
   enterCamp: () => void;
   restAtCamp: () => void;
@@ -154,6 +163,8 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
 export const initialGameState: FrontierReckoningData = {
+  expeditionName: '',
+  difficulty: 'trailwise',
   currentDay: 0,
   distanceTraveled: 0,
   totalDistance: 2000,
@@ -185,19 +196,31 @@ export const initialGameState: FrontierReckoningData = {
   gameStatus: 'not_started',
 };
 
-export const createStartingGameState = (): FrontierReckoningData => ({
-  ...initialGameState,
-  currentDay: 1,
-  food: 180,
-  medicine: 6,
-  ammo: 34,
-  wagonParts: 4,
-  wagonCondition: 100,
-  money: 260,
-  morale: 78,
-  party: createStartingParty(),
-  gameStatus: 'traveling',
-});
+export const createStartingGameState = (
+  options: StartExpeditionOptions = {
+    expeditionName: 'Frontier Expedition',
+    partyMemberIds: ['scout', 'doctor', 'hunter', 'mechanic'],
+    difficulty: 'trailwise',
+  },
+): FrontierReckoningData => {
+  const difficultyConfig = getDifficultyConfig(options.difficulty);
+
+  return {
+    ...initialGameState,
+    expeditionName: options.expeditionName.trim() || 'Frontier Expedition',
+    difficulty: options.difficulty,
+    currentDay: 1,
+    food: 180,
+    medicine: 6,
+    ammo: 34,
+    wagonParts: 4,
+    wagonCondition: 100,
+    money: difficultyConfig.startingMoney,
+    morale: 78,
+    party: createStartingParty(options.partyMemberIds),
+    gameStatus: 'traveling',
+  };
+};
 
 export const startingGameState = createStartingGameState();
 
@@ -208,7 +231,28 @@ const withLog = <T extends FrontierReckoningData>(state: T, message: string): T 
 
 export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
   ...initialGameState,
-  startGame: () => set(() => withLog(createStartingGameState(), 'Expedition started.')),
+  startGame: (options) =>
+    set((state) => {
+      const startingOptions =
+        options ??
+        ({
+          expeditionName: 'Frontier Expedition',
+          partyMemberIds: ['scout', 'doctor', 'hunter', 'mechanic'],
+          difficulty: 'trailwise',
+        } satisfies StartExpeditionOptions);
+
+      if (
+        startingOptions.expeditionName.trim().length === 0 ||
+        new Set(startingOptions.partyMemberIds).size < 4
+      ) {
+        return state;
+      }
+
+      return withLog(
+        createStartingGameState(startingOptions),
+        `${startingOptions.expeditionName.trim()} started on ${getDifficultyConfig(startingOptions.difficulty).label}.`,
+      );
+    }),
   advanceDay: () =>
     set((state) => {
       const nextState = applyDailyTravel(state);

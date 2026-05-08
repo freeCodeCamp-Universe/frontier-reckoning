@@ -69,10 +69,24 @@ export const starterCharacters: Character[] = [
   },
 ];
 
-export function createStartingParty() {
-  return starterCharacters.slice(0, 4).map((character) => ({
+const cloneCharacter = (character: Character): Character => ({
+  ...character,
+  skills: [...character.skills],
+  traits: [...character.traits],
+});
+
+export function createStartingParty(characterIds?: string[]) {
+  const selectedCharacters = characterIds
+    ? characterIds
+        .map((id) => starterCharacters.find((character) => character.id === id))
+        .filter((character): character is Character => Boolean(character))
+    : starterCharacters.slice(0, 4);
+
+  return selectedCharacters.map((character) => ({
     ...character,
     skills: [...character.skills],
     traits: [...character.traits],
   }));
 }
+
+export { cloneCharacter };

@@ -2,6 +2,7 @@ import type { Character } from '@game/types/character';
 import type { EventChoice, EventEffects, GameEvent } from '@game/types/event';
 import type { FrontierReckoningData, ResourceName } from '@stores/expeditionStore';
 import { weightedChoice, type Rng } from '@utils/rng';
+import { getDifficultyConfig } from '@game/data/difficulties';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
@@ -18,6 +19,16 @@ const findTargetCharacterId = (party: Character[], targetCharacterId?: string) =
   }
 
   return livingCharacters(party)[0]?.id;
+};
+
+const scaleSeverity = (state: FrontierReckoningData, amount: number) => {
+  if (amount >= 0) {
+    return amount;
+  }
+
+  return Math.round(
+    amount * getDifficultyConfig(state.difficulty).eventSeverityMultiplier,
+  );
 };
 
 export function pickWeightedEvent(
@@ -38,18 +49,29 @@ export function applyEventEffects(
       [ResourceName, number]
     >) {
       nextState[resourceName] = clamp(
-        nextState[resourceName] + amount,
+        nextState[resourceName] + scaleSeverity(state, amount),
         0,
         resourceUpperLimit(resourceName),
       );
     }
   }
 
-  nextState.morale = clamp(nextState.morale + (effects.morale ?? 0), 0, 100);
-  nextState.health = clamp(nextState.health + (effects.health ?? 0), 0, 100);
-  nextState.wagonParts = Math.max(0, nextState.wagonParts + (effects.wagonParts ?? 0));
+  nextState.morale = clamp(
+    nextState.morale + scaleSeverity(state, effects.morale ?? 0),
+    0,
+    100,
+  );
+  nextState.health = clamp(
+    nextState.health + scaleSeverity(state, effects.health ?? 0),
+    0,
+    100,
+  );
+  nextState.wagonParts = Math.max(
+    0,
+    nextState.wagonParts + scaleSeverity(state, effects.wagonParts ?? 0),
+  );
   nextState.wagonCondition = clamp(
-    nextState.wagonCondition + (effects.wagonCondition ?? 0),
+    nextState.wagonCondition + scaleSeverity(state, effects.wagonCondition ?? 0),
     0,
     100,
   );
@@ -58,7 +80,7 @@ export function applyEventEffects(
     0,
     nextState.totalDistance,
   );
-  nextState.currentDay += effects.delayDays ?? 0;
+  nextState.currentDay += Math.max(0, scaleSeverity(state, effects.delayDays ?? 0));
 
   const targetCharacterId = findTargetCharacterId(
     nextState.party,
@@ -76,14 +98,22 @@ export function applyEventEffects(
         return character;
       }
 
-      const health = clamp(character.health + (effects.characterHealth ?? 0), 0, 100);
+      const health = clamp(
+        character.health + scaleSeverity(state, effects.characterHealth ?? 0),
+        0,
+        100,
+      );
       const status =
         health === 0 ? 'dead' : (effects.characterStatus ?? character.status);
 
       return {
         ...character,
         health,
-        morale: clamp(character.morale + (effects.characterMorale ?? 0), 0, 100),
+        morale: clamp(
+          character.morale + scaleSeverity(state, effects.characterMorale ?? 0),
+          0,
+          100,
+        ),
         status,
       };
     });

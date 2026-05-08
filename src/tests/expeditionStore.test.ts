@@ -19,8 +19,48 @@ describe('useExpeditionStore', () => {
 
     expect(useExpeditionStore.getState()).toMatchObject({
       ...startingGameState,
-      gameLog: ['Expedition started.'],
+      gameLog: ['Frontier Expedition started on Trailwise.'],
     });
+  });
+
+  it('starts a custom expedition with selected party members', () => {
+    useExpeditionStore.getState().startGame({
+      expeditionName: 'Cinder Ridge Crew',
+      difficulty: 'greenhorn',
+      partyMemberIds: ['scout', 'doctor', 'cook', 'child'],
+    });
+
+    expect(useExpeditionStore.getState()).toMatchObject({
+      expeditionName: 'Cinder Ridge Crew',
+      difficulty: 'greenhorn',
+      money: 340,
+      gameStatus: 'traveling',
+    });
+    expect(
+      useExpeditionStore.getState().party.map((character) => character.role),
+    ).toEqual(['Scout', 'Doctor', 'Cook', 'Child']);
+  });
+
+  it('difficulty modifies starting conditions', () => {
+    useExpeditionStore.getState().startGame({
+      expeditionName: 'Hard Road',
+      difficulty: 'reckoning',
+      partyMemberIds: ['scout', 'doctor', 'hunter', 'mechanic'],
+    });
+
+    expect(useExpeditionStore.getState().money).toBe(190);
+    expect(useExpeditionStore.getState().difficulty).toBe('reckoning');
+  });
+
+  it('does not start without required party members', () => {
+    useExpeditionStore.getState().startGame({
+      expeditionName: 'Too Few',
+      difficulty: 'trailwise',
+      partyMemberIds: ['scout', 'doctor', 'hunter'],
+    });
+
+    expect(useExpeditionStore.getState().gameStatus).toBe('not_started');
+    expect(useExpeditionStore.getState().party).toHaveLength(0);
   });
 
   it('initializes the party on game start', () => {
