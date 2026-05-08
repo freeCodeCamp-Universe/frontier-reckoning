@@ -6,6 +6,7 @@ export function CampScreen() {
   const party = useExpeditionStore((state) => state.party);
   const medicine = useExpeditionStore((state) => state.medicine);
   const wagonParts = useExpeditionStore((state) => state.wagonParts);
+  const ammo = useExpeditionStore((state) => state.ammo);
   const campOutcomeText = useExpeditionStore((state) => state.campOutcomeText);
   const restAtCamp = useExpeditionStore((state) => state.restAtCamp);
   const repairWagonAtCamp = useExpeditionStore((state) => state.repairWagonAtCamp);
@@ -16,6 +17,7 @@ export function CampScreen() {
     (state) => state.tellCampfireStoriesAtCamp,
   );
   const rationFoodAtCamp = useExpeditionStore((state) => state.rationFoodAtCamp);
+  const huntAtCamp = useExpeditionStore((state) => state.huntAtCamp);
   const resumeTravel = useExpeditionStore((state) => state.resumeTravel);
   const treatableParty = party.filter(
     (character) =>
@@ -60,6 +62,33 @@ export function CampScreen() {
         <Button onClick={resumeTravel} className="justify-start text-left">
           Resume travel
         </Button>
+      </div>
+
+      <div className="mt-5">
+        <h3 className="font-mono text-base text-muted">Hunt</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <Button
+            onClick={() => huntAtCamp(1)}
+            disabled={ammo < 1}
+            className="justify-start text-left"
+          >
+            Hunt with 1 ammo
+          </Button>
+          <Button
+            onClick={() => huntAtCamp(3)}
+            disabled={ammo < 3}
+            className="justify-start text-left"
+          >
+            Hunt with 3 ammo
+          </Button>
+          <Button
+            onClick={() => huntAtCamp(5)}
+            disabled={ammo < 5}
+            className="justify-start text-left"
+          >
+            Hunt with 5 ammo
+          </Button>
+        </div>
       </div>
 
       <div className="mt-5">

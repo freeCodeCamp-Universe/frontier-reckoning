@@ -15,6 +15,7 @@ import {
   pickWeightedEvent,
   shouldTriggerTravelEvent,
 } from '@game/systems/eventSystem';
+import { huntAtCamp, type HuntingAmmoAmount } from '@game/systems/huntingSystem';
 import { applyDailyTravel } from '@game/systems/travelSystem';
 import type { Character } from '@game/types/character';
 import type { GameEvent } from '@game/types/event';
@@ -64,6 +65,7 @@ export type FrontierReckoningState = {
   treatPartyMemberAtCamp: (id: string) => void;
   tellCampfireStoriesAtCamp: () => void;
   rationFoodAtCamp: () => void;
+  huntAtCamp: (ammoSpent: HuntingAmmoAmount) => void;
   resumeTravel: () => void;
   resolveCurrentEvent: (choiceId?: string) => void;
   continueFromEvent: () => void;
@@ -86,6 +88,7 @@ export type FrontierReckoningData = Omit<
   | 'treatPartyMemberAtCamp'
   | 'tellCampfireStoriesAtCamp'
   | 'rationFoodAtCamp'
+  | 'huntAtCamp'
   | 'resumeTravel'
   | 'resolveCurrentEvent'
   | 'continueFromEvent'
@@ -218,6 +221,21 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
       const result = rationFoodAtCamp(state);
 
       return { ...result.state, campOutcomeText: result.outcomeText };
+    }),
+  huntAtCamp: (ammoSpent) =>
+    set((state) => {
+      if (state.gameStatus !== 'camp') {
+        return state;
+      }
+
+      const result = huntAtCamp(state, ammoSpent);
+      const foodMessage =
+        result.foodGained > 0 ? ` Food gained: ${result.foodGained}.` : '';
+
+      return {
+        ...result.state,
+        campOutcomeText: `${result.outcomeText}${foodMessage}`,
+      };
     }),
   resumeTravel: () =>
     set((state) =>

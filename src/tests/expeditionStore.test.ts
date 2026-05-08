@@ -169,4 +169,17 @@ describe('useExpeditionStore', () => {
     expect(useExpeditionStore.getState().morale).toBe(44);
     expect(useExpeditionStore.getState().rationingDays).toBe(3);
   });
+
+  it('hunting consumes ammo from camp', () => {
+    useExpeditionStore.setState({
+      ...useExpeditionStore.getState(),
+      ...startingGameState,
+      gameStatus: 'camp',
+      ammo: 10,
+    });
+
+    useExpeditionStore.getState().huntAtCamp(5);
+
+    expect(useExpeditionStore.getState().ammo).toBe(5);
+  });
 });
