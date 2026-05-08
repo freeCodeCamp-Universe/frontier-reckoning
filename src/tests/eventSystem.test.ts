@@ -7,6 +7,7 @@ import {
   pickWeightedEvent,
 } from '@game/systems/eventSystem';
 import { createStartingGameState, useExpeditionStore } from '@stores/expeditionStore';
+import { createSeededRng } from '@utils/rng';
 
 describe('eventSystem', () => {
   beforeEach(() => {
@@ -15,9 +16,16 @@ describe('eventSystem', () => {
   });
 
   it('returns a valid weighted event', () => {
-    const event = pickWeightedEvent(starterEvents, 0.25);
+    const event = pickWeightedEvent(starterEvents, createSeededRng(25));
 
     expect(starterEvents).toContain(event);
+  });
+
+  it('selects events deterministically from a seeded rng', () => {
+    const firstEvent = pickWeightedEvent(starterEvents, createSeededRng('event-seed'));
+    const secondEvent = pickWeightedEvent(starterEvents, createSeededRng('event-seed'));
+
+    expect(firstEvent.id).toBe(secondEvent.id);
   });
 
   it('applies event effects correctly', () => {
@@ -71,13 +79,13 @@ describe('eventSystem', () => {
   it('pauses travel when an event appears', () => {
     vi.spyOn(Math, 'random')
       .mockReturnValueOnce(0.99)
-      .mockReturnValueOnce(0.99)
-      .mockReturnValueOnce(0.99)
       .mockReturnValueOnce(0.1)
       .mockReturnValueOnce(0);
 
-    useExpeditionStore.getState().startGame();
-    useExpeditionStore.getState().advanceDay();
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      daysSinceLastEvent: 2,
+    });
     useExpeditionStore.getState().advanceDay();
 
     expect(useExpeditionStore.getState().gameStatus).toBe('event');

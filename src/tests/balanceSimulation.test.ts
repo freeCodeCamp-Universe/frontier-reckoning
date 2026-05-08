@@ -26,6 +26,7 @@ import {
   createStartingGameState,
   type FrontierReckoningData,
 } from '@stores/expeditionStore';
+import { createSeededRng, randomInt, type Rng } from '@utils/rng';
 import type { EventChoice, GameEvent } from '@game/types/event';
 import type { RiverCrossing } from '@game/types/river';
 import type { Town } from '@game/types/town';
@@ -33,15 +34,6 @@ import type { Town } from '@game/types/town';
 type SimulationResult = {
   finalState: FrontierReckoningData;
   snapshots: FrontierReckoningData[];
-};
-
-const createSeededRandom = (seed: number) => {
-  let value = seed;
-
-  return () => {
-    value = (value * 48271) % 0x7fffffff;
-    return (value - 1) / 0x7ffffffe;
-  };
 };
 
 const supplyTotal = (state: FrontierReckoningData) =>
@@ -61,11 +53,7 @@ const finishIfGameOver = (state: FrontierReckoningData): FrontierReckoningData =
   return gameOverReason ? { ...state, gameOverReason, gameStatus: 'game_over' } : state;
 };
 
-const chooseEventChoice = (
-  state: FrontierReckoningData,
-  event: GameEvent,
-  random: () => number,
-) => {
+const chooseEventChoice = (state: FrontierReckoningData, event: GameEvent, rng: Rng) => {
   const availableChoices =
     event.choices?.filter((choice) => getChoiceAvailability(state, choice).available) ??
     [];
@@ -79,7 +67,7 @@ const chooseEventChoice = (
   );
 
   return (
-    survivalChoice ?? availableChoices[Math.floor(random() * availableChoices.length)]
+    survivalChoice ?? availableChoices[randomInt(rng, 0, availableChoices.length - 1)]
   );
 };
 
@@ -96,12 +84,8 @@ const choiceHelpsCurrentProblem = (state: FrontierReckoningData, choice: EventCh
   );
 };
 
-const resolveEvent = (
-  state: FrontierReckoningData,
-  event: GameEvent,
-  random: () => number,
-) => {
-  const choice = chooseEventChoice(state, event, random);
+const resolveEvent = (state: FrontierReckoningData, event: GameEvent, rng: Rng) => {
+  const choice = chooseEventChoice(state, event, rng);
   const nextState = choice
     ? applyEventChoice(state, event, choice.id)
     : applyEventEffects(state, event.effects);
@@ -117,12 +101,12 @@ const resolveEvent = (
 const chooseRiverOption = (
   state: FrontierReckoningData,
   river: RiverCrossing,
-  random: () => number,
+  rng: Rng,
 ) => {
   const availableOptions = river.options.filter(
     (option) => getRiverOptionAvailability(state, option).available,
   );
-  const roll = random();
+  const roll = rng();
 
   return (
     (roll < 0.4 && availableOptions.find((option) => option.id === 'ferry')) ||
@@ -133,13 +117,9 @@ const chooseRiverOption = (
   );
 };
 
-const resolveRiver = (
-  state: FrontierReckoningData,
-  river: RiverCrossing,
-  random: () => number,
-) => {
-  const option = chooseRiverOption(state, river, random);
-  const result = crossRiver(state, river, option.id, random());
+const resolveRiver = (state: FrontierReckoningData, river: RiverCrossing, rng: Rng) => {
+  const option = chooseRiverOption(state, river, rng);
+  const result = crossRiver(state, river, option.id, rng);
 
   return finishIfGameOver({
     ...result.state,
@@ -181,29 +161,27 @@ const visitTown = (state: FrontierReckoningData, town: Town) => {
   };
 };
 
-const campIfNeeded = (state: FrontierReckoningData, random: () => number) => {
+const campIfNeeded = (state: FrontierReckoningData, rng: Rng) => {
   if (state.food >= 35 || state.ammo < 3) {
     return state;
   }
 
-  return finishIfGameOver(
-    huntAtCamp({ ...state, gameStatus: 'camp' }, 3, random()).state,
-  );
+  return finishIfGameOver(huntAtCamp({ ...state, gameStatus: 'camp' }, 3, rng).state);
 };
 
 const simulateRun = (seed: number): SimulationResult => {
-  const random = createSeededRandom(seed);
+  const rng = createSeededRng(seed);
   let state = createStartingGameState();
   const snapshots: FrontierReckoningData[] = [state];
 
   for (let turn = 0; turn < 220 && !isTerminal(state); turn += 1) {
-    state = campIfNeeded(state, random);
+    state = campIfNeeded(state, rng);
 
     if (isTerminal(state)) {
       break;
     }
 
-    state = applyDailyTravel({ ...state, gameStatus: 'traveling' }, random());
+    state = applyDailyTravel({ ...state, gameStatus: 'traveling' }, rng);
     state = finishIfGameOver(state);
 
     const town = getPendingTown(state, towns);
@@ -216,12 +194,12 @@ const simulateRun = (seed: number): SimulationResult => {
       state = resolveRiver(
         { ...state, currentRiver: river, gameStatus: 'river' },
         river,
-        random,
+        rng,
       );
     }
 
-    if (!isTerminal(state) && shouldTriggerTravelEvent(state, random())) {
-      state = resolveEvent(state, pickWeightedEvent(starterEvents, random()), random);
+    if (!isTerminal(state) && shouldTriggerTravelEvent(state, rng)) {
+      state = resolveEvent(state, pickWeightedEvent(starterEvents, rng), rng);
     }
 
     snapshots.push(state);
@@ -231,6 +209,39 @@ const simulateRun = (seed: number): SimulationResult => {
 };
 
 describe('gameplay balance simulations', () => {
+  it('replays the same run from the same seed and varies with different seeds', () => {
+    const firstRun = simulateRun(77).finalState;
+    const secondRun = simulateRun(77).finalState;
+    const differentRun = simulateRun(78).finalState;
+
+    expect(secondRun).toMatchObject({
+      currentDay: firstRun.currentDay,
+      distanceTraveled: firstRun.distanceTraveled,
+      food: firstRun.food,
+      ammo: firstRun.ammo,
+      wagonCondition: firstRun.wagonCondition,
+      gameStatus: firstRun.gameStatus,
+      gameOverReason: firstRun.gameOverReason,
+    });
+    expect({
+      currentDay: differentRun.currentDay,
+      distanceTraveled: differentRun.distanceTraveled,
+      food: differentRun.food,
+      ammo: differentRun.ammo,
+      wagonCondition: differentRun.wagonCondition,
+      gameStatus: differentRun.gameStatus,
+      gameOverReason: differentRun.gameOverReason,
+    }).not.toEqual({
+      currentDay: firstRun.currentDay,
+      distanceTraveled: firstRun.distanceTraveled,
+      food: firstRun.food,
+      ammo: firstRun.ammo,
+      wagonCondition: firstRun.wagonCondition,
+      gameStatus: firstRun.gameStatus,
+      gameOverReason: firstRun.gameOverReason,
+    });
+  });
+
   it('produces both winning and losing runs across seeded simulations', () => {
     const results = Array.from({ length: 100 }, (_, index) => simulateRun(index + 1));
     const wins = results.filter((result) => result.finalState.gameStatus === 'victory');

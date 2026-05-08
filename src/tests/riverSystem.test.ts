@@ -25,9 +25,7 @@ describe('riverSystem', () => {
     useExpeditionStore.getState().advanceDay();
 
     expect(useExpeditionStore.getState().gameStatus).toBe('river');
-    expect(useExpeditionStore.getState().currentRiver?.name).toBe(
-      'Blackwater Crossing',
-    );
+    expect(useExpeditionStore.getState().currentRiver?.name).toBe('Blackwater Crossing');
     expect(
       getPendingRiverCrossing(useExpeditionStore.getState(), riverCrossings)?.name,
     ).toBe('Blackwater Crossing');
@@ -50,7 +48,7 @@ describe('riverSystem', () => {
 
   it('waiting costs a day', () => {
     const state = createStartingGameState();
-    const result = crossRiver(state, riverCrossings[0], 'wait', 0.99);
+    const result = crossRiver(state, riverCrossings[0], 'wait', () => 0.99);
 
     expect(result.state.currentDay).toBe(state.currentDay + 1);
     expect(result.succeeded).toBe(true);
@@ -58,7 +56,7 @@ describe('riverSystem', () => {
 
   it('failed crossing can damage wagon or supplies', () => {
     const state = createStartingGameState();
-    const result = crossRiver(state, riverCrossings[0], 'ford', 0);
+    const result = crossRiver(state, riverCrossings[0], 'ford', () => 0);
 
     expect(result.succeeded).toBe(false);
     expect(result.state.food).toBeLessThan(state.food);

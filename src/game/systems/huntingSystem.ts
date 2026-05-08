@@ -1,5 +1,6 @@
 import type { Character } from '@game/types/character';
 import type { FrontierReckoningData } from '@stores/expeditionStore';
+import type { Rng } from '@utils/rng';
 
 export type HuntingAmmoAmount = 1 | 3 | 5;
 
@@ -30,17 +31,17 @@ export function hasLivingHunter(party: Character[]) {
 export function calculateHuntingScore(
   state: FrontierReckoningData,
   ammoSpent: HuntingAmmoAmount,
-  randomValue = Math.random(),
+  rng: Rng = Math.random,
 ) {
   const hunterBonus = hasLivingHunter(state.party) ? 0.16 : 0;
 
-  return randomValue + ammoSpent * 0.06 + hunterBonus;
+  return rng() + ammoSpent * 0.06 + hunterBonus;
 }
 
 export function huntAtCamp(
   state: FrontierReckoningData,
   ammoSpent: HuntingAmmoAmount,
-  randomValue = Math.random(),
+  rng: Rng = Math.random,
 ): HuntingResult {
   if (state.ammo < ammoSpent) {
     return {
@@ -51,13 +52,14 @@ export function huntAtCamp(
     };
   }
 
-  const score = calculateHuntingScore(state, ammoSpent, randomValue);
+  const huntRoll = rng();
+  const score = huntRoll + ammoSpent * 0.06 + (hasLivingHunter(state.party) ? 0.16 : 0);
   let outcome: HuntingOutcome = 'no_game_found';
   let foodGained = 0;
   let outcomeText = 'No game is found before dusk.';
   let party = state.party;
 
-  if (randomValue < 0.1) {
+  if (huntRoll < 0.1) {
     const target = livingCharacters(state.party)[0];
     outcome = 'predator_injury';
     outcomeText = 'A predator charges from the brush. The hunt ends in injury.';
@@ -77,7 +79,7 @@ export function huntAtCamp(
         };
       });
     }
-  } else if (randomValue > 0.92 && !hasLivingHunter(state.party)) {
+  } else if (huntRoll > 0.92 && !hasLivingHunter(state.party)) {
     outcome = 'wasted_ammo';
     outcomeText = 'Shots echo across empty scrub. The ammo is gone and nothing falls.';
   } else if (score >= 0.86) {

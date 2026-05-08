@@ -1,6 +1,7 @@
 import type { Character } from '@game/types/character';
 import type { EventChoice, EventEffects, GameEvent } from '@game/types/event';
 import type { FrontierReckoningData, ResourceName } from '@stores/expeditionStore';
+import { weightedChoice, type Rng } from '@utils/rng';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
@@ -21,25 +22,9 @@ const findTargetCharacterId = (party: Character[], targetCharacterId?: string) =
 
 export function pickWeightedEvent(
   events: GameEvent[],
-  randomValue = Math.random(),
+  rng: Rng = Math.random,
 ): GameEvent {
-  const totalWeight = events.reduce((total, event) => total + event.weight, 0);
-
-  if (events.length === 0 || totalWeight <= 0) {
-    throw new Error('Cannot pick an event without positive event weights.');
-  }
-
-  let threshold = randomValue * totalWeight;
-
-  for (const event of events) {
-    threshold -= event.weight;
-
-    if (threshold <= 0) {
-      return event;
-    }
-  }
-
-  return events[events.length - 1];
+  return weightedChoice(events, (event) => event.weight, rng);
 }
 
 export function applyEventEffects(
@@ -138,12 +123,10 @@ export function applyEventChoice(
 
 export function shouldTriggerTravelEvent(
   state: FrontierReckoningData,
-  randomValue = Math.random(),
+  rng: Rng = Math.random,
 ) {
   return (
-    state.gameStatus === 'traveling' &&
-    state.daysSinceLastEvent >= 2 &&
-    randomValue < 0.35
+    state.gameStatus === 'traveling' && state.daysSinceLastEvent >= 2 && rng() < 0.35
   );
 }
 

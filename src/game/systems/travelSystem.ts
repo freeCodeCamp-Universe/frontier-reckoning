@@ -1,5 +1,6 @@
 import type { Character } from '@game/types/character';
 import type { FrontierReckoningData } from '@stores/expeditionStore';
+import type { Rng } from '@utils/rng';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
@@ -32,7 +33,7 @@ export function calculateFoodConsumption(party: Character[], isRationing = false
 
 export function applyDailyTravel(
   state: FrontierReckoningData,
-  randomValue = Math.random(),
+  rng: Rng = Math.random,
 ): FrontierReckoningData {
   if (state.gameStatus !== 'traveling') {
     return state;
@@ -57,8 +58,9 @@ export function applyDailyTravel(
     state.distanceTraveled + calculateDailyDistance(state),
     state.totalDistance,
   );
-  const wagonPartBreak = randomValue < 0.08;
-  const wagonWear = randomValue >= 0.08 && randomValue < 0.2;
+  const incidentRoll = rng();
+  const wagonPartBreak = incidentRoll < 0.08;
+  const wagonWear = incidentRoll >= 0.08 && incidentRoll < 0.2;
   const wagonParts = wagonPartBreak
     ? Math.max(0, state.wagonParts - 1)
     : state.wagonParts;

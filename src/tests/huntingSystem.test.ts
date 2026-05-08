@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { huntAtCamp, calculateHuntingScore } from '@game/systems/huntingSystem';
 import { createStartingGameState } from '@stores/expeditionStore';
+import { createSeededRng } from '@utils/rng';
 
 describe('huntingSystem', () => {
   it('consumes ammo while hunting', () => {
     const state = createStartingGameState();
-    const result = huntAtCamp(state, 3, 0.6);
+    const result = huntAtCamp(state, 3, () => 0.6);
 
     expect(result.state.ammo).toBe(state.ammo - 3);
   });
@@ -15,7 +16,7 @@ describe('huntingSystem', () => {
       ...createStartingGameState(),
       ammo: 0,
     };
-    const result = huntAtCamp(state, 1, 0.6);
+    const result = huntAtCamp(state, 1, () => 0.6);
 
     expect(result.state.ammo).toBe(0);
     expect(result.outcome).toBe('wasted_ammo');
@@ -33,19 +34,28 @@ describe('huntingSystem', () => {
       ),
     };
 
-    expect(calculateHuntingScore(state, 3, 0.4)).toBeGreaterThan(
-      calculateHuntingScore(withoutHunter, 3, 0.4),
+    expect(calculateHuntingScore(state, 3, () => 0.4)).toBeGreaterThan(
+      calculateHuntingScore(withoutHunter, 3, () => 0.4),
     );
   });
 
   it('predator outcome can injure a character', () => {
     const state = createStartingGameState();
-    const result = huntAtCamp(state, 1, 0.01);
+    const result = huntAtCamp(state, 1, () => 0.01);
 
     expect(result.outcome).toBe('predator_injury');
     expect(result.state.party[0]).toMatchObject({
       health: 82,
       status: 'injured',
     });
+  });
+
+  it('produces deterministic results with the same seed', () => {
+    const state = createStartingGameState();
+    const firstResult = huntAtCamp(state, 5, createSeededRng('hunt-seed'));
+    const secondResult = huntAtCamp(state, 5, createSeededRng('hunt-seed'));
+
+    expect(firstResult.outcome).toBe(secondResult.outcome);
+    expect(firstResult.foodGained).toBe(secondResult.foodGained);
   });
 });

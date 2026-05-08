@@ -2,6 +2,7 @@ import type { Character } from '@game/types/character';
 import type { RiverCrossing, RiverCrossingOption } from '@game/types/river';
 import type { EventEffects } from '@game/types/event';
 import type { FrontierReckoningData, ResourceName } from '@stores/expeditionStore';
+import type { Rng } from '@utils/rng';
 
 export type RiverCrossingResult = {
   state: FrontierReckoningData;
@@ -16,9 +17,7 @@ const livingCharacters = (party: Character[]) =>
   party.filter((character) => character.status !== 'dead' && character.health > 0);
 
 const resourceUpperLimit = (resourceName: ResourceName) =>
-  resourceName === 'morale' || resourceName === 'health'
-    ? 100
-    : Number.POSITIVE_INFINITY;
+  resourceName === 'morale' || resourceName === 'health' ? 100 : Number.POSITIVE_INFINITY;
 
 export function getPendingRiverCrossing(
   state: FrontierReckoningData,
@@ -48,7 +47,9 @@ export function getRiverOptionAvailability(
     option.requirements?.minimumWagonParts !== undefined &&
     state.wagonParts < option.requirements.minimumWagonParts
   ) {
-    reasons.push(`Requires at least ${option.requirements.minimumWagonParts} wagon part.`);
+    reasons.push(
+      `Requires at least ${option.requirements.minimumWagonParts} wagon part.`,
+    );
   }
 
   return {
@@ -77,10 +78,7 @@ function applyRiverEffects(
 
   nextState.morale = clamp(nextState.morale + (effects.morale ?? 0), 0, 100);
   nextState.health = clamp(nextState.health + (effects.health ?? 0), 0, 100);
-  nextState.wagonParts = Math.max(
-    0,
-    nextState.wagonParts + (effects.wagonParts ?? 0),
-  );
+  nextState.wagonParts = Math.max(0, nextState.wagonParts + (effects.wagonParts ?? 0));
   nextState.wagonCondition = clamp(
     nextState.wagonCondition + (effects.wagonCondition ?? 0),
     0,
@@ -107,7 +105,7 @@ function applyRiverEffects(
         return {
           ...character,
           health,
-          status: health === 0 ? 'dead' : effects.characterStatus ?? character.status,
+          status: health === 0 ? 'dead' : (effects.characterStatus ?? character.status),
         };
       });
     }
@@ -120,7 +118,7 @@ export function crossRiver(
   state: FrontierReckoningData,
   river: RiverCrossing,
   optionId: RiverCrossingOption['id'],
-  randomValue = Math.random(),
+  rng: Rng = Math.random,
 ): RiverCrossingResult {
   const option = river.options.find((riverOption) => riverOption.id === optionId);
 
@@ -138,7 +136,7 @@ export function crossRiver(
     };
   }
 
-  const failed = randomValue < option.failureChance;
+  const failed = rng() < option.failureChance;
   const nextState = applyRiverEffects(
     state,
     failed ? option.failureEffects : option.successEffects,
