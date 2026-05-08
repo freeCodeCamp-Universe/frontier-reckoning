@@ -12,9 +12,7 @@ export function getSurvivors(state: FrontierReckoningData) {
   );
 }
 
-export function getGameOverReason(
-  state: FrontierReckoningData,
-): GameOverReason | null {
+export function getGameOverReason(state: FrontierReckoningData): GameOverReason | null {
   if (state.party.length > 0 && getSurvivors(state).length === 0) {
     return 'all_party_dead';
   }
@@ -27,7 +25,7 @@ export function getGameOverReason(
     return 'health_collapsed';
   }
 
-  if (state.suppliesExhaustedDays >= 3) {
+  if (state.suppliesExhaustedDays >= 5) {
     return 'supplies_exhausted';
   }
 

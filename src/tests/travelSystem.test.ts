@@ -30,8 +30,8 @@ describe('travelSystem', () => {
         : character,
     );
 
-    expect(calculateFoodConsumption(state.party)).toBe(8);
-    expect(calculateFoodConsumption(partyWithOneDead)).toBe(6);
+    expect(calculateFoodConsumption(state.party)).toBe(6);
+    expect(calculateFoodConsumption(partyWithOneDead)).toBe(4.5);
   });
 
   it('increases distance', () => {

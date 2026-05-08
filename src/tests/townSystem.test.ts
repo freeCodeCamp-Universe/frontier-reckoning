@@ -35,8 +35,8 @@ describe('townSystem', () => {
     const result = buyTownSupply(state, towns[0], 'food');
 
     expect(result.succeeded).toBe(true);
-    expect(result.state.money).toBe(state.money - 12);
-    expect(result.state.food).toBe(state.food + 10);
+    expect(result.state.money).toBe(state.money - 24);
+    expect(result.state.food).toBe(state.food + 25);
   });
 
   it('cannot buy without money', () => {

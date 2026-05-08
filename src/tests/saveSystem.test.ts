@@ -26,7 +26,7 @@ describe('saveSystem', () => {
 
     expect(save.saveVersion).toBe(SAVE_VERSION);
     expect(save.state.currentDay).toBe(1);
-    expect(save.state.food).toBe(100);
+    expect(save.state.food).toBe(180);
     expect(save.state.startGame).toBeUndefined();
   });
 
@@ -44,7 +44,7 @@ describe('saveSystem', () => {
       useExpeditionStore.setState(result.save.state);
     }
 
-    expect(useExpeditionStore.getState().food).toBe(75);
+    expect(useExpeditionStore.getState().food).toBe(155);
     expect(useExpeditionStore.getState().gameStatus).toBe('traveling');
   });
 

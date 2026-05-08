@@ -30,10 +30,10 @@ describe('eventSystem', () => {
       characterStatus: 'injured',
     });
 
-    expect(nextState.food).toBe(75);
-    expect(nextState.ammo).toBe(45);
-    expect(nextState.morale).toBe(65);
-    expect(nextState.wagonParts).toBe(2);
+    expect(nextState.food).toBe(155);
+    expect(nextState.ammo).toBe(39);
+    expect(nextState.morale).toBe(68);
+    expect(nextState.wagonParts).toBe(3);
     expect(nextState.party[0]).toMatchObject({
       health: 80,
       status: 'injured',
@@ -48,8 +48,8 @@ describe('eventSystem', () => {
 
     const nextState = applyEventChoice(state, event!, 'buy-food');
 
-    expect(nextState.money).toBe(170);
-    expect(nextState.food).toBe(130);
+    expect(nextState.money).toBe(230);
+    expect(nextState.food).toBe(210);
   });
 
   it('marks choices unavailable when requirements are unmet', () => {

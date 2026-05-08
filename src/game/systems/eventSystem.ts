@@ -6,9 +6,7 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
 const resourceUpperLimit = (resourceName: ResourceName) =>
-  resourceName === 'morale' || resourceName === 'health'
-    ? 100
-    : Number.POSITIVE_INFINITY;
+  resourceName === 'morale' || resourceName === 'health' ? 100 : Number.POSITIVE_INFINITY;
 
 const livingCharacters = (party: Character[]) =>
   party.filter((character) => character.status !== 'dead' && character.health > 0);
@@ -64,9 +62,11 @@ export function applyEventEffects(
 
   nextState.morale = clamp(nextState.morale + (effects.morale ?? 0), 0, 100);
   nextState.health = clamp(nextState.health + (effects.health ?? 0), 0, 100);
-  nextState.wagonParts = Math.max(
+  nextState.wagonParts = Math.max(0, nextState.wagonParts + (effects.wagonParts ?? 0));
+  nextState.wagonCondition = clamp(
+    nextState.wagonCondition + (effects.wagonCondition ?? 0),
     0,
-    nextState.wagonParts + (effects.wagonParts ?? 0),
+    100,
   );
   nextState.distanceTraveled = clamp(
     nextState.distanceTraveled + (effects.distance ?? 0),
@@ -93,7 +93,7 @@ export function applyEventEffects(
 
       const health = clamp(character.health + (effects.characterHealth ?? 0), 0, 100);
       const status =
-        health === 0 ? 'dead' : effects.characterStatus ?? character.status;
+        health === 0 ? 'dead' : (effects.characterStatus ?? character.status);
 
       return {
         ...character,
@@ -151,10 +151,7 @@ export function getChoiceLabel(choice: EventChoice) {
   return choice.description ? `${choice.label}: ${choice.description}` : choice.label;
 }
 
-export function getChoiceAvailability(
-  state: FrontierReckoningData,
-  choice: EventChoice,
-) {
+export function getChoiceAvailability(state: FrontierReckoningData, choice: EventChoice) {
   const reasons: string[] = [];
   const requirements = choice.requirements;
 
@@ -162,17 +159,11 @@ export function getChoiceAvailability(
     return { available: true, reasons };
   }
 
-  if (
-    requirements.minimumFood !== undefined &&
-    state.food < requirements.minimumFood
-  ) {
+  if (requirements.minimumFood !== undefined && state.food < requirements.minimumFood) {
     reasons.push(`Requires at least ${requirements.minimumFood} food.`);
   }
 
-  if (
-    requirements.minimumAmmo !== undefined &&
-    state.ammo < requirements.minimumAmmo
-  ) {
+  if (requirements.minimumAmmo !== undefined && state.ammo < requirements.minimumAmmo) {
     reasons.push(`Requires at least ${requirements.minimumAmmo} ammo.`);
   }
 

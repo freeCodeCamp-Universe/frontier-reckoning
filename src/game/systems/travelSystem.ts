@@ -17,21 +17,22 @@ export function calculateDailyDistance(state: FrontierReckoningData) {
   const scoutBonus = livingParty.some((character) =>
     character.skills.includes('navigation'),
   )
-    ? 5
+    ? 4
     : 0;
-  const wagonPenalty = state.wagonParts === 0 ? 8 : 0;
-  const moralePenalty = state.morale < 30 ? 5 : 0;
-  const healthPenalty = state.health < 40 ? 5 : 0;
+  const wagonPenalty = state.wagonParts === 0 ? 6 : 0;
+  const moralePenalty = state.morale < 30 ? 4 : 0;
+  const healthPenalty = state.health < 40 ? 4 : 0;
 
-  return Math.max(8, 20 + scoutBonus - wagonPenalty - moralePenalty - healthPenalty);
+  return Math.max(10, 24 + scoutBonus - wagonPenalty - moralePenalty - healthPenalty);
 }
 
 export function calculateFoodConsumption(party: Character[], isRationing = false) {
-  return livingCharacters(party).length * (isRationing ? 1 : 2);
+  return livingCharacters(party).length * (isRationing ? 1 : 1.5);
 }
 
 export function applyDailyTravel(
   state: FrontierReckoningData,
+  randomValue = Math.random(),
 ): FrontierReckoningData {
   if (state.gameStatus !== 'traveling') {
     return state;
@@ -46,21 +47,27 @@ export function applyDailyTravel(
     };
   }
 
-  const foodConsumption = calculateFoodConsumption(
-    state.party,
-    state.rationingDays > 0,
-  );
+  const foodConsumption = calculateFoodConsumption(state.party, state.rationingDays > 0);
   const food = Math.max(0, state.food - foodConsumption);
   const isOutOfFood = food === 0;
   const suppliesExhaustedDays = isOutOfFood ? state.suppliesExhaustedDays + 1 : 0;
   const health = clamp(state.health - (isOutOfFood ? 5 : 0), 0, 100);
-  const morale = clamp(state.morale - 2 - (isOutOfFood ? 3 : 0), 0, 100);
+  const morale = clamp(state.morale - 1 - (isOutOfFood ? 3 : 0), 0, 100);
   const distanceTraveled = Math.min(
     state.distanceTraveled + calculateDailyDistance(state),
     state.totalDistance,
   );
-  const wagonParts =
-    Math.random() < 0.1 ? Math.max(0, state.wagonParts - 1) : state.wagonParts;
+  const wagonPartBreak = randomValue < 0.08;
+  const wagonWear = randomValue >= 0.08 && randomValue < 0.2;
+  const wagonParts = wagonPartBreak
+    ? Math.max(0, state.wagonParts - 1)
+    : state.wagonParts;
+  const wagonCondition = clamp(
+    state.wagonCondition -
+      (wagonPartBreak ? (state.wagonParts > 0 ? 5 : 9) : wagonWear ? 4 : 0),
+    0,
+    100,
+  );
   const party: Character[] = state.party.map((character) => {
     if (character.status === 'dead') {
       return character;
@@ -85,6 +92,7 @@ export function applyDailyTravel(
     distanceTraveled,
     food,
     wagonParts,
+    wagonCondition,
     morale,
     health,
     party,

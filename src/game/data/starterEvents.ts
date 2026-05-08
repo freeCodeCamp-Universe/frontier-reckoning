@@ -23,25 +23,28 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'broken-axle',
     title: 'Broken Axle',
-    description: 'The wagon lurches hard near Split-Stone Rise. One axle needs immediate work.',
+    description:
+      'The wagon lurches hard near Split-Stone Rise. One axle needs immediate work.',
     type: 'wagon_damage',
     categories: ['wagon_breakdown'],
-    weight: 8,
+    weight: 7,
     effects: { wagonParts: -1, wagonCondition: -12, morale: -4 },
   }),
   event({
     id: 'spoiled-food',
     title: 'Spoiled Food',
-    description: 'A damp crate turns sour overnight after fog rolls in from the Glass Flats.',
+    description:
+      'A damp crate turns sour overnight after fog rolls in from the Glass Flats.',
     type: 'resource_loss',
     categories: ['supplies'],
-    weight: 10,
+    weight: 9,
     effects: { resources: { food: -18 }, morale: -3 },
   }),
   event({
     id: 'suspicious-trader',
     title: 'Suspicious Trader',
-    description: 'A trader in a blue coat offers medicine at a strange discount and refuses questions.',
+    description:
+      'A trader in a blue coat offers medicine at a strange discount and refuses questions.',
     type: 'choice',
     categories: ['trader'],
     weight: 6,
@@ -53,7 +56,8 @@ export const starterEvents: GameEvent[] = [
         description: 'Spend cash and hope the bottles are clean.',
         requirements: { minimumMoney: 25 },
         effects: { resources: { money: -25, medicine: 2 }, morale: -1 },
-        outcomeText: 'The bottles smell sharp but usable. The party keeps a wary eye on the trader.',
+        outcomeText:
+          'The bottles smell sharp but usable. The party keeps a wary eye on the trader.',
       },
       {
         id: 'decline-trader',
@@ -67,19 +71,21 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'hunting-opportunity',
     title: 'Hunting Opportunity',
-    description: 'Fresh tracks cross the salt-grass trail. The hunters can spare an hour.',
+    description:
+      'Fresh tracks cross the salt-grass trail. The hunters can spare an hour.',
     type: 'resource_gain',
     categories: ['survival', 'supplies'],
-    weight: 9,
+    weight: 6,
     effects: { resources: { food: 22, ammo: -3 }, morale: 2 },
   }),
   event({
     id: 'illness',
     title: 'Trail Fever',
-    description: 'A fever settles over one traveler before sunset near the Chalk Barrens.',
+    description:
+      'A fever settles over one traveler before sunset near the Chalk Barrens.',
     type: 'character_sickness',
     categories: ['sickness_injury'],
-    weight: 8,
+    weight: 9,
     effects: { characterStatus: 'sick', characterHealth: -12, morale: -3 },
   }),
   event({
@@ -88,7 +94,7 @@ export const starterEvents: GameEvent[] = [
     description: 'Old songs and ridiculous stories make the night feel less hostile.',
     type: 'morale_change',
     categories: ['campfire'],
-    weight: 8,
+    weight: 5,
     effects: { morale: 8, characterMorale: 6 },
   }),
   event({
@@ -138,7 +144,8 @@ export const starterEvents: GameEvent[] = [
         description: 'Keep weapons ready and move through fast.',
         requirements: { minimumAmmo: 5 },
         effects: { resources: { ammo: -5 }, morale: -6 },
-        outcomeText: 'A few warning shots keep shadows at a distance, but nobody sleeps well.',
+        outcomeText:
+          'A few warning shots keep shadows at a distance, but nobody sleeps well.',
       },
     ],
   }),
@@ -148,8 +155,13 @@ export const starterEvents: GameEvent[] = [
     description: 'A hard storm batters the canvas and floods the supply crates.',
     type: 'wagon_damage',
     categories: ['wagon_breakdown', 'supplies'],
-    weight: 8,
-    effects: { wagonParts: -1, wagonCondition: -10, resources: { food: -10 }, morale: -4 },
+    weight: 7,
+    effects: {
+      wagonParts: -1,
+      wagonCondition: -10,
+      resources: { food: -10 },
+      morale: -4,
+    },
   }),
   event({
     id: 'lost-trail',
@@ -157,7 +169,7 @@ export const starterEvents: GameEvent[] = [
     description: 'Dust and bad landmarks pull the caravan off course near Pale Mesa.',
     type: 'morale_change',
     categories: ['navigation'],
-    weight: 6,
+    weight: 7,
     effects: { distance: -12, morale: -4 },
   }),
   event({
@@ -167,7 +179,11 @@ export const starterEvents: GameEvent[] = [
     type: 'character_injury',
     categories: ['sickness_injury'],
     weight: 5,
-    effects: { characterStatus: 'injured', characterHealth: -18, resources: { medicine: -1 } },
+    effects: {
+      characterStatus: 'injured',
+      characterHealth: -18,
+      resources: { medicine: -1 },
+    },
   }),
   event({
     id: 'loose-wheel',
@@ -175,7 +191,7 @@ export const starterEvents: GameEvent[] = [
     description: 'A wheel knocks against its pin until the whole wagon rattles.',
     type: 'wagon_damage',
     categories: ['wagon_breakdown'],
-    weight: 7,
+    weight: 6,
     effects: { wagonParts: -1, wagonCondition: -8, delayDays: 1 },
   }),
   event({
@@ -184,7 +200,7 @@ export const starterEvents: GameEvent[] = [
     description: 'The creek water looked clean enough. By noon, that bet feels costly.',
     type: 'character_sickness',
     categories: ['sickness_injury'],
-    weight: 6,
+    weight: 7,
     effects: { characterStatus: 'sick', characterHealth: -10, health: -4 },
   }),
   event({
@@ -202,7 +218,7 @@ export const starterEvents: GameEvent[] = [
     description: 'A roadside market offers fair prices if the caravan can spare money.',
     type: 'choice',
     categories: ['trader'],
-    weight: 6,
+    weight: 7,
     effects: {},
     choices: [
       {
@@ -236,7 +252,7 @@ export const starterEvents: GameEvent[] = [
     description: 'A family waves from beside a broken handcart, hungry and exhausted.',
     type: 'choice',
     categories: ['survival'],
-    weight: 6,
+    weight: 5,
     effects: {},
     choices: [
       {
@@ -245,7 +261,8 @@ export const starterEvents: GameEvent[] = [
         description: 'Give them enough to reach the next settlement.',
         requirements: { minimumFood: 12 },
         effects: { resources: { food: -12 }, morale: 8 },
-        outcomeText: 'The family blesses the caravan, and the party rides lighter in spirit.',
+        outcomeText:
+          'The family blesses the caravan, and the party rides lighter in spirit.',
       },
       {
         id: 'offer-directions',
@@ -262,7 +279,7 @@ export const starterEvents: GameEvent[] = [
     description: 'A tinkerer offers clean metal and spare fittings for medicine.',
     type: 'choice',
     categories: ['trader'],
-    weight: 5,
+    weight: 6,
     effects: {},
     choices: [
       {
@@ -270,7 +287,8 @@ export const starterEvents: GameEvent[] = [
         label: 'Make the trade',
         description: 'Spend medicine to repair the wagon.',
         effects: { resources: { medicine: -1 }, wagonParts: 2 },
-        outcomeText: 'The wagon gains useful parts, though the medicine chest feels thinner.',
+        outcomeText:
+          'The wagon gains useful parts, though the medicine chest feels thinner.',
       },
       {
         id: 'keep-medicine',
@@ -321,7 +339,11 @@ export const starterEvents: GameEvent[] = [
         label: 'Risk the hunt',
         description: 'Spend ammunition and trust the Hunter.',
         requirements: { characterRolePresent: 'Hunter', minimumAmmo: 6 },
-        effects: { resources: { ammo: -6, food: 36 }, characterHealth: -8, characterStatus: 'injured' },
+        effects: {
+          resources: { ammo: -6, food: 36 },
+          characterHealth: -8,
+          characterStatus: 'injured',
+        },
         outcomeText: 'The hunt succeeds, but not without blood and a shaking hand.',
       },
       {
@@ -365,7 +387,7 @@ export const starterEvents: GameEvent[] = [
     description: 'A lone stranger asks to share the fire until morning.',
     type: 'choice',
     categories: ['campfire'],
-    weight: 6,
+    weight: 5,
     effects: {},
     choices: [
       {
@@ -374,7 +396,8 @@ export const starterEvents: GameEvent[] = [
         description: 'Offer warmth and keep watch.',
         requirements: { minimumMorale: 45 },
         effects: { morale: 4, resources: { food: -4 } },
-        outcomeText: 'The stranger leaves before dawn and marks a safer creek on your map.',
+        outcomeText:
+          'The stranger leaves before dawn and marks a safer creek on your map.',
       },
       {
         id: 'turn-away',
@@ -388,7 +411,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'trader-supplies',
     title: 'Buy Supplies from Trader',
-    description: 'A mule trader offers food, ammunition, and spare bolts at steep prices.',
+    description:
+      'A mule trader offers food, ammunition, and spare bolts at steep prices.',
     type: 'choice',
     categories: ['trader'],
     weight: 7,
@@ -470,7 +494,7 @@ export const starterEvents: GameEvent[] = [
     description: 'Fear and exhaustion settle over camp after a long day.',
     type: 'choice',
     categories: ['campfire'],
-    weight: 6,
+    weight: 4,
     effects: {},
     choices: [
       {
@@ -479,7 +503,8 @@ export const starterEvents: GameEvent[] = [
         description: 'Rally the party if morale has not collapsed.',
         requirements: { minimumMorale: 40 },
         effects: { morale: 7, characterMorale: 5 },
-        outcomeText: 'The words are plain, but they land. The fire burns a little brighter.',
+        outcomeText:
+          'The words are plain, but they land. The fire burns a little brighter.',
       },
       {
         id: 'let-rest',
@@ -496,7 +521,7 @@ export const starterEvents: GameEvent[] = [
     description: 'A ridge ahead may reveal water, game, or danger.',
     type: 'choice',
     categories: ['navigation'],
-    weight: 5,
+    weight: 6,
     effects: {},
     choices: [
       {
@@ -522,7 +547,7 @@ export const starterEvents: GameEvent[] = [
     description: 'Two travelers argue over whether the food stores should be tightened.',
     type: 'choice',
     categories: ['survival', 'supplies'],
-    weight: 6,
+    weight: 7,
     effects: {},
     choices: [
       {
@@ -545,10 +570,11 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'toll-bridge-trader',
     title: 'Toll Bridge Trader',
-    description: 'A bridge keeper at Narrow Rill demands coin or work before lowering the chain.',
+    description:
+      'A bridge keeper at Narrow Rill demands coin or work before lowering the chain.',
     type: 'choice',
     categories: ['trader', 'navigation'],
-    weight: 5,
+    weight: 6,
     effects: {},
     choices: [
       {
@@ -571,7 +597,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'bandit-parley',
     title: 'Bandit Parley',
-    description: 'A scarfed lookout steps from the mesquite and offers safe passage for a price.',
+    description:
+      'A scarfed lookout steps from the mesquite and offers safe passage for a price.',
     type: 'choice',
     categories: ['bandit'],
     weight: 5,
@@ -591,7 +618,8 @@ export const starterEvents: GameEvent[] = [
         description: 'Stand firm with weapons visible.',
         requirements: { minimumAmmo: 6 },
         effects: { resources: { ammo: -6 }, morale: -4 },
-        outcomeText: 'Shots crack into the dust, and the bandits melt back into the rocks.',
+        outcomeText:
+          'Shots crack into the dust, and the bandits melt back into the rocks.',
       },
     ],
   }),
@@ -635,7 +663,8 @@ export const starterEvents: GameEvent[] = [
         label: 'Use medicine',
         description: 'Treat the fever before it worsens.',
         effects: { resources: { medicine: -1 }, health: 4, morale: 3 },
-        outcomeText: 'The fever breaks near dawn, leaving everyone exhausted and relieved.',
+        outcomeText:
+          'The fever breaks near dawn, leaving everyone exhausted and relieved.',
       },
       {
         id: 'save-medicine',
@@ -661,7 +690,8 @@ export const starterEvents: GameEvent[] = [
         description: 'Buy skilled work while it is available.',
         requirements: { minimumMoney: 40 },
         effects: { resources: { money: -40 }, wagonCondition: 25 },
-        outcomeText: 'The wagon rolls smoother after the wagonwright tightens every joint.',
+        outcomeText:
+          'The wagon rolls smoother after the wagonwright tightens every joint.',
       },
       {
         id: 'trade-labor',
@@ -726,7 +756,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'herb-woman',
     title: 'Herb Woman’s Satchel',
-    description: 'An herb seller near Mercy Bend offers bitter tonics and stranger advice.',
+    description:
+      'An herb seller near Mercy Bend offers bitter tonics and stranger advice.',
     type: 'choice',
     categories: ['trader'],
     weight: 5,
@@ -752,7 +783,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'lantern-guide',
     title: 'Last Lantern Guide',
-    description: 'A guide from Last Lantern offers to lead the caravan past old sinkholes.',
+    description:
+      'A guide from Last Lantern offers to lead the caravan past old sinkholes.',
     type: 'choice',
     categories: ['navigation'],
     weight: 4,
@@ -787,7 +819,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'ember-confession',
     title: 'Ember Confession',
-    description: 'Beside the last coals, one traveler admits fear and finds understanding.',
+    description:
+      'Beside the last coals, one traveler admits fear and finds understanding.',
     type: 'morale_change',
     categories: ['campfire'],
     weight: 5,
@@ -814,7 +847,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'child-star-story',
     title: 'Star Story',
-    description: 'A child names the brightest stars after each wagon and makes everyone laugh.',
+    description:
+      'A child names the brightest stars after each wagon and makes everyone laugh.',
     type: 'morale_change',
     categories: ['campfire'],
     weight: 5,
@@ -832,7 +866,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'frost-cough',
     title: 'Frost Cough',
-    description: 'Cold dawn air leaves one traveler coughing hard enough to slow the team.',
+    description:
+      'Cold dawn air leaves one traveler coughing hard enough to slow the team.',
     type: 'character_sickness',
     categories: ['sickness_injury'],
     weight: 5,
@@ -877,7 +912,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'night-riders',
     title: 'Night Riders',
-    description: 'Three riders shadow the campfire, never close enough to see their faces.',
+    description:
+      'Three riders shadow the campfire, never close enough to see their faces.',
     type: 'morale_change',
     categories: ['bandit'],
     weight: 5,
@@ -895,7 +931,8 @@ export const starterEvents: GameEvent[] = [
   event({
     id: 'stolen-tack',
     title: 'Stolen Tack',
-    description: 'A strap bundle disappears in the night, sliced clean from the wagon rail.',
+    description:
+      'A strap bundle disappears in the night, sliced clean from the wagon rail.',
     type: 'resource_loss',
     categories: ['bandit', 'supplies'],
     weight: 5,

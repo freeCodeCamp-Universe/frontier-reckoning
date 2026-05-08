@@ -32,9 +32,9 @@ export function calculateHuntingScore(
   ammoSpent: HuntingAmmoAmount,
   randomValue = Math.random(),
 ) {
-  const hunterBonus = hasLivingHunter(state.party) ? 0.2 : 0;
+  const hunterBonus = hasLivingHunter(state.party) ? 0.16 : 0;
 
-  return randomValue + ammoSpent * 0.08 + hunterBonus;
+  return randomValue + ammoSpent * 0.06 + hunterBonus;
 }
 
 export function huntAtCamp(
@@ -57,7 +57,7 @@ export function huntAtCamp(
   let outcomeText = 'No game is found before dusk.';
   let party = state.party;
 
-  if (randomValue < 0.08) {
+  if (randomValue < 0.1) {
     const target = livingCharacters(state.party)[0];
     outcome = 'predator_injury';
     outcomeText = 'A predator charges from the brush. The hunt ends in injury.';
@@ -80,13 +80,13 @@ export function huntAtCamp(
   } else if (randomValue > 0.92 && !hasLivingHunter(state.party)) {
     outcome = 'wasted_ammo';
     outcomeText = 'Shots echo across empty scrub. The ammo is gone and nothing falls.';
-  } else if (score >= 0.82) {
+  } else if (score >= 0.86) {
     outcome = 'large_game';
-    foodGained = 30;
+    foodGained = 24;
     outcomeText = 'The hunt brings down large game and fills the food stores.';
-  } else if (score >= 0.48) {
+  } else if (score >= 0.54) {
     outcome = 'small_game';
-    foodGained = 12;
+    foodGained = 9;
     outcomeText = 'The hunters return with small game for the cookpot.';
   }
 
