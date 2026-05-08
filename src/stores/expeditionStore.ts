@@ -17,6 +17,10 @@ import {
   pickWeightedEvent,
   shouldTriggerTravelEvent,
 } from '@game/systems/eventSystem';
+import {
+  getGameOverReason,
+  type GameOverReason,
+} from '@game/systems/endingSystem';
 import { huntAtCamp, type HuntingAmmoAmount } from '@game/systems/huntingSystem';
 import {
   crossRiver,
@@ -83,6 +87,8 @@ export type FrontierReckoningState = {
   visitedTownIds: string[];
   daysSinceLastEvent: number;
   rationingDays: number;
+  suppliesExhaustedDays: number;
+  gameOverReason: GameOverReason | null;
   gameStatus: GameStatus;
   startGame: () => void;
   advanceDay: () => void;
@@ -175,6 +181,8 @@ export const initialGameState: FrontierReckoningData = {
   visitedTownIds: [],
   daysSinceLastEvent: 0,
   rationingDays: 0,
+  suppliesExhaustedDays: 0,
+  gameOverReason: null,
   gameStatus: 'not_started',
 };
 
@@ -200,6 +208,16 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
   advanceDay: () =>
     set((state) => {
       const nextState = applyDailyTravel(state);
+      const gameOverReason = getGameOverReason(nextState);
+
+      if (gameOverReason) {
+        return {
+          ...nextState,
+          gameOverReason,
+          gameStatus: 'game_over',
+        };
+      }
+
       const pendingTown = getPendingTown(nextState, towns);
 
       if (pendingTown && nextState.gameStatus === 'traveling') {

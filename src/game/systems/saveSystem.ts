@@ -41,6 +41,8 @@ const dataKeys = [
   'visitedTownIds',
   'daysSinceLastEvent',
   'rationingDays',
+  'suppliesExhaustedDays',
+  'gameOverReason',
   'gameStatus',
 ] as const satisfies Array<keyof FrontierReckoningData>;
 
@@ -58,6 +60,7 @@ const numberKeys: Array<keyof FrontierReckoningData> = [
   'health',
   'daysSinceLastEvent',
   'rationingDays',
+  'suppliesExhaustedDays',
 ];
 
 const validStatuses = new Set([

@@ -52,6 +52,7 @@ export function applyDailyTravel(
   );
   const food = Math.max(0, state.food - foodConsumption);
   const isOutOfFood = food === 0;
+  const suppliesExhaustedDays = isOutOfFood ? state.suppliesExhaustedDays + 1 : 0;
   const health = clamp(state.health - (isOutOfFood ? 5 : 0), 0, 100);
   const morale = clamp(state.morale - 2 - (isOutOfFood ? 3 : 0), 0, 100);
   const distanceTraveled = Math.min(
@@ -88,6 +89,7 @@ export function applyDailyTravel(
     health,
     party,
     rationingDays: Math.max(0, state.rationingDays - 1),
+    suppliesExhaustedDays,
     daysSinceLastEvent: state.daysSinceLastEvent + 1,
     gameStatus: allPartyDead
       ? 'game_over'

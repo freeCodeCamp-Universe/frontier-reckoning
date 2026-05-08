@@ -1,5 +1,6 @@
 import { CampScreen } from '@components/CampScreen';
 import { EventCard } from '@components/EventCard';
+import { EndingScreen } from '@components/EndingScreen';
 import { PhaserGame } from '@components/PhaserGame';
 import { PartyPanel } from '@components/PartyPanel';
 import { ResourceDashboard } from '@components/ResourceDashboard';
@@ -51,6 +52,8 @@ export function App() {
         </div>
 
         <SaveControls />
+
+        <EndingScreen />
 
         <ResourceDashboard />
 
