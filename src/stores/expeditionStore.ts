@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { createStartingParty } from '@game/data/starterCharacters';
+import type { Character } from '@game/types/character';
 
 export type GameStatus =
   | 'not_started'
@@ -28,17 +30,30 @@ export type FrontierReckoningState = {
   money: number;
   morale: number;
   health: number;
+  party: Character[];
   gameStatus: GameStatus;
   startGame: () => void;
   advanceDay: () => void;
   updateResource: (resourceName: ResourceName, amount: number) => void;
+  damageCharacter: (id: string, amount: number) => void;
+  healCharacter: (id: string, amount: number) => void;
+  updateCharacterMorale: (id: string, amount: number) => void;
+  killCharacter: (id: string) => void;
   setGameStatus: (status: GameStatus) => void;
   resetGame: () => void;
 };
 
 type FrontierReckoningData = Omit<
   FrontierReckoningState,
-  'startGame' | 'advanceDay' | 'updateResource' | 'setGameStatus' | 'resetGame'
+  | 'startGame'
+  | 'advanceDay'
+  | 'updateResource'
+  | 'damageCharacter'
+  | 'healCharacter'
+  | 'updateCharacterMorale'
+  | 'killCharacter'
+  | 'setGameStatus'
+  | 'resetGame'
 >;
 
 const clamp = (value: number, min: number, max: number) =>
@@ -55,26 +70,28 @@ export const initialGameState: FrontierReckoningData = {
   money: 0,
   morale: 100,
   health: 100,
+  party: [],
   gameStatus: 'not_started',
 };
 
-export const startingGameState: FrontierReckoningData = {
+export const createStartingGameState = (): FrontierReckoningData => ({
+  ...initialGameState,
   currentDay: 1,
-  distanceTraveled: 0,
-  totalDistance: 2000,
   food: 100,
   medicine: 5,
   ammo: 40,
   wagonParts: 3,
   money: 200,
   morale: 75,
-  health: 100,
+  party: createStartingParty(),
   gameStatus: 'traveling',
-};
+});
+
+export const startingGameState = createStartingGameState();
 
 export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
   ...initialGameState,
-  startGame: () => set(startingGameState),
+  startGame: () => set(createStartingGameState()),
   advanceDay: () =>
     set((state) => {
       const distanceTraveled = Math.min(
@@ -101,6 +118,54 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         [resourceName]: clamp(nextValue, 0, upperLimit),
       } as Pick<FrontierReckoningState, ResourceName>;
     }),
+  damageCharacter: (id, amount) =>
+    set((state) => ({
+      party: state.party.map((character) => {
+        if (character.id !== id || character.status === 'dead') {
+          return character;
+        }
+
+        const health = clamp(character.health - amount, 0, 100);
+
+        return {
+          ...character,
+          health,
+          status: health === 0 ? 'dead' : 'injured',
+        };
+      }),
+    })),
+  healCharacter: (id, amount) =>
+    set((state) => ({
+      party: state.party.map((character) => {
+        if (character.id !== id || character.status === 'dead') {
+          return character;
+        }
+
+        const health = clamp(character.health + amount, 0, 100);
+
+        return {
+          ...character,
+          health,
+          status: health === 100 ? 'healthy' : character.status,
+        };
+      }),
+    })),
+  updateCharacterMorale: (id, amount) =>
+    set((state) => ({
+      party: state.party.map((character) =>
+        character.id === id
+          ? { ...character, morale: clamp(character.morale + amount, 0, 100) }
+          : character,
+      ),
+    })),
+  killCharacter: (id) =>
+    set((state) => ({
+      party: state.party.map((character) =>
+        character.id === id
+          ? { ...character, health: 0, morale: 0, status: 'dead' }
+          : character,
+      ),
+    })),
   setGameStatus: (gameStatus) => set({ gameStatus }),
   resetGame: () => set(initialGameState),
 }));

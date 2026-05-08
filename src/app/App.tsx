@@ -1,4 +1,5 @@
 import { PhaserGame } from '@components/PhaserGame';
+import { PartyPanel } from '@components/PartyPanel';
 import { ResourceDashboard } from '@components/ResourceDashboard';
 import { Button } from '@components/ui/Button';
 import { useExpeditionStore } from '@stores/expeditionStore';
@@ -27,6 +28,8 @@ export function App() {
         </div>
 
         <ResourceDashboard />
+
+        <PartyPanel />
 
         <PhaserGame />
       </section>
