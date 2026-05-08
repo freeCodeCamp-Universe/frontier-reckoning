@@ -13,3 +13,14 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
     };
   },
 });
+
+const localStorageMap = new Map<string, string>();
+
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    clear: () => localStorageMap.clear(),
+    getItem: (key: string) => localStorageMap.get(key) ?? null,
+    removeItem: (key: string) => localStorageMap.delete(key),
+    setItem: (key: string, value: string) => localStorageMap.set(key, value),
+  },
+});
