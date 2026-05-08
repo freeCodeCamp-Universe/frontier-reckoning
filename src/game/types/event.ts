@@ -10,6 +10,16 @@ export type GameEventType =
   | 'wagon_damage'
   | 'choice';
 
+export type GameEventCategory =
+  | 'campfire'
+  | 'sickness_injury'
+  | 'wagon_breakdown'
+  | 'trader'
+  | 'bandit'
+  | 'survival'
+  | 'navigation'
+  | 'supplies';
+
 export type EventEffects = {
   resources?: Partial<Record<ResourceName, number>>;
   morale?: number;
@@ -46,6 +56,7 @@ export type GameEvent = {
   title: string;
   description: string;
   type: GameEventType;
+  categories: GameEventCategory[];
   weight: number;
   effects: EventEffects;
   choices?: EventChoice[];
