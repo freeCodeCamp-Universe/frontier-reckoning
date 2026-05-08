@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { riverCrossings } from '@game/data/riverCrossings';
 import { starterEvents } from '@game/data/starterEvents';
 import { createStartingParty } from '@game/data/starterCharacters';
+import { towns } from '@game/data/towns';
 import {
   rationFoodAtCamp,
   repairWagonAtCamp,
@@ -22,10 +23,20 @@ import {
   getPendingRiverCrossing,
   type RiverCrossingResult,
 } from '@game/systems/riverSystem';
+import {
+  buyTownSupply,
+  getPendingTown,
+  hearTownRumor,
+  recruitPartyMember,
+  repairWagonInTown,
+  restAtInn,
+  sellTownSupply,
+} from '@game/systems/townSystem';
 import { applyDailyTravel } from '@game/systems/travelSystem';
 import type { Character } from '@game/types/character';
 import type { GameEvent } from '@game/types/event';
 import type { RiverCrossing, RiverCrossingOptionId } from '@game/types/river';
+import type { ShopResource, Town } from '@game/types/town';
 
 export type GameStatus =
   | 'not_started'
@@ -33,6 +44,7 @@ export type GameStatus =
   | 'event'
   | 'camp'
   | 'river'
+  | 'town'
   | 'game_over'
   | 'victory';
 
@@ -66,6 +78,9 @@ export type FrontierReckoningState = {
   riverResolved: boolean;
   riverOutcomeText: string | null;
   crossedRiverIds: string[];
+  currentTown: Town | null;
+  townOutcomeText: string | null;
+  visitedTownIds: string[];
   daysSinceLastEvent: number;
   rationingDays: number;
   gameStatus: GameStatus;
@@ -81,6 +96,13 @@ export type FrontierReckoningState = {
   resumeTravel: () => void;
   resolveRiverCrossing: (optionId: RiverCrossingOptionId) => void;
   continueFromRiver: () => void;
+  buySupplyInTown: (resource: ShopResource) => void;
+  sellSupplyInTown: (resource: ShopResource) => void;
+  restAtInn: () => void;
+  repairWagonInTown: () => void;
+  recruitPartyMember: () => void;
+  hearTownRumor: () => void;
+  resumeTrailFromTown: () => void;
   resolveCurrentEvent: (choiceId?: string) => void;
   continueFromEvent: () => void;
   updateResource: (resourceName: ResourceName, amount: number) => void;
@@ -106,6 +128,13 @@ export type FrontierReckoningData = Omit<
   | 'resumeTravel'
   | 'resolveRiverCrossing'
   | 'continueFromRiver'
+  | 'buySupplyInTown'
+  | 'sellSupplyInTown'
+  | 'restAtInn'
+  | 'repairWagonInTown'
+  | 'recruitPartyMember'
+  | 'hearTownRumor'
+  | 'resumeTrailFromTown'
   | 'resolveCurrentEvent'
   | 'continueFromEvent'
   | 'updateResource'
@@ -141,6 +170,9 @@ export const initialGameState: FrontierReckoningData = {
   riverResolved: false,
   riverOutcomeText: null,
   crossedRiverIds: [],
+  currentTown: null,
+  townOutcomeText: null,
+  visitedTownIds: [],
   daysSinceLastEvent: 0,
   rationingDays: 0,
   gameStatus: 'not_started',
@@ -168,6 +200,17 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
   advanceDay: () =>
     set((state) => {
       const nextState = applyDailyTravel(state);
+      const pendingTown = getPendingTown(nextState, towns);
+
+      if (pendingTown && nextState.gameStatus === 'traveling') {
+        return {
+          ...nextState,
+          currentTown: pendingTown,
+          townOutcomeText: `Arrived at ${pendingTown.name}.`,
+          gameStatus: 'town',
+        };
+      }
+
       const pendingRiver = getPendingRiverCrossing(nextState, riverCrossings);
 
       if (pendingRiver && nextState.gameStatus === 'traveling') {
@@ -306,6 +349,80 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         currentRiver: null,
         riverResolved: false,
         riverOutcomeText: null,
+        gameStatus: 'traveling',
+      };
+    }),
+  buySupplyInTown: (resource) =>
+    set((state) => {
+      if (state.gameStatus !== 'town' || !state.currentTown) {
+        return state;
+      }
+
+      const result = buyTownSupply(state, state.currentTown, resource);
+
+      return { ...result.state, townOutcomeText: result.outcomeText };
+    }),
+  sellSupplyInTown: (resource) =>
+    set((state) => {
+      if (state.gameStatus !== 'town' || !state.currentTown) {
+        return state;
+      }
+
+      const result = sellTownSupply(state, state.currentTown, resource);
+
+      return { ...result.state, townOutcomeText: result.outcomeText };
+    }),
+  restAtInn: () =>
+    set((state) => {
+      if (state.gameStatus !== 'town' || !state.currentTown) {
+        return state;
+      }
+
+      const result = restAtInn(state, state.currentTown);
+
+      return { ...result.state, townOutcomeText: result.outcomeText };
+    }),
+  repairWagonInTown: () =>
+    set((state) => {
+      if (state.gameStatus !== 'town' || !state.currentTown) {
+        return state;
+      }
+
+      const result = repairWagonInTown(state, state.currentTown);
+
+      return { ...result.state, townOutcomeText: result.outcomeText };
+    }),
+  recruitPartyMember: () =>
+    set((state) => {
+      if (state.gameStatus !== 'town' || !state.currentTown) {
+        return state;
+      }
+
+      const result = recruitPartyMember(state, state.currentTown);
+
+      return { ...result.state, townOutcomeText: result.outcomeText };
+    }),
+  hearTownRumor: () =>
+    set((state) => {
+      if (state.gameStatus !== 'town' || !state.currentTown) {
+        return state;
+      }
+
+      const result = hearTownRumor(state, state.currentTown);
+
+      return { ...result.state, townOutcomeText: result.outcomeText };
+    }),
+  resumeTrailFromTown: () =>
+    set((state) => {
+      if (state.gameStatus !== 'town' || !state.currentTown) {
+        return state;
+      }
+
+      return {
+        ...state,
+        visitedTownIds: [...state.visitedTownIds, state.currentTown.id],
+        currentTown: null,
+        townOutcomeText: null,
         gameStatus: 'traveling',
       };
     }),

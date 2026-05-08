@@ -1,0 +1,68 @@
+import type { Town } from '@game/types/town';
+
+export const towns: Town[] = [
+  {
+    id: 'ash-hollow',
+    name: 'Ash Hollow',
+    distance: 300,
+    description: 'A wind-scoured trading stop built around a blacksmith and two wells.',
+    innCost: 18,
+    repairCost: 28,
+    recruitCost: 55,
+    rumor: 'Travelers whisper that Blackwater Crossing is deeper after storm season.',
+    shop: [
+      { resource: 'food', label: 'Food', quantity: 10, buyPrice: 12, sellPrice: 5 },
+      { resource: 'medicine', label: 'Medicine', quantity: 1, buyPrice: 18, sellPrice: 8 },
+      { resource: 'ammo', label: 'Ammo', quantity: 5, buyPrice: 14, sellPrice: 6 },
+      { resource: 'wagonParts', label: 'Wagon part', quantity: 1, buyPrice: 24, sellPrice: 10 },
+    ],
+  },
+  {
+    id: 'mercy-bend-town',
+    name: 'Mercy Bend',
+    distance: 760,
+    description: 'A river town where ferrymen, repair crews, and rumor sellers gather.',
+    innCost: 24,
+    repairCost: 34,
+    recruitCost: 65,
+    rumor: 'A washed-out bridge beyond Red Fork has made ferries expensive.',
+    shop: [
+      { resource: 'food', label: 'Food', quantity: 10, buyPrice: 15, sellPrice: 6 },
+      { resource: 'medicine', label: 'Medicine', quantity: 1, buyPrice: 22, sellPrice: 9 },
+      { resource: 'ammo', label: 'Ammo', quantity: 5, buyPrice: 16, sellPrice: 7 },
+      { resource: 'wagonParts', label: 'Wagon part', quantity: 1, buyPrice: 30, sellPrice: 12 },
+    ],
+  },
+  {
+    id: 'iron-post',
+    name: 'Iron Post',
+    distance: 1250,
+    description: 'A hard little fort town with good metalwork and worse manners.',
+    innCost: 28,
+    repairCost: 30,
+    recruitCost: 70,
+    rumor: 'Mercy Bend ahead has ruined more wheels than any crossing on the trail.',
+    shop: [
+      { resource: 'food', label: 'Food', quantity: 10, buyPrice: 17, sellPrice: 7 },
+      { resource: 'medicine', label: 'Medicine', quantity: 1, buyPrice: 25, sellPrice: 10 },
+      { resource: 'ammo', label: 'Ammo', quantity: 5, buyPrice: 13, sellPrice: 6 },
+      { resource: 'wagonParts', label: 'Wagon part', quantity: 1, buyPrice: 26, sellPrice: 11 },
+    ],
+  },
+  {
+    id: 'last-lantern',
+    name: 'Last Lantern',
+    distance: 1750,
+    description: 'The final bright window before the trail turns quiet and thin.',
+    innCost: 35,
+    repairCost: 42,
+    recruitCost: 85,
+    rumor: 'Beyond Last Lantern, stocked wagons arrive. Empty wagons become stories.',
+    shop: [
+      { resource: 'food', label: 'Food', quantity: 10, buyPrice: 20, sellPrice: 8 },
+      { resource: 'medicine', label: 'Medicine', quantity: 1, buyPrice: 30, sellPrice: 12 },
+      { resource: 'ammo', label: 'Ammo', quantity: 5, buyPrice: 19, sellPrice: 8 },
+      { resource: 'wagonParts', label: 'Wagon part', quantity: 1, buyPrice: 38, sellPrice: 15 },
+    ],
+  },
+];

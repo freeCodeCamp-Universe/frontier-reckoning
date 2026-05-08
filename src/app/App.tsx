@@ -4,6 +4,7 @@ import { PhaserGame } from '@components/PhaserGame';
 import { PartyPanel } from '@components/PartyPanel';
 import { ResourceDashboard } from '@components/ResourceDashboard';
 import { RiverEventScreen } from '@components/RiverEventScreen';
+import { TownScreen } from '@components/TownScreen';
 import { Button } from '@components/ui/Button';
 import { useExpeditionStore } from '@stores/expeditionStore';
 
@@ -53,6 +54,8 @@ export function App() {
         <CampScreen />
 
         <RiverEventScreen />
+
+        <TownScreen />
 
         <PartyPanel />
 

@@ -19,6 +19,7 @@ describe('riverSystem', () => {
       ...createStartingGameState(),
       distanceTraveled: 440,
       gameStatus: 'traveling',
+      visitedTownIds: ['ash-hollow'],
     });
 
     useExpeditionStore.getState().advanceDay();
