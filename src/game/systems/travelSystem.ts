@@ -1,0 +1,93 @@
+import type { Character } from '@game/types/character';
+import type { FrontierReckoningData } from '@stores/expeditionStore';
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
+const livingCharacters = (party: Character[]) =>
+  party.filter((character) => character.status !== 'dead' && character.health > 0);
+
+export function calculateDailyDistance(state: FrontierReckoningData) {
+  const livingParty = livingCharacters(state.party);
+
+  if (livingParty.length === 0) {
+    return 0;
+  }
+
+  const scoutBonus = livingParty.some((character) =>
+    character.skills.includes('navigation'),
+  )
+    ? 5
+    : 0;
+  const wagonPenalty = state.wagonParts === 0 ? 8 : 0;
+  const moralePenalty = state.morale < 30 ? 5 : 0;
+  const healthPenalty = state.health < 40 ? 5 : 0;
+
+  return Math.max(8, 20 + scoutBonus - wagonPenalty - moralePenalty - healthPenalty);
+}
+
+export function calculateFoodConsumption(party: Character[]) {
+  return livingCharacters(party).length * 2;
+}
+
+export function applyDailyTravel(
+  state: FrontierReckoningData,
+): FrontierReckoningData {
+  if (state.gameStatus !== 'traveling') {
+    return state;
+  }
+
+  const livingParty = livingCharacters(state.party);
+
+  if (livingParty.length === 0) {
+    return {
+      ...state,
+      gameStatus: 'game_over',
+    };
+  }
+
+  const foodConsumption = calculateFoodConsumption(state.party);
+  const food = Math.max(0, state.food - foodConsumption);
+  const isOutOfFood = food === 0;
+  const health = clamp(state.health - (isOutOfFood ? 5 : 0), 0, 100);
+  const morale = clamp(state.morale - 2 - (isOutOfFood ? 3 : 0), 0, 100);
+  const distanceTraveled = Math.min(
+    state.distanceTraveled + calculateDailyDistance(state),
+    state.totalDistance,
+  );
+  const wagonParts =
+    Math.random() < 0.1 ? Math.max(0, state.wagonParts - 1) : state.wagonParts;
+  const party: Character[] = state.party.map((character) => {
+    if (character.status === 'dead') {
+      return character;
+    }
+
+    const characterHealth = clamp(character.health - (isOutOfFood ? 4 : 0), 0, 100);
+
+    return {
+      ...character,
+      health: characterHealth,
+      morale: clamp(character.morale - 1 - (isOutOfFood ? 2 : 0), 0, 100),
+      status: characterHealth === 0 ? 'dead' : character.status,
+    };
+  });
+  const allPartyDead = party.every(
+    (character) => character.status === 'dead' || character.health === 0,
+  );
+
+  return {
+    ...state,
+    currentDay: state.currentDay + 1,
+    distanceTraveled,
+    food,
+    wagonParts,
+    morale,
+    health,
+    party,
+    gameStatus: allPartyDead
+      ? 'game_over'
+      : distanceTraveled >= state.totalDistance
+        ? 'victory'
+        : 'traveling',
+  };
+}

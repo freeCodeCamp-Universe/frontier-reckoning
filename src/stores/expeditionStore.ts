@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createStartingParty } from '@game/data/starterCharacters';
+import { applyDailyTravel } from '@game/systems/travelSystem';
 import type { Character } from '@game/types/character';
 
 export type GameStatus =
@@ -43,7 +44,7 @@ export type FrontierReckoningState = {
   resetGame: () => void;
 };
 
-type FrontierReckoningData = Omit<
+export type FrontierReckoningData = Omit<
   FrontierReckoningState,
   | 'startGame'
   | 'advanceDay'
@@ -92,20 +93,7 @@ export const startingGameState = createStartingGameState();
 export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
   ...initialGameState,
   startGame: () => set(createStartingGameState()),
-  advanceDay: () =>
-    set((state) => {
-      const distanceTraveled = Math.min(
-        state.distanceTraveled + 20,
-        state.totalDistance,
-      );
-
-      return {
-        currentDay: state.currentDay + 1,
-        distanceTraveled,
-        gameStatus:
-          distanceTraveled >= state.totalDistance ? 'victory' : state.gameStatus,
-      };
-    }),
+  advanceDay: () => set((state) => applyDailyTravel(state)),
   updateResource: (resourceName, amount) =>
     set((state) => {
       const nextValue = state[resourceName] + amount;
