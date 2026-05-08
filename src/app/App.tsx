@@ -12,12 +12,16 @@ import { RiverEventScreen } from '@components/RiverEventScreen';
 import { SaveControls } from '@components/SaveControls';
 import { TownScreen } from '@components/TownScreen';
 import { Button } from '@components/ui/Button';
+import { hasSave, loadGameFromStorage } from '@game/systems/saveSystem';
 import { useExpeditionStore, type StartExpeditionOptions } from '@stores/expeditionStore';
 
 type AppScreen = 'main_menu' | 'setup' | 'active_game';
 
 export function App() {
   const [appScreen, setAppScreen] = useState<AppScreen>('main_menu');
+  const [saveAvailable, setSaveAvailable] = useState(() =>
+    typeof window === 'undefined' ? false : hasSave(window.localStorage),
+  );
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const startGame = useExpeditionStore((state) => state.startGame);
   const advanceDay = useExpeditionStore((state) => state.advanceDay);
@@ -26,12 +30,27 @@ export function App() {
   const handleStart = (options: StartExpeditionOptions) => {
     startGame(options);
     setAppScreen('active_game');
+    setSaveAvailable(true);
+  };
+
+  const handleContinue = () => {
+    const result = loadGameFromStorage(window.localStorage);
+
+    if (result.status === 'loaded') {
+      useExpeditionStore.setState(result.save.state);
+      setAppScreen('active_game');
+      setSaveAvailable(true);
+    }
   };
 
   if (gameStatus === 'not_started' && appScreen !== 'setup') {
     return (
       <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
-        <MainMenu onNewExpedition={() => setAppScreen('setup')} />
+        <MainMenu
+          canContinue={saveAvailable}
+          onContinue={handleContinue}
+          onNewExpedition={() => setAppScreen('setup')}
+        />
       </main>
     );
   }

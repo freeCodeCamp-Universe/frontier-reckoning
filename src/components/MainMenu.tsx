@@ -2,9 +2,11 @@ import { Button } from '@components/ui/Button';
 
 type MainMenuProps = {
   onNewExpedition: () => void;
+  onContinue: () => void;
+  canContinue: boolean;
 };
 
-export function MainMenu({ onNewExpedition }: MainMenuProps) {
+export function MainMenu({ onNewExpedition, onContinue, canContinue }: MainMenuProps) {
   return (
     <section className="mx-auto flex min-h-[70vh] max-w-5xl flex-col justify-center gap-6">
       <header className="border border-border bg-surface p-6">
@@ -21,8 +23,9 @@ export function MainMenu({ onNewExpedition }: MainMenuProps) {
           New Expedition
         </Button>
         <Button
-          disabled
-          disabledReason="Continue is available after a saved expedition is loaded."
+          onClick={onContinue}
+          disabled={!canContinue}
+          disabledReason="Continue is available after saving an expedition."
         >
           Continue
         </Button>
