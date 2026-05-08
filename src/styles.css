@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --color-canvas: 10 10 35;
+  --color-surface: 27 27 50;
+  --color-panel: 42 42 64;
+  --color-border: 59 59 79;
+  --color-foreground: 255 255 255;
+  --color-muted: 208 208 213;
+  --color-highlight: 153 201 255;
+  --color-success: 172 209 87;
+  --color-danger: 255 173 173;
+  --color-cta: 241 190 50;
+  background: rgb(var(--color-canvas));
+  color: rgb(var(--color-foreground));
+  font-family:
+    Lato,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-size: 18px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+canvas {
+  outline-offset: 4px;
+}
+
+:focus-visible {
+  outline: 2px solid #198eee;
+}
