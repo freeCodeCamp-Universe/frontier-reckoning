@@ -1,3 +1,4 @@
+import { EventCard } from '@components/EventCard';
 import { PhaserGame } from '@components/PhaserGame';
 import { PartyPanel } from '@components/PartyPanel';
 import { ResourceDashboard } from '@components/ResourceDashboard';
@@ -43,6 +44,7 @@ export function App() {
 
         <PhaserGame />
       </section>
+      <EventCard />
     </main>
   );
 }

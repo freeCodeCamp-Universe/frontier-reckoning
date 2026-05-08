@@ -84,6 +84,7 @@ export function applyDailyTravel(
     morale,
     health,
     party,
+    daysSinceLastEvent: state.daysSinceLastEvent + 1,
     gameStatus: allPartyDead
       ? 'game_over'
       : distanceTraveled >= state.totalDistance

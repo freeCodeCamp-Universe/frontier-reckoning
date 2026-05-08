@@ -1,7 +1,15 @@
 import { create } from 'zustand';
+import { starterEvents } from '@game/data/starterEvents';
 import { createStartingParty } from '@game/data/starterCharacters';
+import {
+  applyEventChoice,
+  applyEventEffects,
+  pickWeightedEvent,
+  shouldTriggerTravelEvent,
+} from '@game/systems/eventSystem';
 import { applyDailyTravel } from '@game/systems/travelSystem';
 import type { Character } from '@game/types/character';
+import type { GameEvent } from '@game/types/event';
 
 export type GameStatus =
   | 'not_started'
@@ -32,9 +40,14 @@ export type FrontierReckoningState = {
   morale: number;
   health: number;
   party: Character[];
+  currentEvent: GameEvent | null;
+  eventResolved: boolean;
+  daysSinceLastEvent: number;
   gameStatus: GameStatus;
   startGame: () => void;
   advanceDay: () => void;
+  resolveCurrentEvent: (choiceId?: string) => void;
+  continueFromEvent: () => void;
   updateResource: (resourceName: ResourceName, amount: number) => void;
   damageCharacter: (id: string, amount: number) => void;
   healCharacter: (id: string, amount: number) => void;
@@ -48,6 +61,8 @@ export type FrontierReckoningData = Omit<
   FrontierReckoningState,
   | 'startGame'
   | 'advanceDay'
+  | 'resolveCurrentEvent'
+  | 'continueFromEvent'
   | 'updateResource'
   | 'damageCharacter'
   | 'healCharacter'
@@ -72,6 +87,9 @@ export const initialGameState: FrontierReckoningData = {
   morale: 100,
   health: 100,
   party: [],
+  currentEvent: null,
+  eventResolved: false,
+  daysSinceLastEvent: 0,
   gameStatus: 'not_started',
 };
 
@@ -93,7 +111,56 @@ export const startingGameState = createStartingGameState();
 export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
   ...initialGameState,
   startGame: () => set(createStartingGameState()),
-  advanceDay: () => set((state) => applyDailyTravel(state)),
+  advanceDay: () =>
+    set((state) => {
+      const nextState = applyDailyTravel(state);
+
+      if (shouldTriggerTravelEvent(nextState)) {
+        return {
+          ...nextState,
+          currentEvent: pickWeightedEvent(starterEvents),
+          eventResolved: false,
+          daysSinceLastEvent: 0,
+          gameStatus: 'event',
+        };
+      }
+
+      return nextState;
+    }),
+  resolveCurrentEvent: (choiceId) =>
+    set((state) => {
+      if (!state.currentEvent || state.eventResolved) {
+        return state;
+      }
+
+      if (state.currentEvent.choices?.length && !choiceId) {
+        return state;
+      }
+
+      const nextState = choiceId
+        ? applyEventChoice(state, state.currentEvent, choiceId)
+        : applyEventEffects(state, state.currentEvent.effects);
+
+      return {
+        ...nextState,
+        currentEvent: state.currentEvent,
+        eventResolved: true,
+        gameStatus: nextState.gameStatus === 'game_over' ? 'game_over' : 'event',
+      };
+    }),
+  continueFromEvent: () =>
+    set((state) => {
+      if (!state.currentEvent || !state.eventResolved) {
+        return state;
+      }
+
+      return {
+        ...state,
+        currentEvent: null,
+        eventResolved: false,
+        gameStatus: state.gameStatus === 'game_over' ? 'game_over' : 'traveling',
+      };
+    }),
   updateResource: (resourceName, amount) =>
     set((state) => {
       const nextValue = state[resourceName] + amount;
