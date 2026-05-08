@@ -49,6 +49,7 @@ export function CampScreen() {
         <Button
           onClick={repairWagonAtCamp}
           disabled={wagonParts <= 0}
+          disabledReason="Repair wagon requires at least one wagon part."
           className="justify-start text-left"
         >
           Repair wagon
@@ -70,6 +71,7 @@ export function CampScreen() {
           <Button
             onClick={() => huntAtCamp(1)}
             disabled={ammo < 1}
+            disabledReason="Hunting with 1 ammo requires at least 1 ammo."
             className="justify-start text-left"
           >
             Hunt with 1 ammo
@@ -77,6 +79,7 @@ export function CampScreen() {
           <Button
             onClick={() => huntAtCamp(3)}
             disabled={ammo < 3}
+            disabledReason="Hunting with 3 ammo requires at least 3 ammo."
             className="justify-start text-left"
           >
             Hunt with 3 ammo
@@ -84,6 +87,7 @@ export function CampScreen() {
           <Button
             onClick={() => huntAtCamp(5)}
             disabled={ammo < 5}
+            disabledReason="Hunting with 5 ammo requires at least 5 ammo."
             className="justify-start text-left"
           >
             Hunt with 5 ammo
@@ -104,6 +108,7 @@ export function CampScreen() {
                 key={character.id}
                 onClick={() => treatPartyMemberAtCamp(character.id)}
                 disabled={medicine <= 0}
+                disabledReason="Treating a party member requires medicine."
                 className="justify-start text-left"
               >
                 Treat {character.name}

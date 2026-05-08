@@ -17,19 +17,19 @@ describe('useExpeditionStore', () => {
   it('startGame sets correct values', () => {
     useExpeditionStore.getState().startGame();
 
-    expect(useExpeditionStore.getState()).toMatchObject(startingGameState);
+    expect(useExpeditionStore.getState()).toMatchObject({
+      ...startingGameState,
+      gameLog: ['Expedition started.'],
+    });
   });
 
   it('initializes the party on game start', () => {
     useExpeditionStore.getState().startGame();
 
     expect(useExpeditionStore.getState().party).toHaveLength(4);
-    expect(useExpeditionStore.getState().party.map((character) => character.role)).toEqual([
-      'Scout',
-      'Doctor',
-      'Hunter',
-      'Mechanic',
-    ]);
+    expect(
+      useExpeditionStore.getState().party.map((character) => character.role),
+    ).toEqual(['Scout', 'Doctor', 'Hunter', 'Mechanic']);
   });
 
   it('prevents resources from going below zero', () => {

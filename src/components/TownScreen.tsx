@@ -58,6 +58,7 @@ export function TownScreen() {
                   <Button
                     onClick={() => buySupplyInTown(item.resource)}
                     disabled={money < item.buyPrice}
+                    disabledReason={`Buying ${item.label.toLowerCase()} requires $${item.buyPrice}.`}
                     className="min-h-10 px-3 py-2"
                   >
                     Buy
@@ -65,6 +66,7 @@ export function TownScreen() {
                   <Button
                     onClick={() => sellSupplyInTown(item.resource)}
                     disabled={resources[item.resource] < item.quantity}
+                    disabledReason={`Selling ${item.label.toLowerCase()} requires ${item.quantity} available.`}
                     className="min-h-10 px-3 py-2"
                   >
                     Sell
@@ -77,13 +79,25 @@ export function TownScreen() {
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <Button onClick={restAtInn} disabled={money < currentTown.innCost}>
+        <Button
+          onClick={restAtInn}
+          disabled={money < currentTown.innCost}
+          disabledReason={`Resting at the inn requires $${currentTown.innCost}.`}
+        >
           Rest at inn ${currentTown.innCost}
         </Button>
-        <Button onClick={repairWagonInTown} disabled={money < currentTown.repairCost}>
+        <Button
+          onClick={repairWagonInTown}
+          disabled={money < currentTown.repairCost}
+          disabledReason={`Town wagon repair requires $${currentTown.repairCost}.`}
+        >
           Repair wagon ${currentTown.repairCost}
         </Button>
-        <Button onClick={recruitPartyMember} disabled={money < currentTown.recruitCost}>
+        <Button
+          onClick={recruitPartyMember}
+          disabled={money < currentTown.recruitCost}
+          disabledReason={`Recruiting requires $${currentTown.recruitCost}.`}
+        >
           Recruit ${currentTown.recruitCost}
         </Button>
         <Button onClick={hearTownRumor}>Hear rumors</Button>

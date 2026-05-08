@@ -17,9 +17,29 @@ export function ResourceDashboard() {
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const wagonCondition = useExpeditionStore((state) => state.wagonCondition);
   const progressPercentage = Math.floor((distanceTraveled / totalDistance) * 100);
+  const clampedProgress = Math.min(Math.max(progressPercentage, 0), 100);
 
   return (
-    <section className="border border-border bg-surface p-4" aria-label="Expedition status">
+    <section
+      className="border border-border bg-surface p-4"
+      aria-label="Expedition status"
+    >
+      <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold">Trail Dashboard</h2>
+          <p className="font-mono text-base text-muted">{clampedProgress}% complete</p>
+        </div>
+        <div
+          className="h-4 border border-border bg-panel"
+          aria-label={`Trail progress ${clampedProgress}%`}
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={clampedProgress}
+        >
+          <div className="h-full bg-cta" style={{ width: `${clampedProgress}%` }} />
+        </div>
+      </div>
       <div className="grid gap-3 border-b border-border pb-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="Day" value={currentDay} />
         <Stat label="Distance" value={`${distanceTraveled} / ${totalDistance} mi`} />

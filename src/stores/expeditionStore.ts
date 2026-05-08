@@ -17,10 +17,7 @@ import {
   pickWeightedEvent,
   shouldTriggerTravelEvent,
 } from '@game/systems/eventSystem';
-import {
-  getGameOverReason,
-  type GameOverReason,
-} from '@game/systems/endingSystem';
+import { getGameOverReason, type GameOverReason } from '@game/systems/endingSystem';
 import { huntAtCamp, type HuntingAmmoAmount } from '@game/systems/huntingSystem';
 import {
   crossRiver,
@@ -89,6 +86,7 @@ export type FrontierReckoningState = {
   rationingDays: number;
   suppliesExhaustedDays: number;
   gameOverReason: GameOverReason | null;
+  gameLog: string[];
   gameStatus: GameStatus;
   startGame: () => void;
   advanceDay: () => void;
@@ -183,6 +181,7 @@ export const initialGameState: FrontierReckoningData = {
   rationingDays: 0,
   suppliesExhaustedDays: 0,
   gameOverReason: null,
+  gameLog: [],
   gameStatus: 'not_started',
 };
 
@@ -202,57 +201,76 @@ export const createStartingGameState = (): FrontierReckoningData => ({
 
 export const startingGameState = createStartingGameState();
 
+const withLog = <T extends FrontierReckoningData>(state: T, message: string): T => ({
+  ...state,
+  gameLog: [message, ...state.gameLog].slice(0, 20),
+});
+
 export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
   ...initialGameState,
-  startGame: () => set(createStartingGameState()),
+  startGame: () => set(() => withLog(createStartingGameState(), 'Expedition started.')),
   advanceDay: () =>
     set((state) => {
       const nextState = applyDailyTravel(state);
       const gameOverReason = getGameOverReason(nextState);
 
       if (gameOverReason) {
-        return {
-          ...nextState,
-          gameOverReason,
-          gameStatus: 'game_over',
-        };
+        return withLog(
+          {
+            ...nextState,
+            gameOverReason,
+            gameStatus: 'game_over',
+          },
+          'The expedition ended.',
+        );
       }
 
       const pendingTown = getPendingTown(nextState, towns);
 
       if (pendingTown && nextState.gameStatus === 'traveling') {
-        return {
-          ...nextState,
-          currentTown: pendingTown,
-          townOutcomeText: `Arrived at ${pendingTown.name}.`,
-          gameStatus: 'town',
-        };
+        return withLog(
+          {
+            ...nextState,
+            currentTown: pendingTown,
+            townOutcomeText: `Arrived at ${pendingTown.name}.`,
+            gameStatus: 'town',
+          },
+          `Arrived at ${pendingTown.name}.`,
+        );
       }
 
       const pendingRiver = getPendingRiverCrossing(nextState, riverCrossings);
 
       if (pendingRiver && nextState.gameStatus === 'traveling') {
-        return {
-          ...nextState,
-          currentRiver: pendingRiver,
-          riverResolved: false,
-          riverOutcomeText: null,
-          gameStatus: 'river',
-        };
+        return withLog(
+          {
+            ...nextState,
+            currentRiver: pendingRiver,
+            riverResolved: false,
+            riverOutcomeText: null,
+            gameStatus: 'river',
+          },
+          `Reached ${pendingRiver.name}.`,
+        );
       }
 
       if (shouldTriggerTravelEvent(nextState)) {
-        return {
-          ...nextState,
-          currentEvent: pickWeightedEvent(starterEvents),
-          eventResolved: false,
-          eventOutcomeText: null,
-          daysSinceLastEvent: 0,
-          gameStatus: 'event',
-        };
+        const currentEvent = pickWeightedEvent(starterEvents);
+
+        return withLog(
+          {
+            ...nextState,
+            currentEvent,
+            eventResolved: false,
+            eventOutcomeText: null,
+            daysSinceLastEvent: 0,
+            gameStatus: 'event',
+          },
+          `Event encountered: ${currentEvent.title}.`,
+        );
       }
 
-      return nextState;
+      return withLog(nextState, `Traveled to day ${nextState.currentDay}.`);
     }),
   enterCamp: () =>
     set((state) =>
@@ -260,6 +278,7 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         ? {
             ...state,
             campOutcomeText: 'The caravan makes camp.',
+            gameLog: ['The caravan made camp.', ...state.gameLog].slice(0, 20),
             gameStatus: 'camp',
           }
         : state,
@@ -272,7 +291,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = restAtCamp(state);
 
-      return { ...result.state, campOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, campOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   repairWagonAtCamp: () =>
     set((state) => {
@@ -282,7 +304,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = repairWagonAtCamp(state);
 
-      return { ...result.state, campOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, campOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   treatPartyMemberAtCamp: (id) =>
     set((state) => {
@@ -292,7 +317,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = treatPartyMemberAtCamp(state, id);
 
-      return { ...result.state, campOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, campOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   tellCampfireStoriesAtCamp: () =>
     set((state) => {
@@ -302,7 +330,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = tellCampfireStoriesAtCamp(state);
 
-      return { ...result.state, campOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, campOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   rationFoodAtCamp: () =>
     set((state) => {
@@ -312,7 +343,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = rationFoodAtCamp(state);
 
-      return { ...result.state, campOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, campOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   huntAtCamp: (ammoSpent) =>
     set((state) => {
@@ -327,6 +361,7 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
       return {
         ...result.state,
         campOutcomeText: `${result.outcomeText}${foodMessage}`,
+        gameLog: [`${result.outcomeText}${foodMessage}`, ...state.gameLog].slice(0, 20),
       };
     }),
   resumeTravel: () =>
@@ -335,6 +370,7 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         ? {
             ...state,
             campOutcomeText: 'The caravan breaks camp and resumes travel.',
+            gameLog: ['The caravan resumed travel.', ...state.gameLog].slice(0, 20),
             gameStatus: 'traveling',
           }
         : state,
@@ -345,15 +381,12 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         return state;
       }
 
-      const result: RiverCrossingResult = crossRiver(
-        state,
-        state.currentRiver,
-        optionId,
-      );
+      const result: RiverCrossingResult = crossRiver(state, state.currentRiver, optionId);
 
       return {
         ...result.state,
         riverOutcomeText: result.outcomeText,
+        gameLog: [result.outcomeText, ...state.gameLog].slice(0, 20),
       };
     }),
   continueFromRiver: () =>
@@ -367,6 +400,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         currentRiver: null,
         riverResolved: false,
         riverOutcomeText: null,
+        gameLog: ['The caravan moved beyond the river crossing.', ...state.gameLog].slice(
+          0,
+          20,
+        ),
         gameStatus: 'traveling',
       };
     }),
@@ -378,7 +415,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = buyTownSupply(state, state.currentTown, resource);
 
-      return { ...result.state, townOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, townOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   sellSupplyInTown: (resource) =>
     set((state) => {
@@ -388,7 +428,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = sellTownSupply(state, state.currentTown, resource);
 
-      return { ...result.state, townOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, townOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   restAtInn: () =>
     set((state) => {
@@ -398,7 +441,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = restAtInn(state, state.currentTown);
 
-      return { ...result.state, townOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, townOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   repairWagonInTown: () =>
     set((state) => {
@@ -408,7 +454,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = repairWagonInTown(state, state.currentTown);
 
-      return { ...result.state, townOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, townOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   recruitPartyMember: () =>
     set((state) => {
@@ -418,7 +467,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = recruitPartyMember(state, state.currentTown);
 
-      return { ...result.state, townOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, townOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   hearTownRumor: () =>
     set((state) => {
@@ -428,7 +480,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       const result = hearTownRumor(state, state.currentTown);
 
-      return { ...result.state, townOutcomeText: result.outcomeText };
+      return withLog(
+        { ...result.state, townOutcomeText: result.outcomeText },
+        result.outcomeText,
+      );
     }),
   resumeTrailFromTown: () =>
     set((state) => {
@@ -441,6 +496,7 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         visitedTownIds: [...state.visitedTownIds, state.currentTown.id],
         currentTown: null,
         townOutcomeText: null,
+        gameLog: [`Left ${state.currentTown.name}.`, ...state.gameLog].slice(0, 20),
         gameStatus: 'traveling',
       };
     }),
@@ -471,6 +527,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         currentEvent: state.currentEvent,
         eventResolved: true,
         eventOutcomeText: choice?.outcomeText ?? 'The caravan absorbs the consequences.',
+        gameLog: [
+          choice?.outcomeText ?? 'The caravan absorbs the consequences.',
+          ...state.gameLog,
+        ].slice(0, 20),
         gameStatus: nextState.gameStatus === 'game_over' ? 'game_over' : 'event',
       };
     }),
@@ -485,6 +545,10 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         currentEvent: null,
         eventResolved: false,
         eventOutcomeText: null,
+        gameLog: ['The caravan continued after the event.', ...state.gameLog].slice(
+          0,
+          20,
+        ),
         gameStatus: state.gameStatus === 'game_over' ? 'game_over' : 'traveling',
       };
     }),

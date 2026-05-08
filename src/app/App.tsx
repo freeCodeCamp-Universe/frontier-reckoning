@@ -2,6 +2,7 @@ import { CampScreen } from '@components/CampScreen';
 import { EventCard } from '@components/EventCard';
 import { EndingScreen } from '@components/EndingScreen';
 import { PhaserGame } from '@components/PhaserGame';
+import { GameLogPanel } from '@components/GameLogPanel';
 import { PartyPanel } from '@components/PartyPanel';
 import { ResourceDashboard } from '@components/ResourceDashboard';
 import { RiverEventScreen } from '@components/RiverEventScreen';
@@ -17,55 +18,68 @@ export function App() {
   const enterCamp = useExpeditionStore((state) => state.enterCamp);
 
   return (
-    <main className="min-h-screen bg-canvas px-5 py-8 text-foreground sm:px-8">
-      <section className="mx-auto flex max-w-5xl flex-col gap-6">
-        <header className="border-b border-border pb-5">
-          <p className="font-mono text-base text-highlight">browser game scaffold</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-normal sm:text-5xl">
-            Frontier Reckoning
-          </h1>
-        </header>
+    <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
+      <section className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex flex-col gap-6">
+          <header className="border border-border bg-surface p-5">
+            <p className="font-mono text-base text-highlight">frontier command desk</p>
+            <h1 className="mt-2 text-4xl font-bold tracking-normal sm:text-5xl">
+              Frontier Reckoning
+            </h1>
+            <p className="mt-3 max-w-3xl text-muted">
+              Guide the caravan through towns, rivers, camp decisions, and hard trail
+              weather.
+            </p>
+          </header>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button onClick={startGame}>Start Expedition</Button>
-            <Button
-              onClick={advanceDay}
-              disabled={gameStatus !== 'traveling'}
-              className="sm:min-w-44"
-            >
-              Travel One Day
-            </Button>
-            <Button
-              onClick={enterCamp}
-              disabled={gameStatus !== 'traveling'}
-              className="sm:min-w-36"
-            >
-              Make Camp
-            </Button>
+          <div className="border border-border bg-surface p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button onClick={startGame}>Start Expedition</Button>
+                <Button
+                  onClick={advanceDay}
+                  disabled={gameStatus !== 'traveling'}
+                  disabledReason="Travel is available only while the expedition is traveling."
+                  className="sm:min-w-44"
+                >
+                  Travel One Day
+                </Button>
+                <Button
+                  onClick={enterCamp}
+                  disabled={gameStatus !== 'traveling'}
+                  disabledReason="Camp can be made only while the expedition is traveling."
+                  className="sm:min-w-36"
+                >
+                  Make Camp
+                </Button>
+              </div>
+              <p className="font-mono text-base text-muted" aria-live="polite">
+                {gameStatus === 'not_started'
+                  ? 'Awaiting launch command'
+                  : 'Expedition initialized'}
+              </p>
+            </div>
           </div>
-          <p className="font-mono text-base text-muted" aria-live="polite">
-            {gameStatus === 'not_started'
-              ? 'Awaiting launch command'
-              : 'Expedition initialized'}
-          </p>
+
+          <SaveControls />
+
+          <EndingScreen />
+
+          <ResourceDashboard />
+
+          <CampScreen />
+
+          <RiverEventScreen />
+
+          <TownScreen />
+
+          <PartyPanel />
+
+          <PhaserGame />
         </div>
-
-        <SaveControls />
-
-        <EndingScreen />
-
-        <ResourceDashboard />
-
-        <CampScreen />
-
-        <RiverEventScreen />
-
-        <TownScreen />
-
-        <PartyPanel />
-
-        <PhaserGame />
+        <aside className="flex flex-col gap-6">
+          <GameLogPanel />
+        </aside>
       </section>
       <EventCard />
     </main>

@@ -1,4 +1,7 @@
-import type { FrontierReckoningData, FrontierReckoningState } from '@stores/expeditionStore';
+import type {
+  FrontierReckoningData,
+  FrontierReckoningState,
+} from '@stores/expeditionStore';
 
 export const SAVE_STORAGE_KEY = 'frontier-reckoning-save';
 export const SAVE_VERSION = 1;
@@ -43,6 +46,7 @@ const dataKeys = [
   'rationingDays',
   'suppliesExhaustedDays',
   'gameOverReason',
+  'gameLog',
   'gameStatus',
 ] as const satisfies Array<keyof FrontierReckoningData>;
 
@@ -75,7 +79,9 @@ const validStatuses = new Set([
 ]);
 
 export function extractSaveData(state: FrontierReckoningState): FrontierReckoningData {
-  return Object.fromEntries(dataKeys.map((key) => [key, state[key]])) as FrontierReckoningData;
+  return Object.fromEntries(
+    dataKeys.map((key) => [key, state[key]]),
+  ) as FrontierReckoningData;
 }
 
 export function createGameSave(state: FrontierReckoningState): GameSave {
@@ -125,11 +131,18 @@ export function validateGameSave(value: unknown): LoadSaveResult {
     return { status: 'invalid' };
   }
 
-  if (!Array.isArray(state.crossedRiverIds) || !Array.isArray(state.visitedTownIds)) {
+  if (
+    !Array.isArray(state.crossedRiverIds) ||
+    !Array.isArray(state.visitedTownIds) ||
+    !Array.isArray(state.gameLog)
+  ) {
     return { status: 'invalid' };
   }
 
-  if (typeof state.eventResolved !== 'boolean' || typeof state.riverResolved !== 'boolean') {
+  if (
+    typeof state.eventResolved !== 'boolean' ||
+    typeof state.riverResolved !== 'boolean'
+  ) {
     return { status: 'invalid' };
   }
 
@@ -150,9 +163,7 @@ export function saveGameToStorage(
   storage.setItem(SAVE_STORAGE_KEY, serializeGameSave(state));
 }
 
-export function loadGameFromStorage(
-  storage: Pick<Storage, 'getItem'>,
-): LoadSaveResult {
+export function loadGameFromStorage(storage: Pick<Storage, 'getItem'>): LoadSaveResult {
   const rawSave = storage.getItem(SAVE_STORAGE_KEY);
 
   if (!rawSave) {

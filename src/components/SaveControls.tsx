@@ -60,7 +60,11 @@ export function SaveControls() {
     <section className="border border-border bg-surface p-4" aria-label="Save controls">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {saveExists ? <Button onClick={handleContinue}>Continue</Button> : null}
-        <Button onClick={handleManualSave} disabled={gameStatus === 'not_started'}>
+        <Button
+          onClick={handleManualSave}
+          disabled={gameStatus === 'not_started'}
+          disabledReason="Save is available after starting an expedition."
+        >
           Save
         </Button>
         <Button onClick={handleResetSave}>Reset save</Button>

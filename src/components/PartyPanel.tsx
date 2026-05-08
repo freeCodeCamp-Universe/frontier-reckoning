@@ -29,6 +29,9 @@ export function PartyPanel() {
                   {character.status}
                 </span>
               </div>
+              <p className="mt-3 font-mono text-base text-muted">
+                Age {character.age} / {character.traits.join(', ')}
+              </p>
 
               <dl className="mt-4 grid grid-cols-2 gap-3">
                 <div>
