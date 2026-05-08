@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { ButtonHTMLAttributes, PropsWithChildren } from 'react';
+import { getStoredAudioEnabled, playAudioCue } from '@utils/audio';
 
 type ButtonProps = PropsWithChildren<
   ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -13,6 +14,7 @@ export function Button({
   disabledReason,
   disabled,
   'aria-describedby': ariaDescribedBy,
+  onClick,
   ...props
 }: ButtonProps) {
   const disabledReasonId = useId();
@@ -24,6 +26,10 @@ export function Button({
         aria-describedby={showDisabledReason ? disabledReasonId : ariaDescribedBy}
         className={`inline-flex min-h-12 items-center justify-center border-2 border-cta bg-cta px-5 py-3 font-mono font-bold text-canvas motion-safe:transition-colors hover:bg-transparent hover:text-cta disabled:cursor-not-allowed disabled:border-border disabled:bg-panel disabled:text-muted disabled:hover:bg-panel disabled:hover:text-muted ${className}`}
         disabled={disabled}
+        onClick={(event) => {
+          playAudioCue('button', getStoredAudioEnabled(window.localStorage));
+          onClick?.(event);
+        }}
         type="button"
         {...props}
       >

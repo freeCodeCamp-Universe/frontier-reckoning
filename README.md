@@ -74,6 +74,10 @@ npm run preview
   - `Tab` / `Shift+Tab`: move between controls.
   - `Enter` or `Space`: activate focused buttons and choices.
   - Event dialogs trap focus while open.
+- Audio:
+  - Sound effects and background ambience are muted by default.
+  - Use the audio controls to enable sound effects, then optionally enable ambience.
+  - Audio preferences persist in localStorage.
 
 ## Feature List
 
@@ -92,6 +96,7 @@ npm run preview
 - Seeded RNG utilities for deterministic simulations and tests.
 - Game log panel showing recent major actions.
 - Keyboard-accessible UI and reduced-motion support.
+- Optional generated-tone audio cues for buttons, events, victory, game over, and ambience.
 
 ## Testing Strategy
 
@@ -136,6 +141,6 @@ npm run build
 - Events and river outcomes use simplified effects rather than detailed sub-systems.
 - Save format migration is not implemented; unsupported old save versions are ignored with a message.
 - Phaser map visuals are functional placeholders.
-- There is no audio.
+- Audio uses simple generated placeholder tones rather than final music or sound design.
 - There is no settings menu yet.
 - Bundle size is above Vite's default warning threshold because Phaser is included in the main bundle.

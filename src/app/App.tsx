@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { AudioControls } from '@components/AudioControls';
+import { AudioEffects } from '@components/AudioEffects';
 import { CampScreen } from '@components/CampScreen';
 import { EventCard } from '@components/EventCard';
 import { EndingScreen } from '@components/EndingScreen';
@@ -51,6 +53,9 @@ export function App() {
           onContinue={handleContinue}
           onNewExpedition={() => setAppScreen('setup')}
         />
+        <div className="mx-auto mt-6 max-w-5xl">
+          <AudioControls />
+        </div>
       </main>
     );
   }
@@ -62,6 +67,9 @@ export function App() {
           onBack={() => setAppScreen('main_menu')}
           onStart={handleStart}
         />
+        <div className="mx-auto mt-6 max-w-6xl">
+          <AudioControls />
+        </div>
       </main>
     );
   }
@@ -115,6 +123,8 @@ export function App() {
 
           <SaveControls />
 
+          <AudioControls />
+
           <EndingScreen />
 
           <ResourceDashboard />
@@ -133,6 +143,7 @@ export function App() {
           <GameLogPanel />
         </aside>
       </section>
+      <AudioEffects />
       <EventCard />
     </main>
   );
