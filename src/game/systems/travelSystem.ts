@@ -26,8 +26,8 @@ export function calculateDailyDistance(state: FrontierReckoningData) {
   return Math.max(8, 20 + scoutBonus - wagonPenalty - moralePenalty - healthPenalty);
 }
 
-export function calculateFoodConsumption(party: Character[]) {
-  return livingCharacters(party).length * 2;
+export function calculateFoodConsumption(party: Character[], isRationing = false) {
+  return livingCharacters(party).length * (isRationing ? 1 : 2);
 }
 
 export function applyDailyTravel(
@@ -46,7 +46,10 @@ export function applyDailyTravel(
     };
   }
 
-  const foodConsumption = calculateFoodConsumption(state.party);
+  const foodConsumption = calculateFoodConsumption(
+    state.party,
+    state.rationingDays > 0,
+  );
   const food = Math.max(0, state.food - foodConsumption);
   const isOutOfFood = food === 0;
   const health = clamp(state.health - (isOutOfFood ? 5 : 0), 0, 100);
@@ -84,6 +87,7 @@ export function applyDailyTravel(
     morale,
     health,
     party,
+    rationingDays: Math.max(0, state.rationingDays - 1),
     daysSinceLastEvent: state.daysSinceLastEvent + 1,
     gameStatus: allPartyDead
       ? 'game_over'

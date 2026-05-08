@@ -87,4 +87,86 @@ describe('useExpeditionStore', () => {
       status: 'dead',
     });
   });
+
+  it('rest consumes food and improves health', () => {
+    useExpeditionStore.setState({
+      ...useExpeditionStore.getState(),
+      ...startingGameState,
+      gameStatus: 'camp',
+      food: 100,
+      health: 50,
+      party: startingGameState.party.map((character) => ({
+        ...character,
+        health: 50,
+      })),
+    });
+
+    useExpeditionStore.getState().restAtCamp();
+
+    expect(useExpeditionStore.getState().food).toBe(92);
+    expect(useExpeditionStore.getState().health).toBe(60);
+    expect(useExpeditionStore.getState().party[0].health).toBe(60);
+  });
+
+  it('repair consumes wagon parts and improves wagon condition', () => {
+    useExpeditionStore.setState({
+      ...useExpeditionStore.getState(),
+      ...startingGameState,
+      gameStatus: 'camp',
+      wagonParts: 3,
+      wagonCondition: 50,
+    });
+
+    useExpeditionStore.getState().repairWagonAtCamp();
+
+    expect(useExpeditionStore.getState().wagonParts).toBe(2);
+    expect(useExpeditionStore.getState().wagonCondition).toBe(75);
+  });
+
+  it('treat consumes medicine and improves a character', () => {
+    useExpeditionStore.setState({
+      ...useExpeditionStore.getState(),
+      ...startingGameState,
+      gameStatus: 'camp',
+      medicine: 5,
+      party: startingGameState.party.map((character) =>
+        character.id === 'scout'
+          ? { ...character, health: 40, status: 'injured' }
+          : character,
+      ),
+    });
+
+    useExpeditionStore.getState().treatPartyMemberAtCamp('scout');
+
+    expect(useExpeditionStore.getState().medicine).toBe(4);
+    expect(useExpeditionStore.getState().party[0].health).toBe(65);
+  });
+
+  it('campfire improves morale', () => {
+    useExpeditionStore.setState({
+      ...useExpeditionStore.getState(),
+      ...startingGameState,
+      gameStatus: 'camp',
+      morale: 50,
+    });
+
+    useExpeditionStore.getState().tellCampfireStoriesAtCamp();
+
+    expect(useExpeditionStore.getState().morale).toBe(58);
+  });
+
+  it('rationing affects morale', () => {
+    useExpeditionStore.setState({
+      ...useExpeditionStore.getState(),
+      ...startingGameState,
+      gameStatus: 'camp',
+      morale: 50,
+      rationingDays: 0,
+    });
+
+    useExpeditionStore.getState().rationFoodAtCamp();
+
+    expect(useExpeditionStore.getState().morale).toBe(44);
+    expect(useExpeditionStore.getState().rationingDays).toBe(3);
+  });
 });

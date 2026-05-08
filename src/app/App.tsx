@@ -1,3 +1,4 @@
+import { CampScreen } from '@components/CampScreen';
 import { EventCard } from '@components/EventCard';
 import { PhaserGame } from '@components/PhaserGame';
 import { PartyPanel } from '@components/PartyPanel';
@@ -9,6 +10,7 @@ export function App() {
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const startGame = useExpeditionStore((state) => state.startGame);
   const advanceDay = useExpeditionStore((state) => state.advanceDay);
+  const enterCamp = useExpeditionStore((state) => state.enterCamp);
 
   return (
     <main className="min-h-screen bg-canvas px-5 py-8 text-foreground sm:px-8">
@@ -30,6 +32,13 @@ export function App() {
             >
               Travel One Day
             </Button>
+            <Button
+              onClick={enterCamp}
+              disabled={gameStatus !== 'traveling'}
+              className="sm:min-w-36"
+            >
+              Make Camp
+            </Button>
           </div>
           <p className="font-mono text-base text-muted" aria-live="polite">
             {gameStatus === 'not_started'
@@ -39,6 +48,8 @@ export function App() {
         </div>
 
         <ResourceDashboard />
+
+        <CampScreen />
 
         <PartyPanel />
 

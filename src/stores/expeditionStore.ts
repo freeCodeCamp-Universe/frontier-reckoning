@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { starterEvents } from '@game/data/starterEvents';
 import { createStartingParty } from '@game/data/starterCharacters';
 import {
+  rationFoodAtCamp,
+  repairWagonAtCamp,
+  restAtCamp,
+  tellCampfireStoriesAtCamp,
+  treatPartyMemberAtCamp,
+} from '@game/systems/campSystem';
+import {
   applyEventChoice,
   applyEventEffects,
   getChoiceAvailability,
@@ -37,6 +44,7 @@ export type FrontierReckoningState = {
   medicine: number;
   ammo: number;
   wagonParts: number;
+  wagonCondition: number;
   money: number;
   morale: number;
   health: number;
@@ -44,10 +52,19 @@ export type FrontierReckoningState = {
   currentEvent: GameEvent | null;
   eventResolved: boolean;
   eventOutcomeText: string | null;
+  campOutcomeText: string | null;
   daysSinceLastEvent: number;
+  rationingDays: number;
   gameStatus: GameStatus;
   startGame: () => void;
   advanceDay: () => void;
+  enterCamp: () => void;
+  restAtCamp: () => void;
+  repairWagonAtCamp: () => void;
+  treatPartyMemberAtCamp: (id: string) => void;
+  tellCampfireStoriesAtCamp: () => void;
+  rationFoodAtCamp: () => void;
+  resumeTravel: () => void;
   resolveCurrentEvent: (choiceId?: string) => void;
   continueFromEvent: () => void;
   updateResource: (resourceName: ResourceName, amount: number) => void;
@@ -63,6 +80,13 @@ export type FrontierReckoningData = Omit<
   FrontierReckoningState,
   | 'startGame'
   | 'advanceDay'
+  | 'enterCamp'
+  | 'restAtCamp'
+  | 'repairWagonAtCamp'
+  | 'treatPartyMemberAtCamp'
+  | 'tellCampfireStoriesAtCamp'
+  | 'rationFoodAtCamp'
+  | 'resumeTravel'
   | 'resolveCurrentEvent'
   | 'continueFromEvent'
   | 'updateResource'
@@ -85,6 +109,7 @@ export const initialGameState: FrontierReckoningData = {
   medicine: 0,
   ammo: 0,
   wagonParts: 0,
+  wagonCondition: 100,
   money: 0,
   morale: 100,
   health: 100,
@@ -92,7 +117,9 @@ export const initialGameState: FrontierReckoningData = {
   currentEvent: null,
   eventResolved: false,
   eventOutcomeText: null,
+  campOutcomeText: null,
   daysSinceLastEvent: 0,
+  rationingDays: 0,
   gameStatus: 'not_started',
 };
 
@@ -103,6 +130,7 @@ export const createStartingGameState = (): FrontierReckoningData => ({
   medicine: 5,
   ammo: 40,
   wagonParts: 3,
+  wagonCondition: 100,
   money: 200,
   morale: 75,
   party: createStartingParty(),
@@ -131,6 +159,76 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
 
       return nextState;
     }),
+  enterCamp: () =>
+    set((state) =>
+      state.gameStatus === 'traveling'
+        ? {
+            ...state,
+            campOutcomeText: 'The caravan makes camp.',
+            gameStatus: 'camp',
+          }
+        : state,
+    ),
+  restAtCamp: () =>
+    set((state) => {
+      if (state.gameStatus !== 'camp') {
+        return state;
+      }
+
+      const result = restAtCamp(state);
+
+      return { ...result.state, campOutcomeText: result.outcomeText };
+    }),
+  repairWagonAtCamp: () =>
+    set((state) => {
+      if (state.gameStatus !== 'camp') {
+        return state;
+      }
+
+      const result = repairWagonAtCamp(state);
+
+      return { ...result.state, campOutcomeText: result.outcomeText };
+    }),
+  treatPartyMemberAtCamp: (id) =>
+    set((state) => {
+      if (state.gameStatus !== 'camp') {
+        return state;
+      }
+
+      const result = treatPartyMemberAtCamp(state, id);
+
+      return { ...result.state, campOutcomeText: result.outcomeText };
+    }),
+  tellCampfireStoriesAtCamp: () =>
+    set((state) => {
+      if (state.gameStatus !== 'camp') {
+        return state;
+      }
+
+      const result = tellCampfireStoriesAtCamp(state);
+
+      return { ...result.state, campOutcomeText: result.outcomeText };
+    }),
+  rationFoodAtCamp: () =>
+    set((state) => {
+      if (state.gameStatus !== 'camp') {
+        return state;
+      }
+
+      const result = rationFoodAtCamp(state);
+
+      return { ...result.state, campOutcomeText: result.outcomeText };
+    }),
+  resumeTravel: () =>
+    set((state) =>
+      state.gameStatus === 'camp'
+        ? {
+            ...state,
+            campOutcomeText: 'The caravan breaks camp and resumes travel.',
+            gameStatus: 'traveling',
+          }
+        : state,
+    ),
   resolveCurrentEvent: (choiceId) =>
     set((state) => {
       if (!state.currentEvent || state.eventResolved) {

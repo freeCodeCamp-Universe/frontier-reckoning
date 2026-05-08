@@ -15,14 +15,16 @@ export function ResourceDashboard() {
   const distanceTraveled = useExpeditionStore((state) => state.distanceTraveled);
   const totalDistance = useExpeditionStore((state) => state.totalDistance);
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
+  const wagonCondition = useExpeditionStore((state) => state.wagonCondition);
   const progressPercentage = Math.floor((distanceTraveled / totalDistance) * 100);
 
   return (
     <section className="border border-border bg-surface p-4" aria-label="Expedition status">
-      <div className="grid gap-3 border-b border-border pb-4 sm:grid-cols-4">
+      <div className="grid gap-3 border-b border-border pb-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="Day" value={currentDay} />
         <Stat label="Distance" value={`${distanceTraveled} / ${totalDistance} mi`} />
         <Stat label="Progress" value={`${progressPercentage}%`} />
+        <Stat label="Wagon" value={`${wagonCondition}%`} />
         <Stat label="Status" value={gameStatus.replace('_', ' ')} />
       </div>
 

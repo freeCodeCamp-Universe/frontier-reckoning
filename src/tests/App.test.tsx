@@ -22,5 +22,6 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Start Expedition' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Travel One Day' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Make Camp' })).toBeDisabled();
   });
 });
