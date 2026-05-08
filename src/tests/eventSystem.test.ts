@@ -3,6 +3,7 @@ import { starterEvents } from '@game/data/starterEvents';
 import {
   applyEventChoice,
   applyEventEffects,
+  getChoiceAvailability,
   pickWeightedEvent,
 } from '@game/systems/eventSystem';
 import { createStartingGameState, useExpeditionStore } from '@stores/expeditionStore';
@@ -49,6 +50,22 @@ describe('eventSystem', () => {
 
     expect(nextState.money).toBe(170);
     expect(nextState.food).toBe(130);
+  });
+
+  it('marks choices unavailable when requirements are unmet', () => {
+    const state = {
+      ...createStartingGameState(),
+      money: 5,
+    };
+    const event = starterEvents.find((starterEvent) => starterEvent.id === 'market-day');
+    const choice = event?.choices?.find((eventChoice) => eventChoice.id === 'buy-food');
+
+    expect(choice).toBeDefined();
+
+    const availability = getChoiceAvailability(state, choice!);
+
+    expect(availability.available).toBe(false);
+    expect(availability.reasons).toContain('Requires at least $30.');
   });
 
   it('pauses travel when an event appears', () => {

@@ -23,11 +23,21 @@ export type EventEffects = {
   characterStatus?: Extract<CharacterStatus, 'sick' | 'injured' | 'dead'>;
 };
 
+export type ChoiceRequirements = {
+  minimumFood?: number;
+  minimumAmmo?: number;
+  minimumMoney?: number;
+  characterRolePresent?: string;
+  minimumMorale?: number;
+};
+
 export type EventChoice = {
   id: string;
   label: string;
-  description?: string;
+  description: string;
+  requirements?: ChoiceRequirements;
   effects: EventEffects;
+  outcomeText: string;
 };
 
 export type GameEvent = {

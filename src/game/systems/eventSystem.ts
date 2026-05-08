@@ -127,6 +127,12 @@ export function applyEventChoice(
     throw new Error(`Choice "${choiceId}" does not exist for event "${event.id}".`);
   }
 
+  const availability = getChoiceAvailability(state, choice);
+
+  if (!availability.available) {
+    throw new Error(availability.reasons.join(' '));
+  }
+
   return applyEventEffects(state, choice.effects);
 }
 
@@ -143,4 +149,58 @@ export function shouldTriggerTravelEvent(
 
 export function getChoiceLabel(choice: EventChoice) {
   return choice.description ? `${choice.label}: ${choice.description}` : choice.label;
+}
+
+export function getChoiceAvailability(
+  state: FrontierReckoningData,
+  choice: EventChoice,
+) {
+  const reasons: string[] = [];
+  const requirements = choice.requirements;
+
+  if (!requirements) {
+    return { available: true, reasons };
+  }
+
+  if (
+    requirements.minimumFood !== undefined &&
+    state.food < requirements.minimumFood
+  ) {
+    reasons.push(`Requires at least ${requirements.minimumFood} food.`);
+  }
+
+  if (
+    requirements.minimumAmmo !== undefined &&
+    state.ammo < requirements.minimumAmmo
+  ) {
+    reasons.push(`Requires at least ${requirements.minimumAmmo} ammo.`);
+  }
+
+  if (
+    requirements.minimumMoney !== undefined &&
+    state.money < requirements.minimumMoney
+  ) {
+    reasons.push(`Requires at least $${requirements.minimumMoney}.`);
+  }
+
+  if (
+    requirements.minimumMorale !== undefined &&
+    state.morale < requirements.minimumMorale
+  ) {
+    reasons.push(`Requires morale of at least ${requirements.minimumMorale}.`);
+  }
+
+  if (
+    requirements.characterRolePresent &&
+    !livingCharacters(state.party).some(
+      (character) => character.role === requirements.characterRolePresent,
+    )
+  ) {
+    reasons.push(`Requires a living ${requirements.characterRolePresent}.`);
+  }
+
+  return {
+    available: reasons.length === 0,
+    reasons,
+  };
 }

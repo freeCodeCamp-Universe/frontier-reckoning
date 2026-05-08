@@ -4,6 +4,7 @@ import { createStartingParty } from '@game/data/starterCharacters';
 import {
   applyEventChoice,
   applyEventEffects,
+  getChoiceAvailability,
   pickWeightedEvent,
   shouldTriggerTravelEvent,
 } from '@game/systems/eventSystem';
@@ -42,6 +43,7 @@ export type FrontierReckoningState = {
   party: Character[];
   currentEvent: GameEvent | null;
   eventResolved: boolean;
+  eventOutcomeText: string | null;
   daysSinceLastEvent: number;
   gameStatus: GameStatus;
   startGame: () => void;
@@ -89,6 +91,7 @@ export const initialGameState: FrontierReckoningData = {
   party: [],
   currentEvent: null,
   eventResolved: false,
+  eventOutcomeText: null,
   daysSinceLastEvent: 0,
   gameStatus: 'not_started',
 };
@@ -120,6 +123,7 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
           ...nextState,
           currentEvent: pickWeightedEvent(starterEvents),
           eventResolved: false,
+          eventOutcomeText: null,
           daysSinceLastEvent: 0,
           gameStatus: 'event',
         };
@@ -137,6 +141,14 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         return state;
       }
 
+      const choice = choiceId
+        ? state.currentEvent.choices?.find((eventChoice) => eventChoice.id === choiceId)
+        : undefined;
+
+      if (choice && !getChoiceAvailability(state, choice).available) {
+        return state;
+      }
+
       const nextState = choiceId
         ? applyEventChoice(state, state.currentEvent, choiceId)
         : applyEventEffects(state, state.currentEvent.effects);
@@ -145,6 +157,7 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         ...nextState,
         currentEvent: state.currentEvent,
         eventResolved: true,
+        eventOutcomeText: choice?.outcomeText ?? 'The caravan absorbs the consequences.',
         gameStatus: nextState.gameStatus === 'game_over' ? 'game_over' : 'event',
       };
     }),
@@ -158,6 +171,7 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         ...state,
         currentEvent: null,
         eventResolved: false,
+        eventOutcomeText: null,
         gameStatus: state.gameStatus === 'game_over' ? 'game_over' : 'traveling',
       };
     }),
