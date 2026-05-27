@@ -2,7 +2,7 @@
 
 Frontier Reckoning is a browser-based frontier survival strategy game. You lead a small caravan across a long trail, manage scarce supplies, make event choices, stop in towns, cross rivers, camp, hunt, and try to reach the destination before the wagon, supplies, or party give out.
 
-This app focuses on the core loop, deterministic systems, save/load, accessibility, and automated test coverage. It does not include final art, advanced animation, or deep combat.
+This app focuses on the core loop, deterministic systems, save/load, accessibility, lightweight original presentation, and automated test coverage. It is still an MVP, but the major placeholder systems have been upgraded into shippable first passes.
 
 ## Tech Stack
 
@@ -74,10 +74,19 @@ npm run preview
   - `Tab` / `Shift+Tab`: move between controls.
   - `Enter` or `Space`: activate focused buttons and choices.
   - Event dialogs trap focus while open.
-- Audio:
-  - Sound effects and background ambience are muted by default.
-  - Use the audio controls to enable sound effects, then optionally enable ambience.
-  - Audio preferences persist in localStorage.
+
+## Settings
+
+Open `Settings` from the main menu or active game screen. Settings are stored in localStorage and persist across reloads.
+
+- `Sound`: master audio toggle. Audio is muted by default and starts only after user interaction.
+- `Music volume`: controls menu music and scene ambience.
+- `SFX volume`: controls button clicks, event alerts, hunting sounds, victory, and game over stings.
+- `Reduced motion`: disables non-essential CSS animation classes and Phaser movement flourishes.
+- `Text speed`: stores the preferred event text pacing for current and future presentation work.
+- `Autosave`: stores whether autosave behavior should be active.
+- `Difficulty display`: toggles detailed difficulty presentation.
+- `Reset save data`: clears the current local save and returns the run to the main menu.
 
 ## Feature List
 
@@ -90,13 +99,60 @@ npm run preview
 - Camp actions, including rest, repair, treatment, stories, rationing, and hunting.
 - Town milestones with shops, inns, repairs, recruiting, and rumors.
 - River crossing milestone events with different risks and costs.
-- Phaser trail map showing wagon progress, towns, rivers, start, and destination.
-- LocalStorage save/load with save validation.
+- Detailed river crossing subsystem with river width, depth, current, weather, ferry/bridge availability, option requirements, cost previews, risk meter, seeded outcomes, and outcome summaries.
+- Phaser trail map with parchment-style graphics, curved trail path, animated wagon marker, towns, rivers, danger zones, destination marker, marker tooltips, visited/unknown landmark states, and day/night tint.
+- Phaser hunting mini-game from camp with a 30-second timer, reticle controls, moving animals, limited ammo, food rewards, misses, predator injury risk, and Hunter role benefits.
+- Expressive event effects engine covering resources, party health/morale, single-character health/status, wagon condition, game logs, day advancement, follow-up events, subsystem starts, temporary modifiers, and faction reputation placeholders.
+- LocalStorage save/load with save validation and versioned migrations.
 - Victory and game over summary screens.
 - Seeded RNG utilities for deterministic simulations and tests.
-- Game log panel showing recent major actions.
-- Keyboard-accessible UI and reduced-motion support.
-- Optional generated-tone audio cues for buttons, events, victory, game over, and ambience.
+- Expedition journal with chronological day grouping, category filters, search, highlighted key events, current run summary, and plain text export.
+- Keyboard-accessible UI, settings modal focus handling, event dialog focus handling, and reduced-motion support.
+- Structured procedural Web Audio system with music, scene ambience, SFX, mute, volumes, fade handling, browser autoplay safety, and an asset replacement path.
+- Lightweight SVG/CSS presentation layer for event illustrations and generated character portraits.
+
+## Save Migration Behavior
+
+Saves include a `saveVersion`. The current save version is maintained in `src/stores/saveMigrations.ts`.
+
+- Versioned saves are migrated through a migration map before loading.
+- The v1 to v2 migration adds settings defaults and `discoveredLandmarks`.
+- Missing fields are defaulted safely after migration.
+- Corrupted saves are ignored with a clear load result instead of crashing the app.
+- Saves from unsupported future versions are rejected so newer save data is not silently damaged by an older app build.
+
+## Performance And Bundle Strategy
+
+Phaser is intentionally kept out of the initial menu/setup bundle.
+
+- The main trail map uses `React.lazy` and loads only after the active game screen opens.
+- The hunting mini-game is also lazy-loaded from camp.
+- Main menu and expedition setup avoid direct Phaser imports.
+- Vite builds Phaser into a separate production chunk, reducing initial app code and avoiding the earlier main-bundle warning where possible.
+- Generated SVG/CSS illustrations, generated portraits, and procedural Web Audio avoid large external art/audio payloads.
+
+## Audio Replacement Strategy
+
+Frontier Reckoning currently uses original procedural Web Audio compositions, not copyrighted music or sound effects.
+
+- Audio categories are defined in `src/game/systems/audioSystem.ts`.
+- Current categories include menu music, trail/camp/town/storm/river ambience, button click, event alert, hunting shot, hunting hit, victory, and game over.
+- To replace generated audio later, add final `.ogg` or similar files under `public/audio/placeholders/` and set the matching `src` fields in `generatedAudioAssets`.
+- Keep looped ambience files short and loop-clean.
+- Keep final assets normalized conservatively so the existing music and SFX volume settings remain comfortable.
+- See `public/audio/placeholders/README.md` for the expected replacement filenames.
+
+## Current Status Check
+
+- Art and animation are no longer purely minimal: event illustrations, generated portraits, Phaser map visuals, CSS transitions, and Phaser tweens are in place.
+- Hunting includes an action scene: camp launches a Phaser mini-game with reticle controls and moving animals.
+- Events use a detailed effects engine.
+- Rivers use a detailed crossing subsystem.
+- Save migrations work and are covered by tests.
+- Phaser map visuals are polished MVP quality using graphics primitives.
+- Audio is structured beyond tones with procedural music, ambience, and SFX categories.
+- A full settings menu exists in the main menu and active game.
+- Phaser is lazy-loaded to reduce initial bundle size.
 
 ## Testing Strategy
 
@@ -136,11 +192,10 @@ npm run build
 
 ## Known Limitations
 
-- Art and animation are intentionally minimal.
-- Hunting is result-based and does not yet include an action scene.
-- Events and river outcomes use simplified effects rather than detailed sub-systems.
-- Save format migration is not implemented; unsupported old save versions are ignored with a message.
-- Phaser map visuals are functional placeholders.
-- Audio uses simple generated placeholder tones rather than final music or sound design.
-- There is no settings menu yet.
-- Bundle size is above Vite's default warning threshold because Phaser is included in the main bundle.
+- Art is generated with CSS, SVG, Phaser graphics, and procedural systems. There are no final bespoke illustration, sprite, or audio asset packs yet.
+- The hunting mini-game is intentionally simple: no advanced enemy AI, weapon variety, tracking, or full mobile gesture tuning beyond basic pointer support.
+- Event content is broad but still MVP-scale; more authored event chains, faction consequences, and late-game variety would improve replayability.
+- River crossing outcomes are deterministic when seeded and mechanically detailed, but the UI is still a compact panel rather than a cinematic scene.
+- Saves are localStorage-only. There is no cloud sync, import/export save file UI, or account-based persistence.
+- The journal is derived from existing log text, so older saves gain grouping/filtering but not perfect historical metadata for every old entry.
+- Phaser remains a large dependency, but it is split into lazy chunks so it does not load on the main menu/setup path.

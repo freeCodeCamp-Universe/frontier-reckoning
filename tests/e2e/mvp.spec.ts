@@ -39,11 +39,12 @@ test('enters camp and hunts', async ({ page }) => {
   await startNewGame(page);
 
   await enterCamp(page);
-  await page.getByRole('button', { name: 'Hunt with 3 ammo' }).click();
-
+  await page.getByRole('button', { name: 'Start hunting mini-game' }).click();
+  await expect(page.getByLabel('Hunting mini-game')).toBeVisible();
   await expect(
-    page.locator('section[aria-label="Camp actions"]').getByText(/Food gained:/),
+    page.locator('section[aria-label="Hunting mini-game"]').getByText('hunting range'),
   ).toBeVisible();
+
   await page.getByRole('button', { name: 'Resume travel' }).click();
   await expect(page.getByRole('button', { name: 'Travel One Day' })).toBeEnabled();
 });
