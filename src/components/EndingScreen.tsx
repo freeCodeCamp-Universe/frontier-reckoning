@@ -1,18 +1,21 @@
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
 import { Card, CardEyebrow } from '@components/ui/Card';
+import { cx } from '@components/ui/styles';
 import {
   calculateScore,
   getGameOverReasonText,
   getSurvivors,
 } from '@game/systems/endingSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
+import { useSettings } from '@/hooks/useSettings';
 
 export function EndingScreen() {
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const gameOverReason = useExpeditionStore((state) => state.gameOverReason);
   const resetGame = useExpeditionStore((state) => state.resetGame);
   const state = useExpeditionStore((currentState) => currentState);
+  const [settings] = useSettings();
 
   if (gameStatus !== 'game_over' && gameStatus !== 'victory') {
     return null;
@@ -25,6 +28,7 @@ export function EndingScreen() {
     <Card
       aria-label="Ending screen"
       variant={gameStatus === 'victory' ? 'success' : 'danger'}
+      className={cx(settings.reducedMotion ? null : 'fr-fade-in')}
     >
       <CardEyebrow>
         {gameStatus === 'victory' ? 'expedition complete' : 'expedition ended'}

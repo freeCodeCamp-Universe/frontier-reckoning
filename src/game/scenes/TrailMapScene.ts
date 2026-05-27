@@ -48,6 +48,7 @@ type MarkerView = {
   marker: Phaser.GameObjects.Arc;
   label: Phaser.GameObjects.Text;
   status: Phaser.GameObjects.Text;
+  pulseTween?: Phaser.Tweens.Tween;
 };
 
 const dangerZones: MapLandmark[] = [
@@ -137,8 +138,10 @@ export class TrailMapScene extends Phaser.Scene {
       this.wagonIdleTween?.stop();
       this.wagonMoveTween?.stop();
       this.wagonBounceTween?.stop();
+      this.stopMarkerPulses();
     } else {
       this.startIdleAnimation();
+      this.updateMarkerStates();
     }
   }
 
@@ -430,6 +433,39 @@ export class TrailMapScene extends Phaser.Scene {
       view.label.setAlpha(state === 'unknown' ? 0.55 : 1);
       view.status.setText(getMarkerStatusText(view.landmark.kind, state));
       view.status.setAlpha(state === 'unknown' ? 0.65 : 1);
+
+      if (state === 'current' && !this.reducedMotion) {
+        this.startMarkerPulse(view);
+      } else {
+        this.stopMarkerPulse(view);
+      }
+    }
+  }
+
+  private startMarkerPulse(view: MarkerView) {
+    if (view.pulseTween) {
+      return;
+    }
+
+    view.pulseTween = this.tweens.add({
+      targets: view.marker,
+      scale: 1.18,
+      duration: 620,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  private stopMarkerPulse(view: MarkerView) {
+    view.pulseTween?.stop();
+    view.pulseTween = undefined;
+    view.marker.setScale(1);
+  }
+
+  private stopMarkerPulses() {
+    for (const view of this.markerViews) {
+      this.stopMarkerPulse(view);
     }
   }
 

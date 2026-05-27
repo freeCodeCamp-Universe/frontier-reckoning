@@ -3,8 +3,10 @@ import type { KeyboardEvent } from 'react';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
+import { cx } from '@components/ui/styles';
 import { getChoiceAvailability, getChoiceLabel } from '@game/systems/eventSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
+import { useSettings } from '@/hooks/useSettings';
 
 export function EventCard() {
   const dialogRef = useRef<HTMLElement>(null);
@@ -14,6 +16,7 @@ export function EventCard() {
   const gameState = useExpeditionStore((state) => state);
   const resolveCurrentEvent = useExpeditionStore((state) => state.resolveCurrentEvent);
   const continueFromEvent = useExpeditionStore((state) => state.continueFromEvent);
+  const [settings] = useSettings();
 
   useEffect(() => {
     if (!currentEvent || !dialogRef.current) {
@@ -64,7 +67,10 @@ export function EventCard() {
         as="section"
         ref={dialogRef}
         tabIndex={-1}
-        className="w-full max-w-2xl p-5"
+        className={cx(
+          'w-full max-w-2xl p-5',
+          settings.reducedMotion ? null : 'fr-event-card-enter',
+        )}
         aria-labelledby="event-title"
         aria-describedby="event-description"
         role="dialog"

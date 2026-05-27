@@ -28,6 +28,7 @@ const createChainable = () => {
     setInteractive: vi.fn(() => chainable),
     setOrigin: vi.fn(() => chainable),
     setPosition: vi.fn(() => chainable),
+    setScale: vi.fn(() => chainable),
     setSize: vi.fn(() => chainable),
     setStrokeStyle: vi.fn(() => chainable),
     setText: vi.fn(() => chainable),
