@@ -1,4 +1,9 @@
 import { useEffect, useRef } from 'react';
+import {
+  audioSystem,
+  getAudioSceneForGameStatus,
+} from '@game/systems/audioSystem';
+import { useSettings } from '@/hooks/useSettings';
 import { useExpeditionStore } from '@stores/expeditionStore';
 import { getStoredAudioEnabled, playAudioCue } from '@utils/audio';
 
@@ -6,8 +11,23 @@ export function AudioEffects() {
   const currentEvent = useExpeditionStore((state) => state.currentEvent);
   const eventResolved = useExpeditionStore((state) => state.eventResolved);
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
+  const [settings] = useSettings();
   const previousEventId = useRef<string | null>(null);
   const previousGameStatus = useRef(gameStatus);
+
+  useEffect(() => {
+    audioSystem.updateSettings({
+      soundEnabled: settings.soundEnabled,
+      musicVolume: settings.musicVolume,
+      sfxVolume: settings.sfxVolume,
+    });
+  }, [settings.soundEnabled, settings.musicVolume, settings.sfxVolume]);
+
+  useEffect(() => {
+    audioSystem.requestSceneAudio(
+      getAudioSceneForGameStatus(gameStatus, currentEvent?.type),
+    );
+  }, [currentEvent?.type, gameStatus, settings.soundEnabled]);
 
   useEffect(() => {
     if (

@@ -9,6 +9,7 @@ import {
   type HuntingAnimal,
   type HuntingMiniGameResult,
 } from '@game/systems/huntingSystem';
+import { audioSystem } from '@game/systems/audioSystem';
 import type { FrontierReckoningData } from '@stores/expeditionStore';
 
 type HuntingMiniGameProps = {
@@ -244,6 +245,8 @@ class HuntingScene extends Phaser.Scene {
       return;
     }
 
+    void audioSystem.playSfx('hunting_shot');
+
     const shot = resolveHuntingShot({
       animals: this.animals,
       target: { x, y },
@@ -256,6 +259,7 @@ class HuntingScene extends Phaser.Scene {
     if (shot.hitAnimal) {
       const hitAnimal = this.animals.find((animal) => animal.id === shot.hitAnimal?.id);
 
+      void audioSystem.playSfx('hunting_hit');
       this.hits += 1;
       this.foodGained += shot.foodGained;
       this.resultText?.setText(`${shot.hitAnimal.type} hit +${shot.foodGained} food`);

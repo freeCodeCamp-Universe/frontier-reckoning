@@ -9,18 +9,24 @@ import {
 } from '@utils/audio';
 
 describe('audio controls', () => {
-  const originalAudioContext = window.AudioContext;
-
   beforeEach(() => {
     window.localStorage.clear();
+    vi.stubGlobal(
+      'Audio',
+      vi.fn(() => ({
+        currentTime: 0,
+        loop: false,
+        pause: vi.fn(),
+        play: vi.fn(() => Promise.resolve()),
+        preload: '',
+        volume: 1,
+      })),
+    );
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    Object.defineProperty(window, 'AudioContext', {
-      configurable: true,
-      value: originalAudioContext,
-    });
+    vi.unstubAllGlobals();
   });
 
   it('defaults to muted and persists audio settings', () => {
@@ -67,14 +73,12 @@ describe('audio controls', () => {
   });
 
   it('does not crash if the audio engine fails', () => {
-    Object.defineProperty(window, 'AudioContext', {
-      configurable: true,
-      value: class BrokenAudioContext {
-        constructor() {
-          throw new Error('Audio unavailable');
-        }
-      },
-    });
+    vi.stubGlobal(
+      'Audio',
+      vi.fn(() => {
+        throw new Error('Audio unavailable');
+      }),
+    );
 
     render(<AudioControls />);
 

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '@app/App';
 import { SettingsModal } from '@components/SettingsModal';
 import { saveGameToStorage, SAVE_STORAGE_KEY } from '@game/systems/saveSystem';
@@ -22,6 +22,10 @@ describe('settings', () => {
     vi.restoreAllMocks();
     window.localStorage.clear();
     useExpeditionStore.getState().resetGame();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('renders from the main menu and active game', async () => {
@@ -81,32 +85,26 @@ describe('settings', () => {
   });
 
   it('uses sound settings in the audio system', () => {
-    const gainRamp = vi.fn();
-    const oscillatorStart = vi.fn();
-    const oscillatorStop = vi.fn();
-    const audioContext = vi.fn(() => ({
-      currentTime: 1,
-      destination: {},
-      createGain: () => ({
-        gain: {
-          setValueAtTime: vi.fn(),
-          exponentialRampToValueAtTime: gainRamp,
-        },
-        connect: vi.fn(),
-      }),
-      createOscillator: () => ({
-        type: 'sine',
-        frequency: { setValueAtTime: vi.fn() },
-        connect: vi.fn(),
-        start: oscillatorStart,
-        stop: oscillatorStop,
-      }),
-    }));
+    const play = vi.fn(() => Promise.resolve());
+    const audioElements: Array<{ volume: number; play: () => Promise<void> }> = [];
 
-    Object.defineProperty(window, 'AudioContext', {
-      configurable: true,
-      value: audioContext,
-    });
+    vi.stubGlobal(
+      'Audio',
+      vi.fn(() => {
+        const audio = {
+          currentTime: 0,
+          loop: false,
+          pause: vi.fn(),
+          play,
+          preload: '',
+          volume: 1,
+        };
+
+        audioElements.push(audio);
+
+        return audio;
+      }),
+    );
 
     updateStoredSettings(window.localStorage, {
       soundEnabled: false,
@@ -115,15 +113,13 @@ describe('settings', () => {
 
     playAudioCue('button');
 
-    expect(audioContext).not.toHaveBeenCalled();
+    expect(play).not.toHaveBeenCalled();
 
     updateStoredSettings(window.localStorage, { soundEnabled: true });
     playAudioCue('button');
 
-    expect(audioContext).toHaveBeenCalledTimes(1);
-    expect(gainRamp).toHaveBeenCalledWith(0.02, 1.01);
-    expect(oscillatorStart).toHaveBeenCalled();
-    expect(oscillatorStop).toHaveBeenCalled();
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(audioElements.at(-1)?.volume).toBe(0.5);
   });
 
   it('uses reduced motion settings for animation flags', () => {
