@@ -133,7 +133,7 @@ const chooseRiverOption = (
   rng: Rng,
 ) => {
   const availableOptions = river.options.filter(
-    (option) => getRiverOptionAvailability(state, option).available,
+    (option) => getRiverOptionAvailability(state, option, river).available,
   );
   const roll = rng();
 
