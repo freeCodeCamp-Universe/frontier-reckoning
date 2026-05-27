@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { AudioEffects } from '@components/AudioEffects';
 import { CampScreen } from '@components/CampScreen';
 import { EventCard } from '@components/EventCard';
 import { EndingScreen } from '@components/EndingScreen';
-import { PhaserGame } from '@components/PhaserGame';
 import { GameLogPanel } from '@components/GameLogPanel';
 import { MainMenu } from '@components/MainMenu';
 import { NewExpeditionSetup } from '@components/NewExpeditionSetup';
@@ -18,6 +17,12 @@ import { hasSave, loadGameFromStorage } from '@game/systems/saveSystem';
 import { useExpeditionStore, type StartExpeditionOptions } from '@stores/expeditionStore';
 
 type AppScreen = 'main_menu' | 'setup' | 'active_game';
+
+const LazyPhaserGame = lazy(() =>
+  import('@components/PhaserGame').then((module) => ({
+    default: module.PhaserGame,
+  })),
+);
 
 export function App() {
   const [appScreen, setAppScreen] = useState<AppScreen>('main_menu');
@@ -147,7 +152,9 @@ export function App() {
 
           <PartyPanel />
 
-          <PhaserGame />
+          <Suspense fallback={<PhaserGameLoadingFallback />}>
+            <LazyPhaserGame />
+          </Suspense>
         </div>
         <aside className="flex flex-col gap-6">
           <GameLogPanel />
@@ -161,5 +168,20 @@ export function App() {
         onSaveReset={handleSaveReset}
       />
     </main>
+  );
+}
+
+function PhaserGameLoadingFallback() {
+  return (
+    <section
+      className="overflow-hidden rounded border border-border bg-panel"
+      aria-label="Frontier Reckoning game canvas loading"
+    >
+      <div className="flex min-h-[360px] w-full items-center justify-center px-4">
+        <p className="font-mono text-base text-muted" role="status">
+          Loading trail map...
+        </p>
+      </div>
+    </section>
   );
 }

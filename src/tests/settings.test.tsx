@@ -24,7 +24,7 @@ describe('settings', () => {
     useExpeditionStore.getState().resetGame();
   });
 
-  it('renders from the main menu and active game', () => {
+  it('renders from the main menu and active game', async () => {
     const { unmount } = render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
@@ -42,6 +42,7 @@ describe('settings', () => {
     unmount();
     useExpeditionStore.getState().startGame();
     render(<App />);
+    await screen.findByTestId('phaser-game');
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
 
