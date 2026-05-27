@@ -2,21 +2,16 @@ import type {
   FrontierReckoningData,
   FrontierReckoningState,
 } from '@stores/expeditionStore';
+import { CURRENT_SAVE_VERSION, migrateSave, type GameSave } from '@stores/saveMigrations';
 
 export const SAVE_STORAGE_KEY = 'frontier-reckoning-save';
-export const SAVE_VERSION = 1;
-
-export type GameSave = {
-  saveVersion: typeof SAVE_VERSION;
-  savedAt: string;
-  state: FrontierReckoningData;
-};
+export const SAVE_VERSION = CURRENT_SAVE_VERSION;
 
 export type LoadSaveResult =
   | { status: 'loaded'; save: GameSave }
   | { status: 'empty' }
-  | { status: 'invalid' }
-  | { status: 'unsupported'; saveVersion: number };
+  | { status: 'invalid'; message?: string }
+  | { status: 'unsupported'; saveVersion: number; message?: string };
 
 const dataKeys = [
   'expeditionName',
@@ -53,34 +48,6 @@ const dataKeys = [
   'gameStatus',
 ] as const satisfies Array<keyof FrontierReckoningData>;
 
-const numberKeys: Array<keyof FrontierReckoningData> = [
-  'currentDay',
-  'distanceTraveled',
-  'totalDistance',
-  'food',
-  'medicine',
-  'ammo',
-  'wagonParts',
-  'wagonCondition',
-  'money',
-  'morale',
-  'health',
-  'daysSinceLastEvent',
-  'rationingDays',
-  'suppliesExhaustedDays',
-];
-
-const validStatuses = new Set([
-  'not_started',
-  'traveling',
-  'event',
-  'camp',
-  'river',
-  'town',
-  'game_over',
-  'victory',
-]);
-
 export function extractSaveData(state: FrontierReckoningState): FrontierReckoningData {
   return Object.fromEntries(
     dataKeys.map((key) => [key, state[key]]),
@@ -92,7 +59,43 @@ export function createGameSave(state: FrontierReckoningState): GameSave {
     saveVersion: SAVE_VERSION,
     savedAt: new Date().toISOString(),
     state: extractSaveData(state),
+    settings: getSaveSettings(),
+    discoveredLandmarks: [
+      ...new Set(
+        [
+          ...state.visitedTownIds,
+          ...state.crossedRiverIds,
+          state.currentTown?.id,
+          state.currentRiver?.id,
+        ].filter((landmarkId): landmarkId is string => typeof landmarkId === 'string'),
+      ),
+    ],
   };
+}
+
+function getSaveSettings(): GameSave['settings'] {
+  const defaultSettings: GameSave['settings'] = {
+    soundEnabled: false,
+    musicVolume: 50,
+    sfxVolume: 70,
+    reducedMotion: false,
+    textSpeed: 'normal',
+    autosaveEnabled: true,
+    difficultyDisplay: true,
+  };
+
+  if (typeof window === 'undefined') {
+    return defaultSettings;
+  }
+
+  try {
+    return {
+      ...defaultSettings,
+      ...JSON.parse(window.localStorage.getItem('frontier-reckoning-settings') ?? '{}'),
+    };
+  } catch {
+    return defaultSettings;
+  }
 }
 
 export function serializeGameSave(state: FrontierReckoningState) {
@@ -104,71 +107,13 @@ export function isSaveableState(state: FrontierReckoningData) {
 }
 
 export function validateGameSave(value: unknown): LoadSaveResult {
-  if (!value || typeof value !== 'object') {
-    return { status: 'invalid' };
+  const result = migrateSave(value);
+
+  if (result.status === 'migrated') {
+    return { status: 'loaded', save: result.save };
   }
 
-  const maybeSave = value as Partial<GameSave> & { saveVersion?: unknown };
-
-  if (typeof maybeSave.saveVersion !== 'number') {
-    return { status: 'invalid' };
-  }
-
-  if (maybeSave.saveVersion !== SAVE_VERSION) {
-    return { status: 'unsupported', saveVersion: maybeSave.saveVersion };
-  }
-
-  if (!maybeSave.state || typeof maybeSave.state !== 'object') {
-    return { status: 'invalid' };
-  }
-
-  const state = maybeSave.state as Partial<FrontierReckoningData>;
-
-  state.temporaryModifiers ??= [];
-
-  for (const key of numberKeys) {
-    if (typeof state[key] !== 'number') {
-      return { status: 'invalid' };
-    }
-  }
-
-  if (!Array.isArray(state.party)) {
-    return { status: 'invalid' };
-  }
-
-  if (
-    !Array.isArray(state.crossedRiverIds) ||
-    !Array.isArray(state.visitedTownIds) ||
-    !Array.isArray(state.temporaryModifiers) ||
-    !Array.isArray(state.gameLog)
-  ) {
-    return { status: 'invalid' };
-  }
-
-  if (
-    typeof state.eventResolved !== 'boolean' ||
-    typeof state.riverResolved !== 'boolean'
-  ) {
-    return { status: 'invalid' };
-  }
-
-  if (typeof state.gameStatus !== 'string' || !validStatuses.has(state.gameStatus)) {
-    return { status: 'invalid' };
-  }
-
-  if (
-    typeof state.expeditionName !== 'string' ||
-    (state.difficulty !== 'greenhorn' &&
-      state.difficulty !== 'trailwise' &&
-      state.difficulty !== 'reckoning')
-  ) {
-    return { status: 'invalid' };
-  }
-
-  return {
-    status: 'loaded',
-    save: maybeSave as GameSave,
-  };
+  return result;
 }
 
 export function saveGameToStorage(

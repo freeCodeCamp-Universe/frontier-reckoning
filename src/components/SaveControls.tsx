@@ -34,7 +34,7 @@ export function SaveControls() {
     }
 
     if (result.status === 'unsupported') {
-      setMessage(`Unsupported save version ${result.saveVersion}.`);
+      setMessage(result.message ?? `Unsupported save version ${result.saveVersion}.`);
       return;
     }
 
@@ -42,7 +42,7 @@ export function SaveControls() {
       clearSaveFromStorage(window.localStorage);
       resetGame();
       setSaveExists(false);
-      setMessage('Invalid save ignored. Starting fresh.');
+      setMessage(result.message ?? 'Invalid save ignored. Starting fresh.');
       return;
     }
 

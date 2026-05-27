@@ -73,7 +73,7 @@ describe('saveSystem', () => {
       JSON.stringify({ saveVersion: 0, state: {} }),
     );
 
-    expect(loadGameFromStorage(window.localStorage)).toEqual({
+    expect(loadGameFromStorage(window.localStorage)).toMatchObject({
       status: 'unsupported',
       saveVersion: 0,
     });
