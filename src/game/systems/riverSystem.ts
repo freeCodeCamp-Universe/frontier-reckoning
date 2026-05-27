@@ -1,6 +1,6 @@
 import type { Character } from '@game/types/character';
 import type { RiverCrossing, RiverCrossingOption } from '@game/types/river';
-import type { EventEffects } from '@game/types/event';
+import type { LegacyEventEffects } from '@game/types/event';
 import type { FrontierReckoningData, ResourceName } from '@stores/expeditionStore';
 import type { Rng } from '@utils/rng';
 
@@ -60,7 +60,7 @@ export function getRiverOptionAvailability(
 
 function applyRiverEffects(
   state: FrontierReckoningData,
-  effects: EventEffects,
+  effects: LegacyEventEffects,
 ): FrontierReckoningData {
   const nextState = { ...state };
 

@@ -34,37 +34,24 @@ const validResources = new Set<ResourceName>([
   'health',
 ]);
 
-const numericEffectKeys: Array<keyof EventEffects> = [
-  'morale',
-  'health',
-  'wagonParts',
-  'wagonCondition',
-  'distance',
-  'delayDays',
-  'characterHealth',
-  'characterMorale',
-];
-
 function expectValidEffects(effects: EventEffects) {
-  for (const key of numericEffectKeys) {
-    const value = effects[key];
+  expect(Array.isArray(effects)).toBe(true);
 
-    if (value !== undefined) {
-      expect(typeof value, key).toBe('number');
-      expect(Number.isFinite(value), key).toBe(true);
+  for (const effect of effects) {
+    expect(effect.type).toBeTruthy();
+
+    if ('amount' in effect) {
+      expect(typeof effect.amount, effect.type).toBe('number');
+      expect(Number.isFinite(effect.amount), effect.type).toBe(true);
     }
-  }
 
-  if (effects.resources) {
-    for (const [resourceName, amount] of Object.entries(effects.resources)) {
-      expect(validResources.has(resourceName as ResourceName), resourceName).toBe(true);
-      expect(typeof amount, resourceName).toBe('number');
-      expect(Number.isFinite(amount), resourceName).toBe(true);
+    if (effect.type === 'change_resource') {
+      expect(validResources.has(effect.resource), effect.resource).toBe(true);
     }
-  }
 
-  if (effects.characterStatus) {
-    expect(['sick', 'injured', 'dead']).toContain(effects.characterStatus);
+    if (effect.type === 'change_single_character_status') {
+      expect(['healthy', 'sick', 'injured', 'dead']).toContain(effect.status);
+    }
   }
 }
 
@@ -72,15 +59,21 @@ describe('starterEvents', () => {
   it('contains the requested event counts', () => {
     expect(starterEvents).toHaveLength(50);
     expect(starterEvents.filter((event) => event.type === 'choice')).toHaveLength(25);
-    expect(starterEvents.filter((event) => event.categories.includes('campfire'))).toHaveLength(10);
+    expect(
+      starterEvents.filter((event) => event.categories.includes('campfire')),
+    ).toHaveLength(10);
     expect(
       starterEvents.filter((event) => event.categories.includes('sickness_injury')),
     ).toHaveLength(8);
     expect(
       starterEvents.filter((event) => event.categories.includes('wagon_breakdown')),
     ).toHaveLength(6);
-    expect(starterEvents.filter((event) => event.categories.includes('trader'))).toHaveLength(6);
-    expect(starterEvents.filter((event) => event.categories.includes('bandit'))).toHaveLength(5);
+    expect(
+      starterEvents.filter((event) => event.categories.includes('trader')),
+    ).toHaveLength(6);
+    expect(
+      starterEvents.filter((event) => event.categories.includes('bandit')),
+    ).toHaveLength(5);
   });
 
   it('gives every event required fields', () => {
@@ -92,7 +85,9 @@ describe('starterEvents', () => {
       expect(event.weight).toBeGreaterThan(0);
       expect(event.effects).toBeDefined();
       expect(event.categories.length).toBeGreaterThan(0);
-      expect(event.categories.every((category) => validCategories.has(category))).toBe(true);
+      expect(event.categories.every((category) => validCategories.has(category))).toBe(
+        true,
+      );
 
       if (event.type === 'choice') {
         expect(event.choices?.length).toBeGreaterThan(0);

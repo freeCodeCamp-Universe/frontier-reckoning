@@ -75,14 +75,43 @@ const choiceHelpsCurrentProblem = (state: FrontierReckoningData, choice: EventCh
   const effects = choice.effects;
 
   return (
-    (state.food < 45 && (effects.resources?.food ?? 0) > 0) ||
-    (state.medicine < 3 && (effects.resources?.medicine ?? 0) > 0) ||
-    (state.ammo < 10 && (effects.resources?.ammo ?? 0) > 0) ||
-    (state.wagonParts < 2 && (effects.wagonParts ?? 0) > 0) ||
-    (state.wagonCondition < 60 && (effects.wagonCondition ?? 0) > 0) ||
-    (state.morale < 45 && (effects.morale ?? 0) > 0)
+    (state.food < 45 && getResourceEffectAmount(effects, 'food') > 0) ||
+    (state.medicine < 3 && getResourceEffectAmount(effects, 'medicine') > 0) ||
+    (state.ammo < 10 && getResourceEffectAmount(effects, 'ammo') > 0) ||
+    (state.wagonParts < 2 && getResourceEffectAmount(effects, 'wagonParts') > 0) ||
+    (state.wagonCondition < 60 && getWagonConditionEffectAmount(effects) > 0) ||
+    (state.morale < 45 && getPartyMoraleEffectAmount(effects) > 0)
   );
 };
+
+const getResourceEffectAmount = (
+  effects: EventChoice['effects'],
+  resource: keyof Pick<
+    FrontierReckoningData,
+    'food' | 'medicine' | 'ammo' | 'wagonParts'
+  >,
+) =>
+  effects.reduce(
+    (total, effect) =>
+      effect.type === 'change_resource' && effect.resource === resource
+        ? total + effect.amount
+        : total,
+    0,
+  );
+
+const getWagonConditionEffectAmount = (effects: EventChoice['effects']) =>
+  effects.reduce(
+    (total, effect) =>
+      effect.type === 'change_wagon_condition' ? total + effect.amount : total,
+    0,
+  );
+
+const getPartyMoraleEffectAmount = (effects: EventChoice['effects']) =>
+  effects.reduce(
+    (total, effect) =>
+      effect.type === 'change_party_morale' ? total + effect.amount : total,
+    0,
+  );
 
 const resolveEvent = (state: FrontierReckoningData, event: GameEvent, rng: Rng) => {
   const choice = chooseEventChoice(state, event, rng);

@@ -41,7 +41,7 @@ import {
 } from '@game/systems/townSystem';
 import { applyDailyTravel } from '@game/systems/travelSystem';
 import type { Character } from '@game/types/character';
-import type { GameEvent } from '@game/types/event';
+import type { GameEvent, TemporaryModifier } from '@game/types/event';
 import type { RiverCrossing, RiverCrossingOptionId } from '@game/types/river';
 import type { ShopResource, Town } from '@game/types/town';
 
@@ -100,6 +100,7 @@ export type FrontierReckoningState = {
   rationingDays: number;
   suppliesExhaustedDays: number;
   gameOverReason: GameOverReason | null;
+  temporaryModifiers: TemporaryModifier[];
   gameLog: string[];
   gameStatus: GameStatus;
   startGame: (options?: StartExpeditionOptions) => void;
@@ -199,6 +200,7 @@ export const initialGameState: FrontierReckoningData = {
   rationingDays: 0,
   suppliesExhaustedDays: 0,
   gameOverReason: null,
+  temporaryModifiers: [],
   gameLog: [],
   gameStatus: 'not_started',
 };
@@ -306,7 +308,7 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
       }
 
       if (shouldTriggerTravelEvent(nextState)) {
-        const currentEvent = pickWeightedEvent(starterEvents);
+        const currentEvent = pickWeightedEvent(starterEvents, Math.random, nextState);
 
         return withLog(
           {

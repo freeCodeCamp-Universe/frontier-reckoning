@@ -1,11 +1,6 @@
-import type { EventEffects } from '@game/types/event';
+import type { LegacyEventEffects } from '@game/types/event';
 
-export type RiverCrossingOptionId =
-  | 'ford'
-  | 'caulk'
-  | 'ferry'
-  | 'wait'
-  | 'bridge';
+export type RiverCrossingOptionId = 'ford' | 'caulk' | 'ferry' | 'wait' | 'bridge';
 
 export type RiverCrossingRequirements = {
   minimumMoney?: number;
@@ -18,8 +13,8 @@ export type RiverCrossingOption = {
   description: string;
   riskDescription: string;
   requirements?: RiverCrossingRequirements;
-  successEffects: EventEffects;
-  failureEffects: EventEffects;
+  successEffects: LegacyEventEffects;
+  failureEffects: LegacyEventEffects;
   failureChance: number;
   successText: string;
   failureText: string;

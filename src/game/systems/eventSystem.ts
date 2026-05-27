@@ -1,5 +1,12 @@
 import type { Character } from '@game/types/character';
-import type { EventChoice, EventEffects, GameEvent } from '@game/types/event';
+import type {
+  EventChoice,
+  EventEffect,
+  EventEffects,
+  GameEvent,
+  LegacyEventEffects,
+  TemporaryModifier,
+} from '@game/types/event';
 import type { FrontierReckoningData, ResourceName } from '@stores/expeditionStore';
 import { weightedChoice, type Rng } from '@utils/rng';
 import { getDifficultyConfig } from '@game/data/difficulties';
@@ -13,13 +20,8 @@ const resourceUpperLimit = (resourceName: ResourceName) =>
 const livingCharacters = (party: Character[]) =>
   party.filter((character) => character.status !== 'dead' && character.health > 0);
 
-const findTargetCharacterId = (party: Character[], targetCharacterId?: string) => {
-  if (targetCharacterId) {
-    return targetCharacterId;
-  }
-
-  return livingCharacters(party)[0]?.id;
-};
+const findTargetCharacterId = (party: Character[], targetCharacterId?: string) =>
+  targetCharacterId ?? livingCharacters(party)[0]?.id;
 
 const scaleSeverity = (state: FrontierReckoningData, amount: number) => {
   if (amount >= 0) {
@@ -34,101 +36,335 @@ const scaleSeverity = (state: FrontierReckoningData, amount: number) => {
 export function pickWeightedEvent(
   events: GameEvent[],
   rng: Rng = Math.random,
+  state?: FrontierReckoningData,
 ): GameEvent {
-  return weightedChoice(events, (event) => event.weight, rng);
+  return weightedChoice(events, (event) => getModifiedEventWeight(event, state), rng);
+}
+
+export function getModifiedEventWeight(event: GameEvent, state?: FrontierReckoningData) {
+  if (!state?.temporaryModifiers?.length) {
+    return event.weight;
+  }
+
+  return state.temporaryModifiers.reduce((weight, modifier) => {
+    const categoryMultiplier = event.categories.reduce(
+      (multiplier, category) =>
+        multiplier * (modifier.eventWeightModifiers?.[category] ?? 1),
+      1,
+    );
+
+    return weight * categoryMultiplier;
+  }, event.weight);
+}
+
+export function legacyEffectsToEventEffects(effects: LegacyEventEffects): EventEffects {
+  const nextEffects: EventEffects = [];
+
+  for (const [resource, amount] of Object.entries(effects.resources ?? {}) as Array<
+    [ResourceName, number]
+  >) {
+    nextEffects.push({ type: 'change_resource', resource, amount });
+  }
+
+  if (effects.morale) {
+    nextEffects.push({ type: 'change_party_morale', amount: effects.morale });
+  }
+
+  if (effects.health) {
+    nextEffects.push({ type: 'change_party_health', amount: effects.health });
+  }
+
+  if (effects.wagonParts) {
+    nextEffects.push({
+      type: 'change_resource',
+      resource: 'wagonParts',
+      amount: effects.wagonParts,
+    });
+  }
+
+  if (effects.wagonCondition) {
+    nextEffects.push({
+      type: 'change_wagon_condition',
+      amount: effects.wagonCondition,
+    });
+  }
+
+  if (effects.distance) {
+    nextEffects.push({ type: 'change_distance', amount: effects.distance });
+  }
+
+  if (effects.delayDays) {
+    nextEffects.push({ type: 'advance_days', days: effects.delayDays });
+  }
+
+  if (effects.characterHealth) {
+    nextEffects.push({
+      type: 'change_single_character_health',
+      targetCharacterId: effects.targetCharacterId,
+      amount: effects.characterHealth,
+    });
+  }
+
+  if (effects.characterMorale) {
+    nextEffects.push({
+      type: 'change_single_character_morale',
+      targetCharacterId: effects.targetCharacterId,
+      amount: effects.characterMorale,
+    });
+  }
+
+  if (effects.characterStatus) {
+    nextEffects.push({
+      type: 'change_single_character_status',
+      targetCharacterId: effects.targetCharacterId,
+      status: effects.characterStatus,
+    });
+  }
+
+  return nextEffects;
 }
 
 export function applyEventEffects(
   state: FrontierReckoningData,
-  effects: EventEffects,
+  effects: EventEffects | LegacyEventEffects,
 ): FrontierReckoningData {
-  const nextState = { ...state };
+  const normalizedEffects = Array.isArray(effects)
+    ? effects
+    : legacyEffectsToEventEffects(effects);
 
-  if (effects.resources) {
-    for (const [resourceName, amount] of Object.entries(effects.resources) as Array<
-      [ResourceName, number]
-    >) {
-      nextState[resourceName] = clamp(
-        nextState[resourceName] + scaleSeverity(state, amount),
-        0,
-        resourceUpperLimit(resourceName),
-      );
+  return normalizedEffects.reduce(applyEventEffect, state);
+}
+
+export function applyEventEffect(
+  state: FrontierReckoningData,
+  effect: EventEffect,
+): FrontierReckoningData {
+  try {
+    switch (effect.type) {
+      case 'change_resource':
+        return applyResourceChange(state, effect.resource, effect.amount);
+      case 'change_party_health':
+        return applyPartyHealthChange(state, effect.amount);
+      case 'change_party_morale':
+        return applyPartyMoraleChange(state, effect.amount);
+      case 'change_single_character_health':
+        return applyCharacterChange(state, effect.targetCharacterId, {
+          health: effect.amount,
+        });
+      case 'change_single_character_morale':
+        return applyCharacterChange(state, effect.targetCharacterId, {
+          morale: effect.amount,
+        });
+      case 'change_single_character_status':
+        return applyCharacterChange(state, effect.targetCharacterId, {
+          status: effect.status,
+        });
+      case 'change_wagon_condition':
+        return {
+          ...state,
+          wagonCondition: clamp(
+            state.wagonCondition + scaleSeverity(state, effect.amount),
+            0,
+            100,
+          ),
+        };
+      case 'change_distance':
+        return {
+          ...state,
+          distanceTraveled: clamp(
+            state.distanceTraveled + effect.amount,
+            0,
+            state.totalDistance,
+          ),
+        };
+      case 'add_game_log':
+        return { ...state, gameLog: [effect.message, ...state.gameLog].slice(0, 20) };
+      case 'advance_days':
+        return { ...state, currentDay: state.currentDay + Math.max(0, effect.days) };
+      case 'trigger_followup_event':
+        return {
+          ...state,
+          currentEvent: effect.event,
+          eventResolved: false,
+          gameStatus: 'event',
+        };
+      case 'start_subsystem':
+        return {
+          ...state,
+          gameStatus: effect.subsystem === 'hunting' ? 'camp' : effect.subsystem,
+        };
+      case 'add_temporary_modifier':
+        return {
+          ...state,
+          temporaryModifiers: upsertTemporaryModifier(
+            state.temporaryModifiers,
+            effect.modifier,
+          ),
+        };
+      case 'remove_temporary_modifier':
+        return {
+          ...state,
+          temporaryModifiers: state.temporaryModifiers.filter(
+            (modifier) => modifier.id !== effect.modifierId,
+          ),
+        };
+      case 'faction_reputation_change':
+        return {
+          ...state,
+          gameLog: [
+            `Faction reputation placeholder: ${effect.factionId} ${effect.amount}.`,
+            ...state.gameLog,
+          ].slice(0, 20),
+        };
+      default:
+        return state;
     }
+  } catch {
+    return state;
+  }
+}
+
+function applyResourceChange(
+  state: FrontierReckoningData,
+  resourceName: ResourceName,
+  amount: number,
+) {
+  if (!(resourceName in state) || typeof state[resourceName] !== 'number') {
+    return state;
   }
 
-  nextState.morale = clamp(
-    nextState.morale + scaleSeverity(state, effects.morale ?? 0),
-    0,
-    100,
-  );
-  nextState.health = clamp(
-    nextState.health + scaleSeverity(state, effects.health ?? 0),
-    0,
-    100,
-  );
-  nextState.wagonParts = Math.max(
-    0,
-    nextState.wagonParts + scaleSeverity(state, effects.wagonParts ?? 0),
-  );
-  nextState.wagonCondition = clamp(
-    nextState.wagonCondition + scaleSeverity(state, effects.wagonCondition ?? 0),
-    0,
-    100,
-  );
-  nextState.distanceTraveled = clamp(
-    nextState.distanceTraveled + (effects.distance ?? 0),
-    0,
-    nextState.totalDistance,
-  );
-  nextState.currentDay += Math.max(0, scaleSeverity(state, effects.delayDays ?? 0));
+  return {
+    ...state,
+    [resourceName]: clamp(
+      state[resourceName] + scaleSeverity(state, amount),
+      0,
+      resourceUpperLimit(resourceName),
+    ),
+  };
+}
 
-  const targetCharacterId = findTargetCharacterId(
-    nextState.party,
-    effects.targetCharacterId,
-  );
+function applyPartyHealthChange(state: FrontierReckoningData, amount: number) {
+  const healthDelta = scaleSeverity(state, amount);
+  const party: Character[] = state.party.map((character) => {
+    if (character.status === 'dead') {
+      return character;
+    }
 
-  if (
-    targetCharacterId &&
-    (effects.characterHealth !== undefined ||
-      effects.characterMorale !== undefined ||
-      effects.characterStatus !== undefined)
-  ) {
-    nextState.party = nextState.party.map((character) => {
-      if (character.id !== targetCharacterId || character.status === 'dead') {
-        return character;
-      }
+    const health = clamp(character.health + healthDelta, 0, 100);
 
-      const health = clamp(
-        character.health + scaleSeverity(state, effects.characterHealth ?? 0),
-        0,
-        100,
-      );
-      const status =
-        health === 0 ? 'dead' : (effects.characterStatus ?? character.status);
+    return {
+      ...character,
+      health,
+      status: health === 0 ? 'dead' : character.status,
+    };
+  });
 
-      return {
-        ...character,
-        health,
-        morale: clamp(
-          character.morale + scaleSeverity(state, effects.characterMorale ?? 0),
-          0,
-          100,
-        ),
-        status,
-      };
-    });
+  return finishPartyHealthState({
+    ...state,
+    health: clamp(state.health + healthDelta, 0, 100),
+    party,
+  });
+}
+
+function applyPartyMoraleChange(state: FrontierReckoningData, amount: number) {
+  const moraleDelta = scaleSeverity(state, amount);
+
+  return {
+    ...state,
+    morale: clamp(state.morale + moraleDelta, 0, 100),
+    party: state.party.map((character) =>
+      character.status === 'dead'
+        ? character
+        : {
+            ...character,
+            morale: clamp(character.morale + moraleDelta, 0, 100),
+          },
+    ),
+  };
+}
+
+function applyCharacterChange(
+  state: FrontierReckoningData,
+  targetCharacterId: string | undefined,
+  change: {
+    health?: number;
+    morale?: number;
+    status?: Character['status'];
+  },
+) {
+  const resolvedTargetCharacterId = findTargetCharacterId(state.party, targetCharacterId);
+
+  if (!resolvedTargetCharacterId) {
+    return state;
   }
 
+  const party = state.party.map((character) => {
+    if (character.id !== resolvedTargetCharacterId || character.status === 'dead') {
+      return character;
+    }
+
+    const health =
+      change.health === undefined
+        ? character.health
+        : clamp(character.health + scaleSeverity(state, change.health), 0, 100);
+
+    return {
+      ...character,
+      health,
+      morale:
+        change.morale === undefined
+          ? character.morale
+          : clamp(character.morale + scaleSeverity(state, change.morale), 0, 100),
+      status: health === 0 ? 'dead' : (change.status ?? character.status),
+    };
+  });
+
+  return finishPartyHealthState({ ...state, party });
+}
+
+function finishPartyHealthState(state: FrontierReckoningData) {
   if (
-    nextState.party.length > 0 &&
-    nextState.party.every(
+    state.party.length > 0 &&
+    state.party.every(
       (character) => character.status === 'dead' || character.health === 0,
     )
   ) {
-    nextState.gameStatus = 'game_over';
+    return { ...state, gameStatus: 'game_over' as const };
   }
 
-  return nextState;
+  return state;
+}
+
+function upsertTemporaryModifier(
+  modifiers: TemporaryModifier[],
+  modifier: TemporaryModifier,
+) {
+  return [
+    ...modifiers.filter((currentModifier) => currentModifier.id !== modifier.id),
+    modifier,
+  ];
+}
+
+export function tickTemporaryModifiers(state: FrontierReckoningData) {
+  if (!state.temporaryModifiers.length) {
+    return state;
+  }
+
+  const moraleDelta = state.temporaryModifiers.reduce(
+    (total, modifier) => total + (modifier.moraleDeltaPerDay ?? 0),
+    0,
+  );
+
+  return {
+    ...state,
+    morale: clamp(state.morale + moraleDelta, 0, 100),
+    temporaryModifiers: state.temporaryModifiers
+      .map((modifier) => ({
+        ...modifier,
+        durationDays: modifier.durationDays - 1,
+      }))
+      .filter((modifier) => modifier.durationDays > 0),
+  };
 }
 
 export function applyEventChoice(

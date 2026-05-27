@@ -48,6 +48,7 @@ const dataKeys = [
   'rationingDays',
   'suppliesExhaustedDays',
   'gameOverReason',
+  'temporaryModifiers',
   'gameLog',
   'gameStatus',
 ] as const satisfies Array<keyof FrontierReckoningData>;
@@ -123,6 +124,8 @@ export function validateGameSave(value: unknown): LoadSaveResult {
 
   const state = maybeSave.state as Partial<FrontierReckoningData>;
 
+  state.temporaryModifiers ??= [];
+
   for (const key of numberKeys) {
     if (typeof state[key] !== 'number') {
       return { status: 'invalid' };
@@ -136,6 +139,7 @@ export function validateGameSave(value: unknown): LoadSaveResult {
   if (
     !Array.isArray(state.crossedRiverIds) ||
     !Array.isArray(state.visitedTownIds) ||
+    !Array.isArray(state.temporaryModifiers) ||
     !Array.isArray(state.gameLog)
   ) {
     return { status: 'invalid' };

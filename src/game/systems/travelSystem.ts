@@ -2,6 +2,7 @@ import type { Character } from '@game/types/character';
 import type { FrontierReckoningData } from '@stores/expeditionStore';
 import type { Rng } from '@utils/rng';
 import { getDifficultyConfig } from '@game/data/difficulties';
+import { tickTemporaryModifiers } from '@game/systems/eventSystem';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
@@ -25,7 +26,18 @@ export function calculateDailyDistance(state: FrontierReckoningData) {
   const moralePenalty = state.morale < 30 ? 4 : 0;
   const healthPenalty = state.health < 40 ? 4 : 0;
 
-  return Math.max(10, 24 + scoutBonus - wagonPenalty - moralePenalty - healthPenalty);
+  const travelSpeedMultiplier = state.temporaryModifiers.reduce(
+    (multiplier, modifier) => multiplier * (modifier.travelSpeedMultiplier ?? 1),
+    1,
+  );
+
+  return Math.max(
+    10,
+    Math.round(
+      (24 + scoutBonus - wagonPenalty - moralePenalty - healthPenalty) *
+        travelSpeedMultiplier,
+    ),
+  );
 }
 
 export function calculateFoodConsumption(
@@ -54,10 +66,14 @@ export function applyDailyTravel(
   }
 
   const difficultyConfig = getDifficultyConfig(state.difficulty);
+  const modifierFoodConsumptionMultiplier = state.temporaryModifiers.reduce(
+    (multiplier, modifier) => multiplier * (modifier.foodConsumptionMultiplier ?? 1),
+    1,
+  );
   const foodConsumption = calculateFoodConsumption(
     state.party,
     state.rationingDays > 0,
-    difficultyConfig.resourceConsumptionMultiplier,
+    difficultyConfig.resourceConsumptionMultiplier * modifierFoodConsumptionMultiplier,
   );
   const food = Math.max(0, state.food - foodConsumption);
   const isOutOfFood = food === 0;
@@ -98,7 +114,7 @@ export function applyDailyTravel(
     (character) => character.status === 'dead' || character.health === 0,
   );
 
-  return {
+  return tickTemporaryModifiers({
     ...state,
     currentDay: state.currentDay + 1,
     distanceTraveled,
@@ -116,5 +132,5 @@ export function applyDailyTravel(
       : distanceTraveled >= state.totalDistance
         ? 'victory'
         : 'traveling',
-  };
+  });
 }

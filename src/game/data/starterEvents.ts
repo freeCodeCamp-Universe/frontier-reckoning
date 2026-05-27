@@ -4,7 +4,9 @@ import type {
   GameEvent,
   GameEventCategory,
   GameEventType,
+  LegacyEventEffects,
 } from '@game/types/event';
+import { legacyEffectsToEventEffects } from '@game/systems/eventSystem';
 
 type EventConfig = {
   id: string;
@@ -13,11 +15,23 @@ type EventConfig = {
   type: GameEventType;
   categories: GameEventCategory[];
   weight: number;
-  effects: EventEffects;
-  choices?: EventChoice[];
+  effects: EventEffects | LegacyEventEffects;
+  choices?: Array<
+    Omit<EventChoice, 'effects'> & { effects: EventEffects | LegacyEventEffects }
+  >;
 };
 
-const event = (config: EventConfig): GameEvent => config;
+const effects = (eventEffects: EventEffects | LegacyEventEffects): EventEffects =>
+  Array.isArray(eventEffects) ? eventEffects : legacyEffectsToEventEffects(eventEffects);
+
+const event = (config: EventConfig): GameEvent => ({
+  ...config,
+  effects: effects(config.effects),
+  choices: config.choices?.map((choice) => ({
+    ...choice,
+    effects: effects(choice.effects),
+  })),
+});
 
 export const starterEvents: GameEvent[] = [
   event({
