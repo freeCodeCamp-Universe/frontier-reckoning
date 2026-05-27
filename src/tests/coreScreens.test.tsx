@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CampScreen } from '@components/CampScreen';
 import { EndingScreen } from '@components/EndingScreen';
@@ -94,5 +94,42 @@ describe('core screens', () => {
       screen.getByText('Frontier Expedition started on Trailwise.'),
     ).toBeInTheDocument();
     expect(screen.getAllByText('Traveled to day 2.')).toHaveLength(2);
+  });
+
+  it('opens the expedition journal from the log panel', () => {
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      gameLog: [
+        'The caravan made camp.',
+        'Traveled to day 2.',
+        'Frontier Expedition started on Trailwise.',
+      ],
+    });
+
+    render(<GameLogPanel />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Journal' }));
+
+    expect(screen.getByRole('dialog', { name: 'Expedition Journal' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Current run summary' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Day 2' })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Search log text'), {
+      target: { value: 'camp' },
+    });
+
+    const journalEntries = screen.getByRole('region', { name: 'Journal entries' });
+
+    expect(within(journalEntries).getByText('The caravan made camp.')).toBeInTheDocument();
+    expect(
+      within(journalEntries).queryByText('Frontier Expedition started on Trailwise.'),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export Plain Text' }));
+
+    expect(screen.getByLabelText('Plain text export')).toHaveValue();
+    expect(screen.getByLabelText('Plain text export')).toHaveDisplayValue(
+      /Frontier Expedition Expedition Journal/,
+    );
   });
 });
