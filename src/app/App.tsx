@@ -13,6 +13,7 @@ import { SaveControls } from '@components/SaveControls';
 import { SettingsModal } from '@components/SettingsModal';
 import { TownScreen } from '@components/TownScreen';
 import { Button } from '@components/ui/Button';
+import { Card, CardEyebrow } from '@components/ui/Card';
 import { hasSave, loadGameFromStorage } from '@game/systems/saveSystem';
 import { useExpeditionStore, type StartExpeditionOptions } from '@stores/expeditionStore';
 
@@ -94,8 +95,8 @@ export function App() {
     <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
       <section className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-6">
-          <header className="border border-border bg-surface p-5">
-            <p className="font-mono text-base text-highlight">frontier command desk</p>
+          <Card as="header" className="p-5">
+            <CardEyebrow>frontier command desk</CardEyebrow>
             <h1 className="mt-2 text-4xl font-bold tracking-normal sm:text-5xl">
               Frontier Reckoning
             </h1>
@@ -103,9 +104,9 @@ export function App() {
               Guide the caravan through towns, rivers, camp decisions, and hard trail
               weather.
             </p>
-          </header>
+          </Card>
 
-          <div className="border border-border bg-surface p-4">
+          <Card as="div">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
@@ -136,7 +137,7 @@ export function App() {
                       : 'Active game'}
               </p>
             </div>
-          </div>
+          </Card>
 
           <SaveControls />
 

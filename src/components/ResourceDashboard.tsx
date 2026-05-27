@@ -1,5 +1,8 @@
 import { useExpeditionStore, type ResourceName } from '@stores/expeditionStore';
 import { getDifficultyConfig } from '@game/data/difficulties';
+import { Badge } from '@components/ui/Badge';
+import { Card } from '@components/ui/Card';
+import { ResourceIcon } from '@components/ui/ResourceIcon';
 import { useSettings } from '@/hooks/useSettings';
 
 const resources: Array<{ label: string; key: ResourceName }> = [
@@ -26,10 +29,7 @@ export function ResourceDashboard() {
   const clampedProgress = Math.min(Math.max(progressPercentage, 0), 100);
 
   return (
-    <section
-      className="border border-border bg-surface p-4"
-      aria-label="Expedition status"
-    >
+    <Card aria-label="Expedition status">
       <div className="mb-4">
         <div className="mb-2 flex items-center justify-between gap-4">
           <div>
@@ -39,7 +39,7 @@ export function ResourceDashboard() {
               {settings.difficultyDisplay ? ` / ${difficultyLabel}` : null}
             </p>
           </div>
-          <p className="font-mono text-base text-muted">{clampedProgress}% complete</p>
+          <Badge variant="info">{clampedProgress}% complete</Badge>
         </div>
         <div
           className="h-4 border border-border bg-panel"
@@ -56,7 +56,7 @@ export function ResourceDashboard() {
         <Stat label="Day" value={currentDay} />
         <Stat label="Distance" value={`${distanceTraveled} / ${totalDistance} mi`} />
         <Stat label="Progress" value={`${progressPercentage}%`} />
-        <Stat label="Wagon" value={`${wagonCondition}%`} />
+        <Stat label="Wagon" value={`${wagonCondition}%`} icon="wagonCondition" />
         <Stat label="Status" value={gameStatus.replace('_', ' ')} />
       </div>
 
@@ -65,7 +65,7 @@ export function ResourceDashboard() {
           <ResourceStat key={key} label={label} resourceName={key} />
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -78,14 +78,25 @@ function ResourceStat({
 }) {
   const value = useExpeditionStore((state) => state[resourceName]);
 
-  return <Stat label={label} value={value} />;
+  return <Stat label={label} value={value} icon={resourceName} />;
 }
 
-function Stat({ label, value }: { label: string; value: number | string }) {
+function Stat({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: number | string;
+  icon?: ResourceName | 'wagonCondition';
+}) {
   return (
-    <div className="border border-border bg-panel p-3">
-      <dt className="font-mono text-base text-muted">{label}</dt>
+    <Card as="div" variant="panel" className="p-3">
+      <dt className="flex items-center gap-2 font-mono text-base text-muted">
+        {icon ? <ResourceIcon resource={icon} /> : null}
+        {label}
+      </dt>
       <dd className="mt-1 text-2xl font-bold capitalize text-foreground">{value}</dd>
-    </div>
+    </Card>
   );
 }

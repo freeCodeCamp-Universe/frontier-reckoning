@@ -8,11 +8,18 @@
   --color-surface: 27 27 50;
   --color-panel: 42 42 64;
   --color-border: 59 59 79;
+  --color-frontier-bark: 92 67 37;
+  --color-frontier-trail: 139 90 43;
+  --color-parchment: 234 216 173;
+  --color-parchment-dark: 212 185 120;
   --color-foreground: 255 255 255;
   --color-muted: 208 208 213;
+  --color-muted-ui: 133 133 145;
   --color-highlight: 153 201 255;
   --color-success: 172 209 87;
+  --color-success-deep: 0 71 27;
   --color-danger: 255 173 173;
+  --color-danger-deep: 133 0 0;
   --color-cta: 241 190 50;
   background: rgb(var(--color-canvas));
   color: rgb(var(--color-foreground));

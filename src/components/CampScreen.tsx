@@ -1,4 +1,6 @@
 import { Button } from '@components/ui/Button';
+import { Badge } from '@components/ui/Badge';
+import { Card, CardEyebrow, CardHeader } from '@components/ui/Card';
 import { useExpeditionStore } from '@stores/expeditionStore';
 
 export function CampScreen() {
@@ -30,14 +32,14 @@ export function CampScreen() {
   }
 
   return (
-    <section className="border border-border bg-surface p-4" aria-label="Camp actions">
-      <div className="border-b border-border pb-3">
-        <p className="font-mono text-base text-highlight">camp</p>
+    <Card aria-label="Camp actions">
+      <CardHeader>
+        <CardEyebrow>camp</CardEyebrow>
         <h2 className="mt-1 text-2xl font-bold">Camp</h2>
-      </div>
+      </CardHeader>
 
       {campOutcomeText ? (
-        <p className="mt-4 border border-border bg-panel p-3 font-mono text-base text-success">
+        <p className="mt-4 border border-success bg-panel p-3 font-mono text-base text-success">
           {campOutcomeText}
         </p>
       ) : null}
@@ -66,7 +68,7 @@ export function CampScreen() {
       </div>
 
       <div className="mt-5">
-        <h3 className="font-mono text-base text-muted">Hunt</h3>
+        <Badge variant="muted">Hunt</Badge>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           <Button
             onClick={() => huntAtCamp(1)}
@@ -96,7 +98,7 @@ export function CampScreen() {
       </div>
 
       <div className="mt-5">
-        <h3 className="font-mono text-base text-muted">Treat sick or injured</h3>
+        <Badge variant="muted">Treat sick or injured</Badge>
         {treatableParty.length === 0 ? (
           <p className="mt-2 font-mono text-base text-muted">
             No sick or injured party members
@@ -117,6 +119,6 @@ export function CampScreen() {
           </div>
         )}
       </div>
-    </section>
+    </Card>
   );
 }

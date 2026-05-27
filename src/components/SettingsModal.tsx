@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
+import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
+import { Card, CardEyebrow } from '@components/ui/Card';
 import { resetSaveData, type TextSpeed } from '@game/systems/settingsSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
 import { stopAmbience } from '@utils/audio';
@@ -95,18 +97,19 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
       className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/90 px-4 py-6"
       role="presentation"
     >
-      <div
+      <Card
+        as="div"
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         onKeyDown={handleDialogKeyDown}
-        className="max-h-full w-full max-w-3xl overflow-y-auto border border-border bg-surface p-5 text-foreground"
+        className="max-h-full w-full max-w-3xl overflow-y-auto p-5"
       >
         <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="font-mono text-base text-highlight">settings</p>
+            <CardEyebrow>settings</CardEyebrow>
             <h2 id={titleId} className="mt-1 text-3xl font-bold">
               Frontier Settings
             </h2>
@@ -208,20 +211,20 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
             </label>
           </fieldset>
 
-          <section className="border border-danger bg-panel p-4" aria-label="Save data">
+          <Card as="section" variant="danger" aria-label="Save data">
             <h3 className="text-2xl font-bold">Save Data</h3>
             <p className="mt-2 text-base text-muted">
               Clear the saved expedition from this browser.
             </p>
-            <Button
-              onClick={handleResetSave}
-              className="mt-4 border-danger bg-danger text-canvas hover:bg-transparent hover:text-danger"
-            >
+            <Badge variant="danger" className="mt-4">
+              Permanent
+            </Badge>
+            <Button onClick={handleResetSave} className="mt-4" variant="danger">
               Reset save data
             </Button>
-          </section>
+          </Card>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -3,6 +3,9 @@ import { difficultyOptions, type Difficulty } from '@game/data/difficulties';
 import { starterCharacters } from '@game/data/starterCharacters';
 import type { StartExpeditionOptions } from '@stores/expeditionStore';
 import { Button } from '@components/ui/Button';
+import { Badge } from '@components/ui/Badge';
+import { Card, CardEyebrow, CardHeader } from '@components/ui/Card';
+import { CharacterPortrait } from '@components/ui/Portrait';
 
 type NewExpeditionSetupProps = {
   onBack: () => void;
@@ -48,17 +51,17 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
 
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-6">
-      <header className="border border-border bg-surface p-5">
-        <p className="font-mono text-base text-highlight">new expedition setup</p>
+      <Card as="header" className="p-5">
+        <CardEyebrow>new expedition setup</CardEyebrow>
         <h1 className="mt-2 text-4xl font-bold">Frontier Reckoning</h1>
         <p className="mt-3 max-w-3xl text-muted">
           Build a four-person caravan and choose how punishing the trail should be.
         </p>
-      </header>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-6">
-          <section className="border border-border bg-surface p-4">
+          <Card>
             <label htmlFor="expedition-name" className="font-mono text-base text-muted">
               Expedition name
             </label>
@@ -68,15 +71,15 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
               value={expeditionName}
               onChange={(event) => setExpeditionName(event.target.value)}
             />
-          </section>
+          </Card>
 
-          <section className="border border-border bg-surface p-4">
-            <div className="flex items-baseline justify-between gap-4">
+          <Card>
+            <CardHeader className="flex items-baseline justify-between gap-4">
               <h2 className="text-2xl font-bold">Party Members</h2>
-              <p className="font-mono text-base text-muted">
+              <Badge variant="muted">
                 {uniqueSelectedIds.length} / {requiredPartySize}
-              </p>
-            </div>
+              </Badge>
+            </CardHeader>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {starterCharacters.map((character) => {
                 const selected = uniqueSelectedIds.includes(character.id);
@@ -97,14 +100,19 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
                         : 'border-border bg-surface text-muted hover:border-highlight'
                     }`}
                   >
-                    <span className="flex items-center justify-between gap-3">
-                      <span className="font-bold text-foreground">{character.name}</span>
-                      <span className="font-mono text-base text-muted">
-                        {selected ? 'Selected' : 'Available'}
+                    <span className="flex items-start gap-3">
+                      <CharacterPortrait character={character} selected={selected} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold text-foreground">
+                          {character.name}
+                        </span>
+                        <span className="mt-1 block font-mono text-base text-highlight">
+                          {character.role}
+                        </span>
                       </span>
-                    </span>
-                    <span className="mt-1 block font-mono text-base text-highlight">
-                      {character.role}
+                      <Badge variant={selected ? 'success' : 'muted'}>
+                        {selected ? 'Selected' : 'Available'}
+                      </Badge>
                     </span>
                     <span className="mt-2 block text-base">
                       Health {character.health} / Morale {character.morale}
@@ -113,11 +121,11 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
                 );
               })}
             </div>
-          </section>
+          </Card>
         </div>
 
         <aside className="flex flex-col gap-6">
-          <section className="border border-border bg-surface p-4">
+          <Card>
             <h2 className="text-2xl font-bold">Difficulty</h2>
             <div className="mt-4 grid gap-3">
               {difficultyOptions.map((option) => (
@@ -145,9 +153,9 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
                 </label>
               ))}
             </div>
-          </section>
+          </Card>
 
-          <div className="grid gap-3 border border-border bg-surface p-4">
+          <Card as="div" className="grid gap-3">
             <Button
               onClick={() =>
                 onStart({
@@ -161,8 +169,10 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
             >
               Start Custom Expedition
             </Button>
-            <Button onClick={onBack}>Back to Menu</Button>
-          </div>
+            <Button onClick={onBack} variant="secondary">
+              Back to Menu
+            </Button>
+          </Card>
         </aside>
       </div>
     </section>

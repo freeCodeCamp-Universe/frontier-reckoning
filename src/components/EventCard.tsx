@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
+import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
-import {
-  getChoiceAvailability,
-  getChoiceLabel,
-} from '@game/systems/eventSystem';
+import { Card } from '@components/ui/Card';
+import { getChoiceAvailability, getChoiceLabel } from '@game/systems/eventSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
 
 export function EventCard() {
@@ -61,19 +60,18 @@ export function EventCard() {
       className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/90 px-5 py-8"
       role="presentation"
     >
-      <section
+      <Card
+        as="section"
         ref={dialogRef}
         tabIndex={-1}
-        className="w-full max-w-2xl border border-border bg-surface p-5"
+        className="w-full max-w-2xl p-5"
         aria-labelledby="event-title"
         aria-describedby="event-description"
         role="dialog"
         aria-modal="true"
         onKeyDown={handleDialogKeyDown}
       >
-        <p className="font-mono text-base capitalize text-highlight">
-          {currentEvent.type.replace('_', ' ')}
-        </p>
+        <Badge variant="info">{currentEvent.type.replace('_', ' ')}</Badge>
         <h2 id="event-title" className="mt-2 text-3xl font-bold">
           {currentEvent.title}
         </h2>
@@ -82,13 +80,15 @@ export function EventCard() {
         </p>
 
         {eventResolved ? (
-          <div className="mt-5 border border-border bg-panel p-4">
-            <p className="font-mono text-base text-success">Event resolved</p>
-            {eventOutcomeText ? <p className="mt-3 text-muted">{eventOutcomeText}</p> : null}
+          <Card as="div" variant="success" className="mt-5">
+            <Badge variant="success">Event resolved</Badge>
+            {eventOutcomeText ? (
+              <p className="mt-3 text-muted">{eventOutcomeText}</p>
+            ) : null}
             <Button onClick={continueFromEvent} className="mt-4">
               Continue
             </Button>
-          </div>
+          </Card>
         ) : currentEvent.choices?.length ? (
           <div className="mt-5 grid gap-3">
             {currentEvent.choices.map((choice) => {
@@ -118,7 +118,7 @@ export function EventCard() {
             Resolve Event
           </Button>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

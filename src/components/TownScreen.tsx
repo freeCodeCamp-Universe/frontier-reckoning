@@ -1,4 +1,7 @@
 import { Button } from '@components/ui/Button';
+import { Badge } from '@components/ui/Badge';
+import { Card, CardEyebrow, CardHeader } from '@components/ui/Card';
+import { ResourceIcon } from '@components/ui/ResourceIcon';
 import { useExpeditionStore } from '@stores/expeditionStore';
 import { getDifficultyPrice } from '@game/systems/townSystem';
 
@@ -25,15 +28,15 @@ export function TownScreen() {
   }
 
   return (
-    <section className="border border-border bg-surface p-4" aria-label="Town">
-      <div className="border-b border-border pb-3">
-        <p className="font-mono text-base text-highlight">town</p>
+    <Card aria-label="Town">
+      <CardHeader>
+        <CardEyebrow>town</CardEyebrow>
         <h2 className="mt-1 text-2xl font-bold">{currentTown.name}</h2>
         <p className="mt-3 text-muted">{currentTown.description}</p>
-      </div>
+      </CardHeader>
 
       {townOutcomeText ? (
-        <p className="mt-4 border border-border bg-panel p-3 font-mono text-base text-success">
+        <p className="mt-4 border border-success bg-panel p-3 font-mono text-base text-success">
           {townOutcomeText}
         </p>
       ) : null}
@@ -58,7 +61,12 @@ export function TownScreen() {
                   key={item.resource}
                   className="border-b border-border last:border-b-0"
                 >
-                  <td className="p-3 font-bold">{item.label}</td>
+                  <td className="p-3 font-bold">
+                    <span className="inline-flex items-center gap-2">
+                      <ResourceIcon resource={item.resource} />
+                      {item.label}
+                    </span>
+                  </td>
                   <td className="p-3 font-mono text-base text-muted">{item.quantity}</td>
                   <td className="p-3 font-mono text-base">${buyPrice}</td>
                   <td className="p-3 font-mono text-base">${item.sellPrice}</td>
@@ -68,6 +76,7 @@ export function TownScreen() {
                       disabled={money < buyPrice}
                       disabledReason={`Buying ${item.label.toLowerCase()} requires $${buyPrice}.`}
                       className="min-h-10 px-3 py-2"
+                      size="sm"
                     >
                       Buy
                     </Button>
@@ -76,6 +85,8 @@ export function TownScreen() {
                       disabled={resources[item.resource] < item.quantity}
                       disabledReason={`Selling ${item.label.toLowerCase()} requires ${item.quantity} available.`}
                       className="min-h-10 px-3 py-2"
+                      size="sm"
+                      variant="secondary"
                     >
                       Sell
                     </Button>
@@ -88,6 +99,9 @@ export function TownScreen() {
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <Badge variant="warning" className="md:col-span-2 lg:col-span-3">
+          Money ${money}
+        </Badge>
         <Button
           onClick={restAtInn}
           disabled={money < getDifficultyPrice({ difficulty }, currentTown.innCost)}
@@ -109,9 +123,13 @@ export function TownScreen() {
         >
           Recruit ${getDifficultyPrice({ difficulty }, currentTown.recruitCost)}
         </Button>
-        <Button onClick={hearTownRumor}>Hear rumors</Button>
-        <Button onClick={resumeTrailFromTown}>Resume trail</Button>
+        <Button onClick={hearTownRumor} variant="secondary">
+          Hear rumors
+        </Button>
+        <Button onClick={resumeTrailFromTown} variant="secondary">
+          Resume trail
+        </Button>
       </div>
-    </section>
+    </Card>
   );
 }

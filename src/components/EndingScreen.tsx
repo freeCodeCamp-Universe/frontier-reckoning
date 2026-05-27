@@ -1,4 +1,6 @@
 import { Button } from '@components/ui/Button';
+import { Badge } from '@components/ui/Badge';
+import { Card, CardEyebrow } from '@components/ui/Card';
 import {
   calculateScore,
   getGameOverReasonText,
@@ -20,10 +22,13 @@ export function EndingScreen() {
   const score = calculateScore(state);
 
   return (
-    <section className="border border-border bg-surface p-5" aria-label="Ending screen">
-      <p className="font-mono text-base text-highlight">
+    <Card
+      aria-label="Ending screen"
+      variant={gameStatus === 'victory' ? 'success' : 'danger'}
+    >
+      <CardEyebrow>
         {gameStatus === 'victory' ? 'expedition complete' : 'expedition ended'}
-      </p>
+      </CardEyebrow>
       <h2 className="mt-2 text-3xl font-bold">
         {gameStatus === 'victory' ? 'Victory' : 'Game Over'}
       </h2>
@@ -45,18 +50,24 @@ export function EndingScreen() {
         <SummaryCard label="Score" value={score} />
       </div>
 
-      <Button onClick={resetGame} className="mt-5">
+      <Button
+        onClick={resetGame}
+        className="mt-5"
+        variant={gameStatus === 'victory' ? 'primary' : 'danger'}
+      >
         Restart
       </Button>
-    </section>
+    </Card>
   );
 }
 
 function SummaryCard({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="border border-border bg-panel p-3">
+    <Card as="div" variant="panel" className="p-3">
       <dt className="font-mono text-base text-muted">{label}</dt>
-      <dd className="mt-1 text-2xl font-bold text-foreground">{value}</dd>
-    </div>
+      <dd className="mt-1">
+        <Badge variant="muted">{value}</Badge>
+      </dd>
+    </Card>
   );
 }

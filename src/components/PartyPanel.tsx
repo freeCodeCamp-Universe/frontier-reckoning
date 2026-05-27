@@ -1,33 +1,36 @@
 import { useExpeditionStore } from '@stores/expeditionStore';
+import { Card, CardHeader } from '@components/ui/Card';
+import { CharacterPortrait } from '@components/ui/Portrait';
+import { StatusBadge, type StatusKind } from '@components/ui/Badge';
 
 export function PartyPanel() {
   const party = useExpeditionStore((state) => state.party);
 
   return (
-    <section className="border border-border bg-surface p-4" aria-label="Caravan party">
-      <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
+    <Card aria-label="Caravan party">
+      <CardHeader className="flex items-baseline justify-between gap-4">
         <h2 className="text-2xl font-bold">Caravan Party</h2>
         <p className="font-mono text-base text-muted">{party.length} travelers</p>
-      </div>
+      </CardHeader>
 
       {party.length === 0 ? (
         <p className="mt-4 font-mono text-base text-muted">No party assembled</p>
       ) : (
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {party.map((character) => (
-            <article
+            <Card
+              as="article"
+              variant="panel"
               key={character.id}
-              className="border border-border bg-panel p-4"
               aria-label={`${character.name}, ${character.role}`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
+              <div className="flex items-start gap-3">
+                <CharacterPortrait character={character} />
+                <div className="min-w-0 flex-1">
                   <h3 className="text-xl font-bold">{character.name}</h3>
                   <p className="font-mono text-base text-highlight">{character.role}</p>
                 </div>
-                <span className="border border-border px-2 py-1 font-mono text-base capitalize text-muted">
-                  {character.status}
-                </span>
+                <StatusBadge status={character.status as StatusKind} />
               </div>
               <p className="mt-3 font-mono text-base text-muted">
                 Age {character.age} / {character.traits.join(', ')}
@@ -43,10 +46,10 @@ export function PartyPanel() {
                   <dd className="text-2xl font-bold">{character.morale}</dd>
                 </div>
               </dl>
-            </article>
+            </Card>
           ))}
         </div>
       )}
-    </section>
+    </Card>
   );
 }
