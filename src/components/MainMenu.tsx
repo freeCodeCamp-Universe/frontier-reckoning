@@ -3,10 +3,16 @@ import { Button } from '@components/ui/Button';
 type MainMenuProps = {
   onNewExpedition: () => void;
   onContinue: () => void;
+  onSettings: () => void;
   canContinue: boolean;
 };
 
-export function MainMenu({ onNewExpedition, onContinue, canContinue }: MainMenuProps) {
+export function MainMenu({
+  onNewExpedition,
+  onContinue,
+  onSettings,
+  canContinue,
+}: MainMenuProps) {
   return (
     <section className="mx-auto flex min-h-[70vh] max-w-5xl flex-col justify-center gap-6">
       <header className="border border-border bg-surface p-6">
@@ -18,7 +24,7 @@ export function MainMenu({ onNewExpedition, onContinue, canContinue }: MainMenuP
         </p>
       </header>
 
-      <div className="grid gap-4 border border-border bg-surface p-4 sm:grid-cols-2">
+      <div className="grid gap-4 border border-border bg-surface p-4 sm:grid-cols-3">
         <Button onClick={onNewExpedition} className="w-full">
           New Expedition
         </Button>
@@ -29,6 +35,7 @@ export function MainMenu({ onNewExpedition, onContinue, canContinue }: MainMenuP
         >
           Continue
         </Button>
+        <Button onClick={onSettings}>Settings</Button>
       </div>
     </section>
   );

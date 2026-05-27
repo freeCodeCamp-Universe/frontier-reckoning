@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { createGameConfig } from '@game/config';
 import { TrailMapScene } from '@game/scenes/TrailMapScene';
 import { useExpeditionStore } from '@stores/expeditionStore';
+import { useSettings } from '@/hooks/useSettings';
 
 function updateTrailMapScene(
   game: Phaser.Game | null,
@@ -28,6 +29,7 @@ export function PhaserGame() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const distanceTraveled = useExpeditionStore((state) => state.distanceTraveled);
   const totalDistance = useExpeditionStore((state) => state.totalDistance);
+  const [settings] = useSettings();
 
   useEffect(() => {
     if (!containerRef.current || gameRef.current) {
@@ -67,6 +69,14 @@ export function PhaserGame() {
       game?.events.off('trail-map-ready', handleReady);
     };
   }, [distanceTraveled, totalDistance]);
+
+  useEffect(() => {
+    const scene = gameRef.current?.scene.getScene('TrailMapScene');
+
+    if (scene instanceof TrailMapScene) {
+      scene.setReducedMotion(settings.reducedMotion);
+    }
+  }, [settings.reducedMotion]);
 
   return (
     <section

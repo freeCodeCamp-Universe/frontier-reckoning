@@ -1,3 +1,5 @@
+import { getStoredSettings, updateStoredSettings } from '@game/systems/settingsSystem';
+
 export const AUDIO_ENABLED_STORAGE_KEY = 'frontier-reckoning-audio-enabled';
 export const AMBIENCE_ENABLED_STORAGE_KEY = 'frontier-reckoning-ambience-enabled';
 
@@ -19,14 +21,15 @@ const cueFrequencies: Record<AudioCue, number[]> = {
 };
 
 export function getStoredAudioEnabled(storage: Pick<Storage, 'getItem'>) {
-  return storage.getItem(AUDIO_ENABLED_STORAGE_KEY) === 'true';
+  return getStoredSettings(storage).soundEnabled;
 }
 
 export function setStoredAudioEnabled(
-  storage: Pick<Storage, 'setItem'>,
+  storage: Pick<Storage, 'getItem' | 'setItem'>,
   enabled: boolean,
 ) {
   storage.setItem(AUDIO_ENABLED_STORAGE_KEY, String(enabled));
+  updateStoredSettings(storage, { soundEnabled: enabled });
 }
 
 export function getStoredAmbienceEnabled(storage: Pick<Storage, 'getItem'>) {
@@ -60,8 +63,13 @@ function getAudioContext() {
   }
 }
 
-export function playAudioCue(cue: AudioCue, enabled = getStoredAudioEnabled(window.localStorage)) {
-  if (!enabled) {
+export function playAudioCue(
+  cue: AudioCue,
+  enabled = getStoredAudioEnabled(window.localStorage),
+) {
+  const settings = getStoredSettings(window.localStorage);
+
+  if (!enabled || settings.sfxVolume <= 0) {
     return;
   }
 
@@ -83,7 +91,10 @@ export function playAudioCue(cue: AudioCue, enabled = getStoredAudioEnabled(wind
       oscillator.type = cue === 'game_over' ? 'sawtooth' : 'sine';
       oscillator.frequency.setValueAtTime(frequency, noteStart);
       gain.gain.setValueAtTime(0.0001, noteStart);
-      gain.gain.exponentialRampToValueAtTime(0.04, noteStart + 0.01);
+      gain.gain.exponentialRampToValueAtTime(
+        0.04 * (settings.sfxVolume / 100),
+        noteStart + 0.01,
+      );
       gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
       oscillator.connect(gain);
       gain.connect(context.destination);
@@ -96,7 +107,9 @@ export function playAudioCue(cue: AudioCue, enabled = getStoredAudioEnabled(wind
 }
 
 export function startAmbience(enabled = getStoredAudioEnabled(window.localStorage)) {
-  if (!enabled || ambienceOscillator) {
+  const settings = getStoredSettings(window.localStorage);
+
+  if (!enabled || settings.musicVolume <= 0 || ambienceOscillator) {
     return;
   }
 
@@ -111,7 +124,10 @@ export function startAmbience(enabled = getStoredAudioEnabled(window.localStorag
     ambienceGain = context.createGain();
     ambienceOscillator.type = 'sine';
     ambienceOscillator.frequency.setValueAtTime(82, context.currentTime);
-    ambienceGain.gain.setValueAtTime(0.015, context.currentTime);
+    ambienceGain.gain.setValueAtTime(
+      0.015 * (settings.musicVolume / 100),
+      context.currentTime,
+    );
     ambienceOscillator.connect(ambienceGain);
     ambienceGain.connect(context.destination);
     ambienceOscillator.start();

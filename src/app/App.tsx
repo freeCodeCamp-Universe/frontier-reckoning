@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { AudioControls } from '@components/AudioControls';
 import { AudioEffects } from '@components/AudioEffects';
 import { CampScreen } from '@components/CampScreen';
 import { EventCard } from '@components/EventCard';
@@ -12,6 +11,7 @@ import { PartyPanel } from '@components/PartyPanel';
 import { ResourceDashboard } from '@components/ResourceDashboard';
 import { RiverEventScreen } from '@components/RiverEventScreen';
 import { SaveControls } from '@components/SaveControls';
+import { SettingsModal } from '@components/SettingsModal';
 import { TownScreen } from '@components/TownScreen';
 import { Button } from '@components/ui/Button';
 import { hasSave, loadGameFromStorage } from '@game/systems/saveSystem';
@@ -21,6 +21,7 @@ type AppScreen = 'main_menu' | 'setup' | 'active_game';
 
 export function App() {
   const [appScreen, setAppScreen] = useState<AppScreen>('main_menu');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [saveAvailable, setSaveAvailable] = useState(() =>
     typeof window === 'undefined' ? false : hasSave(window.localStorage),
   );
@@ -45,6 +46,11 @@ export function App() {
     }
   };
 
+  const handleSaveReset = () => {
+    setSaveAvailable(false);
+    setAppScreen('main_menu');
+  };
+
   if (gameStatus === 'not_started' && appScreen !== 'setup') {
     return (
       <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
@@ -52,10 +58,13 @@ export function App() {
           canContinue={saveAvailable}
           onContinue={handleContinue}
           onNewExpedition={() => setAppScreen('setup')}
+          onSettings={() => setSettingsOpen(true)}
         />
-        <div className="mx-auto mt-6 max-w-5xl">
-          <AudioControls />
-        </div>
+        <SettingsModal
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onSaveReset={handleSaveReset}
+        />
       </main>
     );
   }
@@ -67,9 +76,11 @@ export function App() {
           onBack={() => setAppScreen('main_menu')}
           onStart={handleStart}
         />
-        <div className="mx-auto mt-6 max-w-6xl">
-          <AudioControls />
-        </div>
+        <SettingsModal
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onSaveReset={handleSaveReset}
+        />
       </main>
     );
   }
@@ -108,6 +119,7 @@ export function App() {
                 >
                   Make Camp
                 </Button>
+                <Button onClick={() => setSettingsOpen(true)}>Settings</Button>
               </div>
               <p className="font-mono text-base text-muted" aria-live="polite">
                 {gameStatus === 'not_started'
@@ -122,8 +134,6 @@ export function App() {
           </div>
 
           <SaveControls />
-
-          <AudioControls />
 
           <EndingScreen />
 
@@ -145,6 +155,11 @@ export function App() {
       </section>
       <AudioEffects />
       <EventCard />
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onSaveReset={handleSaveReset}
+      />
     </main>
   );
 }

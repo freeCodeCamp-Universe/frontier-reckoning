@@ -6,6 +6,7 @@ import {
   calculateWagonPosition,
   shouldAnimateWagon,
 } from '@game/systems/mapProgress';
+import { getEffectiveReducedMotion } from '@game/systems/settingsSystem';
 
 export type TrailMapState = {
   distanceTraveled: number;
@@ -59,6 +60,18 @@ export class TrailMapScene extends Phaser.Scene {
     });
     this.updateMapProgress(this.readInitialState());
     this.game.events.emit('trail-map-ready');
+  }
+
+  setReducedMotion(reducedMotion: boolean) {
+    this.reducedMotion = reducedMotion;
+
+    if (reducedMotion) {
+      this.wagonIdleTween?.stop();
+      this.wagonMoveTween?.stop();
+      this.wagonBounceTween?.stop();
+    } else {
+      this.startIdleAnimation();
+    }
   }
 
   updateMapProgress(nextState: TrailMapState) {
@@ -232,9 +245,13 @@ export class TrailMapScene extends Phaser.Scene {
 }
 
 function getPrefersReducedMotion() {
-  return (
-    typeof window !== 'undefined' &&
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const prefersReducedMotion =
     typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  return getEffectiveReducedMotion(window.localStorage, prefersReducedMotion);
 }
