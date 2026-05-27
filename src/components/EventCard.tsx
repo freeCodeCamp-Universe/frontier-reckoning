@@ -3,6 +3,7 @@ import type { KeyboardEvent } from 'react';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
+import { EventIllustration } from '@components/EventIllustration';
 import { cx } from '@components/ui/styles';
 import { getChoiceAvailability, getChoiceLabel } from '@game/systems/eventSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
@@ -77,6 +78,7 @@ export function EventCard() {
         aria-modal="true"
         onKeyDown={handleDialogKeyDown}
       >
+        <EventIllustration event={currentEvent} className="mb-4" />
         <Badge variant="info">{currentEvent.type.replace('_', ' ')}</Badge>
         <h2 id="event-title" className="mt-2 text-3xl font-bold">
           {currentEvent.title}

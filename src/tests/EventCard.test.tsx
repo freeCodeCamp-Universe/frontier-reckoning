@@ -1,7 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventCard } from '@components/EventCard';
+import { EventIllustration } from '@components/EventIllustration';
 import { starterEvents } from '@game/data/starterEvents';
+import { getEventIllustrationKind } from '@game/systems/eventIllustrations';
 import { createStartingGameState, useExpeditionStore } from '@stores/expeditionStore';
 
 describe('EventCard', () => {
@@ -68,5 +70,56 @@ describe('EventCard', () => {
 
     expect(screen.getByText('Event resolved')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue' })).toHaveFocus();
+  });
+
+  it('maps each event illustration category', () => {
+    expect(getEventIllustrationKind({ categories: ['storm'] })).toBe('storm');
+    expect(getEventIllustrationKind({ categories: ['sickness'] })).toBe('sickness');
+    expect(getEventIllustrationKind({ categories: ['trader'] })).toBe('trader');
+    expect(getEventIllustrationKind({ categories: ['bandit'] })).toBe('bandit');
+    expect(getEventIllustrationKind({ categories: ['river'] })).toBe('river');
+    expect(getEventIllustrationKind({ categories: ['hunting'] })).toBe('hunting');
+    expect(getEventIllustrationKind({ categories: ['wagon_damage'] })).toBe('wagon_damage');
+    expect(getEventIllustrationKind({ categories: ['campfire'] })).toBe('campfire');
+    expect(getEventIllustrationKind({ categories: ['town'] })).toBe('town');
+    expect(getEventIllustrationKind({ categories: ['discovery'] })).toBe('discovery');
+  });
+
+  it('falls back safely for unknown illustration categories', () => {
+    expect(getEventIllustrationKind({ categories: ['mystery'] })).toBe('discovery');
+
+    render(
+      <EventIllustration
+        event={{
+          categories: ['mystery' as never],
+          title: 'Unmarked Sign',
+          type: 'choice',
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole('img', { name: 'Event illustration: discovery' }),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the event card accessible with an illustration', () => {
+    const event = starterEvents.find((starterEvent) => starterEvent.id === 'market-day');
+
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      currentEvent: event,
+      eventResolved: false,
+      gameStatus: 'event',
+    });
+
+    render(<EventCard />);
+
+    expect(screen.getByRole('dialog', { name: 'Market Day' })).toHaveAttribute(
+      'aria-modal',
+      'true',
+    );
+    expect(screen.getByRole('img', { name: 'Event illustration: trader' })).toBeInTheDocument();
+    expect(screen.getByText(event?.description ?? '')).toBeInTheDocument();
   });
 });
