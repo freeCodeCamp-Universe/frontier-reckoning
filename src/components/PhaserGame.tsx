@@ -9,6 +9,9 @@ function updateTrailMapScene(
   game: Phaser.Game | null,
   distanceTraveled: number,
   totalDistance: number,
+  currentDay: number,
+  visitedTownIds: string[],
+  crossedRiverIds: string[],
 ) {
   if (!game) {
     return;
@@ -16,11 +19,20 @@ function updateTrailMapScene(
 
   game.registry.set('distanceTraveled', distanceTraveled);
   game.registry.set('totalDistance', totalDistance);
+  game.registry.set('currentDay', currentDay);
+  game.registry.set('visitedTownIds', visitedTownIds);
+  game.registry.set('crossedRiverIds', crossedRiverIds);
 
   const scene = game.scene.getScene('TrailMapScene');
 
   if (scene instanceof TrailMapScene) {
-    scene.updateMapProgress({ distanceTraveled, totalDistance });
+    scene.updateMapProgress({
+      distanceTraveled,
+      totalDistance,
+      currentDay,
+      visitedTownIds,
+      crossedRiverIds,
+    });
   }
 }
 
@@ -29,6 +41,9 @@ export function PhaserGame() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const distanceTraveled = useExpeditionStore((state) => state.distanceTraveled);
   const totalDistance = useExpeditionStore((state) => state.totalDistance);
+  const currentDay = useExpeditionStore((state) => state.currentDay);
+  const visitedTownIds = useExpeditionStore((state) => state.visitedTownIds);
+  const crossedRiverIds = useExpeditionStore((state) => state.crossedRiverIds);
   const [settings] = useSettings();
 
   useEffect(() => {
@@ -44,6 +59,9 @@ export function PhaserGame() {
         mapState: {
           distanceTraveled: initialState.distanceTraveled,
           totalDistance: initialState.totalDistance,
+          currentDay: initialState.currentDay,
+          visitedTownIds: initialState.visitedTownIds,
+          crossedRiverIds: initialState.crossedRiverIds,
         },
       }),
     );
@@ -57,10 +75,24 @@ export function PhaserGame() {
   useEffect(() => {
     const game = gameRef.current;
 
-    updateTrailMapScene(game, distanceTraveled, totalDistance);
+    updateTrailMapScene(
+      game,
+      distanceTraveled,
+      totalDistance,
+      currentDay,
+      visitedTownIds,
+      crossedRiverIds,
+    );
 
     const handleReady = () => {
-      updateTrailMapScene(game, distanceTraveled, totalDistance);
+      updateTrailMapScene(
+        game,
+        distanceTraveled,
+        totalDistance,
+        currentDay,
+        visitedTownIds,
+        crossedRiverIds,
+      );
     };
 
     game?.events.on('trail-map-ready', handleReady);
@@ -68,7 +100,7 @@ export function PhaserGame() {
     return () => {
       game?.events.off('trail-map-ready', handleReady);
     };
-  }, [distanceTraveled, totalDistance]);
+  }, [crossedRiverIds, currentDay, distanceTraveled, totalDistance, visitedTownIds]);
 
   useEffect(() => {
     const scene = gameRef.current?.scene.getScene('TrailMapScene');

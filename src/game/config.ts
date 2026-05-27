@@ -6,6 +6,9 @@ type CreateGameConfigOptions = {
   mapState?: {
     distanceTraveled: number;
     totalDistance: number;
+    currentDay?: number;
+    visitedTownIds?: string[];
+    crossedRiverIds?: string[];
   };
 };
 
@@ -28,6 +31,9 @@ export function createGameConfig({
 
         game.registry.set('distanceTraveled', mapState.distanceTraveled);
         game.registry.set('totalDistance', mapState.totalDistance);
+        game.registry.set('currentDay', mapState.currentDay ?? 0);
+        game.registry.set('visitedTownIds', mapState.visitedTownIds ?? []);
+        game.registry.set('crossedRiverIds', mapState.crossedRiverIds ?? []);
       },
     },
     scale: {
