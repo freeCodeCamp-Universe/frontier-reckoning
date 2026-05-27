@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { huntAtCamp, calculateHuntingScore } from '@game/systems/huntingSystem';
+import {
+  applyHuntingMiniGameResult,
+  calculateHuntingScore,
+  HUNTING_DURATION_SECONDS,
+  huntAtCamp,
+  isHuntingTimerExpired,
+  resolveHuntingShot,
+} from '@game/systems/huntingSystem';
 import { createStartingGameState } from '@stores/expeditionStore';
 import { createSeededRng } from '@utils/rng';
 
@@ -48,6 +55,73 @@ describe('huntingSystem', () => {
       health: 82,
       status: 'injured',
     });
+  });
+
+  it('successful mini-game hit adds food and consumes ammo', () => {
+    const state = createStartingGameState();
+    const shot = resolveHuntingShot({
+      animals: [{ id: 'deer-1', type: 'deer', x: 100, y: 100, size: 24 }],
+      target: { x: 105, y: 100 },
+      ammoRemaining: 3,
+      state,
+    });
+
+    expect(shot.hitAnimal?.type).toBe('deer');
+    expect(shot.foodGained).toBe(14);
+    expect(shot.ammoSpent).toBe(1);
+    expect(shot.ammoRemaining).toBe(2);
+  });
+
+  it('mini-game miss consumes ammo without food', () => {
+    const state = createStartingGameState();
+    const shot = resolveHuntingShot({
+      animals: [{ id: 'rabbit-1', type: 'rabbit', x: 100, y: 100, size: 15 }],
+      target: { x: 300, y: 100 },
+      ammoRemaining: 2,
+      state,
+    });
+
+    expect(shot.hitAnimal).toBeNull();
+    expect(shot.foodGained).toBe(0);
+    expect(shot.ammoSpent).toBe(1);
+    expect(shot.ammoRemaining).toBe(1);
+  });
+
+  it('timer ends the hunting scene after 30 seconds', () => {
+    expect(isHuntingTimerExpired(HUNTING_DURATION_SECONDS - 1)).toBe(false);
+    expect(isHuntingTimerExpired(HUNTING_DURATION_SECONDS)).toBe(true);
+  });
+
+  it('mini-game predator result can injure a party member', () => {
+    const state = createStartingGameState();
+    const result = applyHuntingMiniGameResult(state, {
+      ammoSpent: 1,
+      foodGained: 2,
+      hits: 1,
+      misses: 0,
+      predatorEncountered: true,
+      injuredCharacterId: state.party[1].id,
+    });
+
+    expect(result.state.party[1]).toMatchObject({
+      health: 84,
+      status: 'injured',
+    });
+  });
+
+  it('store-ready mini-game result updates food and ammo', () => {
+    const state = createStartingGameState();
+    const result = applyHuntingMiniGameResult(state, {
+      ammoSpent: 3,
+      foodGained: 18,
+      hits: 2,
+      misses: 1,
+      predatorEncountered: false,
+    });
+
+    expect(result.state.ammo).toBe(state.ammo - 3);
+    expect(result.state.food).toBe(state.food + 18);
+    expect(result.outcomeText).toContain('18 food');
   });
 
   it('produces deterministic results with the same seed', () => {

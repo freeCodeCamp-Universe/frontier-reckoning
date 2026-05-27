@@ -1,10 +1,19 @@
+import { lazy, Suspense, useState } from 'react';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
 import { Card, CardEyebrow, CardHeader } from '@components/ui/Card';
 import { useExpeditionStore } from '@stores/expeditionStore';
+import { useSettings } from '@/hooks/useSettings';
+
+const HuntingMiniGame = lazy(() =>
+  import('@components/HuntingMiniGame').then((module) => ({
+    default: module.HuntingMiniGame,
+  })),
+);
 
 export function CampScreen() {
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
+  const gameState = useExpeditionStore((state) => state);
   const party = useExpeditionStore((state) => state.party);
   const medicine = useExpeditionStore((state) => state.medicine);
   const wagonParts = useExpeditionStore((state) => state.wagonParts);
@@ -19,8 +28,10 @@ export function CampScreen() {
     (state) => state.tellCampfireStoriesAtCamp,
   );
   const rationFoodAtCamp = useExpeditionStore((state) => state.rationFoodAtCamp);
-  const huntAtCamp = useExpeditionStore((state) => state.huntAtCamp);
+  const applyHuntingResult = useExpeditionStore((state) => state.applyHuntingResult);
   const resumeTravel = useExpeditionStore((state) => state.resumeTravel);
+  const [settings] = useSettings();
+  const [huntingActive, setHuntingActive] = useState(false);
   const treatableParty = party.filter(
     (character) =>
       character.status !== 'dead' &&
@@ -69,32 +80,39 @@ export function CampScreen() {
 
       <div className="mt-5">
         <Badge variant="muted">Hunt</Badge>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <Button
-            onClick={() => huntAtCamp(1)}
-            disabled={ammo < 1}
-            disabledReason="Hunting with 1 ammo requires at least 1 ammo."
-            className="justify-start text-left"
-          >
-            Hunt with 1 ammo
-          </Button>
-          <Button
-            onClick={() => huntAtCamp(3)}
-            disabled={ammo < 3}
-            disabledReason="Hunting with 3 ammo requires at least 3 ammo."
-            className="justify-start text-left"
-          >
-            Hunt with 3 ammo
-          </Button>
-          <Button
-            onClick={() => huntAtCamp(5)}
-            disabled={ammo < 5}
-            disabledReason="Hunting with 5 ammo requires at least 5 ammo."
-            className="justify-start text-left"
-          >
-            Hunt with 5 ammo
-          </Button>
-        </div>
+        <p className="mt-2 text-base text-muted">
+          Spend up to 8 ammo in a 30-second hunting run.
+        </p>
+        <Button
+          onClick={() => setHuntingActive(true)}
+          disabled={ammo < 1 || huntingActive}
+          disabledReason="Hunting requires at least 1 ammo."
+          className="mt-3 justify-start text-left"
+        >
+          Start hunting mini-game
+        </Button>
+
+        {huntingActive ? (
+          <div className="mt-4">
+            <Suspense
+              fallback={
+                <div className="border border-border bg-panel p-4 font-mono text-base text-muted">
+                  Loading hunting range...
+                </div>
+              }
+            >
+              <HuntingMiniGame
+                ammoAvailable={ammo}
+                gameState={gameState}
+                reducedMotion={settings.reducedMotion}
+                onComplete={(result) => {
+                  applyHuntingResult(result);
+                  setHuntingActive(false);
+                }}
+              />
+            </Suspense>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-5">

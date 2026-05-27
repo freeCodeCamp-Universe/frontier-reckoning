@@ -19,7 +19,12 @@ import {
   shouldTriggerTravelEvent,
 } from '@game/systems/eventSystem';
 import { getGameOverReason, type GameOverReason } from '@game/systems/endingSystem';
-import { huntAtCamp, type HuntingAmmoAmount } from '@game/systems/huntingSystem';
+import {
+  applyHuntingMiniGameResult,
+  huntAtCamp,
+  type HuntingAmmoAmount,
+  type HuntingMiniGameResult,
+} from '@game/systems/huntingSystem';
 import {
   crossRiver,
   getPendingRiverCrossing,
@@ -106,6 +111,7 @@ export type FrontierReckoningState = {
   tellCampfireStoriesAtCamp: () => void;
   rationFoodAtCamp: () => void;
   huntAtCamp: (ammoSpent: HuntingAmmoAmount) => void;
+  applyHuntingResult: (result: HuntingMiniGameResult) => void;
   resumeTravel: () => void;
   resolveRiverCrossing: (optionId: RiverCrossingOptionId) => void;
   continueFromRiver: () => void;
@@ -138,6 +144,7 @@ export type FrontierReckoningData = Omit<
   | 'tellCampfireStoriesAtCamp'
   | 'rationFoodAtCamp'
   | 'huntAtCamp'
+  | 'applyHuntingResult'
   | 'resumeTravel'
   | 'resolveRiverCrossing'
   | 'continueFromRiver'
@@ -407,6 +414,22 @@ export const useExpeditionStore = create<FrontierReckoningState>((set) => ({
         campOutcomeText: `${result.outcomeText}${foodMessage}`,
         gameLog: [`${result.outcomeText}${foodMessage}`, ...state.gameLog].slice(0, 20),
       };
+    }),
+  applyHuntingResult: (result) =>
+    set((state) => {
+      if (state.gameStatus !== 'camp') {
+        return state;
+      }
+
+      const appliedResult = applyHuntingMiniGameResult(state, result);
+
+      return withLog(
+        {
+          ...appliedResult.state,
+          campOutcomeText: appliedResult.outcomeText,
+        },
+        appliedResult.outcomeText,
+      );
     }),
   resumeTravel: () =>
     set((state) =>

@@ -222,4 +222,26 @@ describe('useExpeditionStore', () => {
 
     expect(useExpeditionStore.getState().ammo).toBe(5);
   });
+
+  it('receives hunting mini-game results from camp', () => {
+    useExpeditionStore.setState({
+      ...useExpeditionStore.getState(),
+      ...startingGameState,
+      gameStatus: 'camp',
+      ammo: 10,
+      food: 20,
+    });
+
+    useExpeditionStore.getState().applyHuntingResult({
+      ammoSpent: 4,
+      foodGained: 16,
+      hits: 2,
+      misses: 2,
+      predatorEncountered: false,
+    });
+
+    expect(useExpeditionStore.getState().ammo).toBe(6);
+    expect(useExpeditionStore.getState().food).toBe(36);
+    expect(useExpeditionStore.getState().campOutcomeText).toContain('16 food');
+  });
 });
