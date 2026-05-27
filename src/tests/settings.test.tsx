@@ -85,26 +85,46 @@ describe('settings', () => {
   });
 
   it('uses sound settings in the audio system', () => {
-    const play = vi.fn(() => Promise.resolve());
-    const audioElements: Array<{ volume: number; play: () => Promise<void> }> = [];
+    const createOscillator = vi.fn(() => ({
+      connect: vi.fn(),
+      frequency: { setValueAtTime: vi.fn() },
+      start: vi.fn(),
+      stop: vi.fn(),
+      type: 'sine',
+    }));
+    const audioContext = vi.fn(() => ({
+      currentTime: 0,
+      destination: {},
+      sampleRate: 120,
+      state: 'running',
+      createBiquadFilter: vi.fn(() => ({
+        connect: vi.fn(),
+        frequency: { setValueAtTime: vi.fn() },
+        type: 'lowpass',
+      })),
+      createBuffer: vi.fn((_channels: number, length: number) => ({
+        getChannelData: vi.fn(() => new Float32Array(length)),
+      })),
+      createBufferSource: vi.fn(() => ({
+        buffer: null,
+        connect: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+      })),
+      createGain: vi.fn(() => ({
+        connect: vi.fn(),
+        gain: {
+          exponentialRampToValueAtTime: vi.fn(),
+          linearRampToValueAtTime: vi.fn(),
+          setValueAtTime: vi.fn(),
+          value: 0,
+        },
+      })),
+      createOscillator,
+      resume: vi.fn(() => Promise.resolve()),
+    }));
 
-    vi.stubGlobal(
-      'Audio',
-      vi.fn(() => {
-        const audio = {
-          currentTime: 0,
-          loop: false,
-          pause: vi.fn(),
-          play,
-          preload: '',
-          volume: 1,
-        };
-
-        audioElements.push(audio);
-
-        return audio;
-      }),
-    );
+    vi.stubGlobal('AudioContext', audioContext);
 
     updateStoredSettings(window.localStorage, {
       soundEnabled: false,
@@ -113,13 +133,35 @@ describe('settings', () => {
 
     playAudioCue('button');
 
-    expect(play).not.toHaveBeenCalled();
+    expect(audioContext).not.toHaveBeenCalled();
 
     updateStoredSettings(window.localStorage, { soundEnabled: true });
     playAudioCue('button');
 
-    expect(play).toHaveBeenCalledTimes(1);
-    expect(audioElements.at(-1)?.volume).toBe(0.5);
+    expect(audioContext).toHaveBeenCalledTimes(1);
+    expect(createOscillator).toHaveBeenCalled();
+  });
+
+  it('persists mute and volume settings', () => {
+    updateStoredSettings(window.localStorage, {
+      musicVolume: 18,
+      sfxVolume: 33,
+      soundEnabled: true,
+    });
+
+    expect(getStoredSettings(window.localStorage)).toMatchObject({
+      musicVolume: 18,
+      sfxVolume: 33,
+      soundEnabled: true,
+    });
+
+    updateStoredSettings(window.localStorage, { soundEnabled: false });
+
+    expect(getStoredSettings(window.localStorage)).toMatchObject({
+      musicVolume: 18,
+      sfxVolume: 33,
+      soundEnabled: false,
+    });
   });
 
   it('uses reduced motion settings for animation flags', () => {

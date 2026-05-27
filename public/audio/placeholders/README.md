@@ -1,7 +1,11 @@
-# Frontier Reckoning placeholder audio
+# Frontier Reckoning audio
 
-Drop final audio files here with the names referenced by `src/game/systems/audioSystem.ts`.
-The audio system is designed to fail silently while placeholder files are missing or invalid.
+The game currently uses original procedural Web Audio compositions from
+`src/game/systems/audioSystem.ts`. There are no bundled copyrighted music or sound
+effect files, which keeps the production payload small.
+
+To replace the generated audio later, add final assets in this folder and set the
+matching `src` fields in `generatedAudioAssets`:
 
 - `main-menu.ogg`
 - `trail-ambience.ogg`
@@ -15,3 +19,6 @@ The audio system is designed to fail silently while placeholder files are missin
 - `hunting-hit.ogg`
 - `victory.ogg`
 - `game-over.ogg`
+
+Keep replacements short, loop-clean where needed, and normalized quietly enough that
+the existing music and SFX volume settings remain comfortable.

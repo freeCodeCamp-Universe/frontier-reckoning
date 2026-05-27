@@ -1,6 +1,10 @@
 import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
+import {
+  audioSystem,
+  getAudioSceneForGameStatus,
+} from '@game/systems/audioSystem';
 import { Card, CardEyebrow } from '@components/ui/Card';
 import { resetSaveData, type TextSpeed } from '@game/systems/settingsSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
@@ -26,6 +30,8 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const resetGame = useExpeditionStore((state) => state.resetGame);
+  const gameStatus = useExpeditionStore((state) => state.gameStatus);
+  const currentEvent = useExpeditionStore((state) => state.currentEvent);
 
   useEffect(() => {
     if (!isOpen) {
@@ -79,10 +85,20 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
   };
 
   const handleSoundToggle = (enabled: boolean) => {
+    audioSystem.registerUserInteraction();
     updateSettings({ soundEnabled: enabled });
 
     if (!enabled) {
       stopAmbience();
+    } else {
+      audioSystem.updateSettings({
+        soundEnabled: true,
+        musicVolume: settings.musicVolume,
+        sfxVolume: settings.sfxVolume,
+      });
+      audioSystem.requestSceneAudio(
+        getAudioSceneForGameStatus(gameStatus, currentEvent?.type),
+      );
     }
   };
 

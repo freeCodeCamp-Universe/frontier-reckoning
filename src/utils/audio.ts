@@ -55,6 +55,8 @@ export function playAudioCue(
   cue: AudioCue,
   enabled = getStoredAudioEnabled(window.localStorage),
 ) {
+  audioSystem.registerUserInteraction();
+
   const settings = syncAudioSystemFromStorage();
 
   if (!enabled || settings.sfxVolume <= 0) {
@@ -65,6 +67,8 @@ export function playAudioCue(
 }
 
 export function startAmbience(enabled = getStoredAudioEnabled(window.localStorage)) {
+  audioSystem.registerUserInteraction();
+
   const settings = syncAudioSystemFromStorage();
 
   if (!enabled || settings.musicVolume <= 0) {

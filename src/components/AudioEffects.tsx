@@ -30,6 +30,23 @@ export function AudioEffects() {
   }, [currentEvent?.type, gameStatus, settings.soundEnabled]);
 
   useEffect(() => {
+    const handleUserInteraction = () => {
+      audioSystem.registerUserInteraction();
+      audioSystem.requestSceneAudio(
+        getAudioSceneForGameStatus(gameStatus, currentEvent?.type),
+      );
+    };
+
+    window.addEventListener('pointerdown', handleUserInteraction, { once: true });
+    window.addEventListener('keydown', handleUserInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, [currentEvent?.type, gameStatus]);
+
+  useEffect(() => {
     if (
       currentEvent &&
       !eventResolved &&

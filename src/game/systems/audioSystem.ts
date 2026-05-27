@@ -1,5 +1,5 @@
-import type { GameStatus } from '@stores/expeditionStore';
 import type { FrontierSettings } from '@game/systems/settingsSystem';
+import type { GameStatus } from '@stores/expeditionStore';
 
 export type AudioCategory =
   | 'main_menu_music'
@@ -15,11 +15,27 @@ export type AudioCategory =
   | 'victory'
   | 'game_over';
 
+export type AudioComposition =
+  | 'menu_theme'
+  | 'trail_ambience'
+  | 'campfire_ambience'
+  | 'town_ambience'
+  | 'storm_ambience'
+  | 'river_ambience'
+  | 'button_click'
+  | 'event_alert'
+  | 'hunting_shot'
+  | 'hunting_hit'
+  | 'victory_sting'
+  | 'game_over_sting';
+
 export type AudioAsset = {
   category: AudioCategory;
-  src: string;
   loop: boolean;
   channel: 'music' | 'ambience' | 'sfx';
+  composition: AudioComposition;
+  replacementFileName: string;
+  src?: string;
 };
 
 export type AudioSettings = Pick<
@@ -27,84 +43,116 @@ export type AudioSettings = Pick<
   'soundEnabled' | 'musicVolume' | 'sfxVolume'
 >;
 
-type ManagedAudio = HTMLAudioElement & {
+type ManagedAudio = {
   __frontierCategory?: AudioCategory;
+  currentTime: number;
+  loop: boolean;
+  pause: () => void;
+  play: () => Promise<void> | void;
+  preload: string;
+  volume: number;
 };
 
-export const placeholderAudioAssets: Record<AudioCategory, AudioAsset> = {
+type ManagedHtmlAudio = HTMLAudioElement & ManagedAudio;
+
+type AudioContextConstructor = new () => AudioContext;
+
+type AudioWindow = Window & {
+  webkitAudioContext?: AudioContextConstructor;
+};
+
+type AudioNodeWithStop = AudioScheduledSourceNode & {
+  stop: (when?: number) => void;
+};
+
+export const generatedAudioAssets: Record<AudioCategory, AudioAsset> = {
   main_menu_music: {
     category: 'main_menu_music',
-    src: '/audio/placeholders/main-menu.ogg',
     loop: true,
     channel: 'music',
+    composition: 'menu_theme',
+    replacementFileName: 'main-menu.ogg',
   },
   trail_ambience: {
     category: 'trail_ambience',
-    src: '/audio/placeholders/trail-ambience.ogg',
     loop: true,
     channel: 'ambience',
+    composition: 'trail_ambience',
+    replacementFileName: 'trail-ambience.ogg',
   },
   camp_ambience: {
     category: 'camp_ambience',
-    src: '/audio/placeholders/camp-ambience.ogg',
     loop: true,
     channel: 'ambience',
+    composition: 'campfire_ambience',
+    replacementFileName: 'camp-ambience.ogg',
   },
   town_ambience: {
     category: 'town_ambience',
-    src: '/audio/placeholders/town-ambience.ogg',
     loop: true,
     channel: 'ambience',
+    composition: 'town_ambience',
+    replacementFileName: 'town-ambience.ogg',
   },
   storm_ambience: {
     category: 'storm_ambience',
-    src: '/audio/placeholders/storm-ambience.ogg',
     loop: true,
     channel: 'ambience',
+    composition: 'storm_ambience',
+    replacementFileName: 'storm-ambience.ogg',
   },
   river_ambience: {
     category: 'river_ambience',
-    src: '/audio/placeholders/river-ambience.ogg',
     loop: true,
     channel: 'ambience',
+    composition: 'river_ambience',
+    replacementFileName: 'river-ambience.ogg',
   },
   button_click: {
     category: 'button_click',
-    src: '/audio/placeholders/button-click.ogg',
     loop: false,
     channel: 'sfx',
+    composition: 'button_click',
+    replacementFileName: 'button-click.ogg',
   },
   event_alert: {
     category: 'event_alert',
-    src: '/audio/placeholders/event-alert.ogg',
     loop: false,
     channel: 'sfx',
+    composition: 'event_alert',
+    replacementFileName: 'event-alert.ogg',
   },
   hunting_shot: {
     category: 'hunting_shot',
-    src: '/audio/placeholders/hunting-shot.ogg',
     loop: false,
     channel: 'sfx',
+    composition: 'hunting_shot',
+    replacementFileName: 'hunting-shot.ogg',
   },
   hunting_hit: {
     category: 'hunting_hit',
-    src: '/audio/placeholders/hunting-hit.ogg',
     loop: false,
     channel: 'sfx',
+    composition: 'hunting_hit',
+    replacementFileName: 'hunting-hit.ogg',
   },
   victory: {
     category: 'victory',
-    src: '/audio/placeholders/victory.ogg',
     loop: false,
     channel: 'sfx',
+    composition: 'victory_sting',
+    replacementFileName: 'victory.ogg',
   },
   game_over: {
     category: 'game_over',
-    src: '/audio/placeholders/game-over.ogg',
     loop: false,
     channel: 'sfx',
+    composition: 'game_over_sting',
+    replacementFileName: 'game-over.ogg',
   },
 };
+
+export const placeholderAudioAssets = generatedAudioAssets;
 
 export class FrontierAudioSystem {
   private settings: AudioSettings = {
@@ -114,13 +162,29 @@ export class FrontierAudioSystem {
   };
   private music: ManagedAudio | null = null;
   private ambience: ManagedAudio | null = null;
+  private audioContext: AudioContext | null = null;
+  private userInteractionReceived = false;
   private autoplayBlocked = false;
 
   constructor(
-    private assets: Record<AudioCategory, AudioAsset> = placeholderAudioAssets,
-    private createAudioElement: (src: string) => ManagedAudio = (src) =>
-      new Audio(src) as ManagedAudio,
+    private assets: Record<AudioCategory, AudioAsset> = generatedAudioAssets,
+    private createAudioElement: (src: string) => ManagedHtmlAudio = (src) =>
+      new Audio(src) as ManagedHtmlAudio,
+    private createAudioContext: () => AudioContext | null = () =>
+      createBrowserAudioContext(),
   ) {}
+
+  registerUserInteraction() {
+    this.userInteractionReceived = true;
+
+    if (this.audioContext?.state === 'suspended') {
+      void this.audioContext.resume().catch(() => undefined);
+    }
+  }
+
+  hasUserInteraction() {
+    return this.userInteractionReceived;
+  }
 
   updateSettings(settings: AudioSettings) {
     this.settings = settings;
@@ -142,7 +206,7 @@ export class FrontierAudioSystem {
   async playMusic(category: AudioCategory, fadeMs = 600) {
     const asset = this.assets[category];
 
-    if (!asset || asset.channel !== 'music') {
+    if (!asset || asset.channel !== 'music' || !this.canStartAudio()) {
       return false;
     }
 
@@ -164,7 +228,7 @@ export class FrontierAudioSystem {
   async playAmbience(category: AudioCategory, fadeMs = 500) {
     const asset = this.assets[category];
 
-    if (!asset || asset.channel !== 'ambience') {
+    if (!asset || asset.channel !== 'ambience' || !this.canStartAudio()) {
       return false;
     }
 
@@ -186,7 +250,7 @@ export class FrontierAudioSystem {
   async playSfx(category: AudioCategory) {
     const asset = this.assets[category];
 
-    if (!asset || asset.channel !== 'sfx' || !this.settings.soundEnabled) {
+    if (!asset || asset.channel !== 'sfx' || !this.canStartAudio()) {
       return false;
     }
 
@@ -238,12 +302,32 @@ export class FrontierAudioSystem {
     return this.autoplayBlocked;
   }
 
+  private canStartAudio() {
+    if (!this.settings.soundEnabled) {
+      return false;
+    }
+
+    if (!this.userInteractionReceived) {
+      this.autoplayBlocked = true;
+      return false;
+    }
+
+    return true;
+  }
+
   private createManagedAudio(asset: AudioAsset) {
-    let audio: ManagedAudio;
+    let audio: ManagedAudio | null;
 
     try {
-      audio = this.createAudioElement(asset.src);
+      audio = asset.src
+        ? this.createAudioElement(asset.src)
+        : this.createGeneratedAudio(asset);
     } catch {
+      this.autoplayBlocked = true;
+      return null;
+    }
+
+    if (!audio) {
       this.autoplayBlocked = true;
       return null;
     }
@@ -254,6 +338,26 @@ export class FrontierAudioSystem {
     this.applyVolume(audio);
 
     return audio;
+  }
+
+  private createGeneratedAudio(asset: AudioAsset) {
+    const context = this.getAudioContext();
+
+    if (!context) {
+      return null;
+    }
+
+    return new GeneratedAudioComposition(context, asset) as ManagedAudio;
+  }
+
+  private getAudioContext() {
+    if (this.audioContext) {
+      return this.audioContext;
+    }
+
+    this.audioContext = this.createAudioContext();
+
+    return this.audioContext;
   }
 
   private applyVolume(audio: ManagedAudio | null) {
@@ -271,7 +375,7 @@ export class FrontierAudioSystem {
   }
 
   private async safePlay(audio: ManagedAudio, fadeMs: number) {
-    if (!this.settings.soundEnabled) {
+    if (!this.canStartAudio()) {
       return false;
     }
 
@@ -319,7 +423,7 @@ export class FrontierAudioSystem {
         audio.pause();
         audio.currentTime = 0;
       } catch {
-        // Missing or interrupted audio should not affect gameplay.
+        // Audio is decorative. Failure should never interrupt gameplay.
       }
     };
 
@@ -331,6 +435,303 @@ export class FrontierAudioSystem {
     audio.volume = 0;
     globalThis.setTimeout(stop, Math.min(fadeMs, 50));
   }
+}
+
+class GeneratedAudioComposition {
+  __frontierCategory?: AudioCategory;
+  currentTime = 0;
+  loop: boolean;
+  preload = 'auto';
+  private output: GainNode;
+  private activeNodes: AudioNodeWithStop[] = [];
+  private loopTimer: ReturnType<typeof globalThis.setInterval> | null = null;
+
+  constructor(
+    private context: AudioContext,
+    private asset: AudioAsset,
+  ) {
+    this.loop = asset.loop;
+    this.output = context.createGain();
+    this.output.gain.value = 0;
+    this.output.connect(context.destination);
+  }
+
+  get volume() {
+    return this.output.gain.value;
+  }
+
+  set volume(value: number) {
+    this.output.gain.value = clamp(value, 0, 1);
+  }
+
+  async play() {
+    if (this.context.state === 'suspended') {
+      await this.context.resume();
+    }
+
+    this.pause();
+    this.schedule();
+
+    if (this.loop) {
+      this.loopTimer = globalThis.setInterval(() => this.schedule(), 5200);
+    }
+  }
+
+  pause() {
+    this.activeNodes.forEach((node) => {
+      try {
+        node.stop();
+      } catch {
+        // Nodes may already have ended naturally.
+      }
+    });
+    this.activeNodes = [];
+
+    if (this.loopTimer !== null) {
+      globalThis.clearInterval(this.loopTimer);
+      this.loopTimer = null;
+    }
+  }
+
+  private schedule() {
+    const start = this.context.currentTime + 0.02;
+
+    switch (this.asset.composition) {
+      case 'menu_theme':
+        scheduleMenuTheme(this.context, this.output, start, this.activeNodes);
+        break;
+      case 'trail_ambience':
+        scheduleTrailAmbience(this.context, this.output, start, this.activeNodes);
+        break;
+      case 'campfire_ambience':
+        scheduleCampfireAmbience(this.context, this.output, start, this.activeNodes);
+        break;
+      case 'town_ambience':
+        scheduleTownAmbience(this.context, this.output, start, this.activeNodes);
+        break;
+      case 'storm_ambience':
+        scheduleStormAmbience(this.context, this.output, start, this.activeNodes);
+        break;
+      case 'river_ambience':
+        scheduleRiverAmbience(this.context, this.output, start, this.activeNodes);
+        break;
+      case 'button_click':
+        scheduleToneSequence(this.context, this.output, start, this.activeNodes, [
+          [660, 0, 0.045, 'triangle', 0.08],
+          [880, 0.035, 0.035, 'triangle', 0.04],
+        ]);
+        break;
+      case 'event_alert':
+        scheduleToneSequence(this.context, this.output, start, this.activeNodes, [
+          [220, 0, 0.16, 'sawtooth', 0.08],
+          [185, 0.18, 0.2, 'sawtooth', 0.07],
+        ]);
+        break;
+      case 'hunting_shot':
+        scheduleNoiseBurst(this.context, this.output, start, 0.09, 0.16, this.activeNodes);
+        scheduleToneSequence(this.context, this.output, start, this.activeNodes, [
+          [90, 0.01, 0.12, 'square', 0.07],
+        ]);
+        break;
+      case 'hunting_hit':
+        scheduleToneSequence(this.context, this.output, start, this.activeNodes, [
+          [330, 0, 0.08, 'triangle', 0.07],
+          [440, 0.08, 0.08, 'triangle', 0.06],
+        ]);
+        break;
+      case 'victory_sting':
+        scheduleToneSequence(this.context, this.output, start, this.activeNodes, [
+          [392, 0, 0.22, 'triangle', 0.08],
+          [494, 0.2, 0.22, 'triangle', 0.08],
+          [587, 0.4, 0.36, 'triangle', 0.09],
+          [784, 0.74, 0.28, 'sine', 0.06],
+        ]);
+        break;
+      case 'game_over_sting':
+        scheduleToneSequence(this.context, this.output, start, this.activeNodes, [
+          [196, 0, 0.32, 'sawtooth', 0.07],
+          [165, 0.3, 0.42, 'sawtooth', 0.065],
+          [123, 0.72, 0.5, 'sine', 0.05],
+        ]);
+        break;
+    }
+  }
+}
+
+function createBrowserAudioContext() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const AudioContextConstructor =
+    window.AudioContext ?? (window as AudioWindow).webkitAudioContext;
+
+  if (!AudioContextConstructor) {
+    return null;
+  }
+
+  try {
+    return new AudioContextConstructor();
+  } catch {
+    return null;
+  }
+}
+
+function scheduleMenuTheme(
+  context: AudioContext,
+  destination: AudioNode,
+  start: number,
+  nodes: AudioNodeWithStop[],
+) {
+  scheduleToneSequence(context, destination, start, nodes, [
+    [196, 0, 0.9, 'sine', 0.045],
+    [247, 0.9, 0.9, 'sine', 0.04],
+    [294, 1.8, 1, 'triangle', 0.04],
+    [247, 3.1, 0.8, 'sine', 0.035],
+    [330, 3.9, 0.9, 'triangle', 0.03],
+  ]);
+}
+
+function scheduleTrailAmbience(
+  context: AudioContext,
+  destination: AudioNode,
+  start: number,
+  nodes: AudioNodeWithStop[],
+) {
+  scheduleToneSequence(context, destination, start, nodes, [
+    [73, 0, 5.1, 'sine', 0.025],
+    [110, 1.2, 3.8, 'sine', 0.012],
+  ]);
+  scheduleNoiseBurst(context, destination, start, 5.2, 0.018, nodes, 900);
+}
+
+function scheduleCampfireAmbience(
+  context: AudioContext,
+  destination: AudioNode,
+  start: number,
+  nodes: AudioNodeWithStop[],
+) {
+  scheduleToneSequence(context, destination, start, nodes, [
+    [82, 0, 5.2, 'sine', 0.015],
+  ]);
+
+  for (let index = 0; index < 16; index += 1) {
+    scheduleNoiseBurst(
+      context,
+      destination,
+      start + index * 0.31,
+      0.05 + (index % 3) * 0.02,
+      0.035,
+      nodes,
+      2600,
+    );
+  }
+}
+
+function scheduleTownAmbience(
+  context: AudioContext,
+  destination: AudioNode,
+  start: number,
+  nodes: AudioNodeWithStop[],
+) {
+  scheduleToneSequence(context, destination, start, nodes, [
+    [147, 0, 1.8, 'triangle', 0.025],
+    [196, 2.1, 1.2, 'triangle', 0.02],
+    [247, 3.6, 0.8, 'triangle', 0.018],
+  ]);
+  scheduleNoiseBurst(context, destination, start + 0.5, 4.2, 0.012, nodes, 1300);
+}
+
+function scheduleStormAmbience(
+  context: AudioContext,
+  destination: AudioNode,
+  start: number,
+  nodes: AudioNodeWithStop[],
+) {
+  scheduleNoiseBurst(context, destination, start, 5.2, 0.06, nodes, 500);
+  scheduleToneSequence(context, destination, start, nodes, [
+    [55, 0.6, 1.4, 'sine', 0.04],
+    [46, 2.7, 1.8, 'sine', 0.05],
+  ]);
+}
+
+function scheduleRiverAmbience(
+  context: AudioContext,
+  destination: AudioNode,
+  start: number,
+  nodes: AudioNodeWithStop[],
+) {
+  scheduleNoiseBurst(context, destination, start, 5.2, 0.05, nodes, 750);
+  scheduleNoiseBurst(context, destination, start + 0.35, 4.5, 0.025, nodes, 1700);
+}
+
+function scheduleToneSequence(
+  context: AudioContext,
+  destination: AudioNode,
+  start: number,
+  nodes: AudioNodeWithStop[],
+  tones: Array<[number, number, number, OscillatorType, number]>,
+) {
+  tones.forEach(([frequency, offset, duration, type, peak]) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const toneStart = start + offset;
+    const toneEnd = toneStart + duration;
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, toneStart);
+    gain.gain.setValueAtTime(0.0001, toneStart);
+    gain.gain.linearRampToValueAtTime(peak, toneStart + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, toneEnd);
+    oscillator.connect(gain);
+    gain.connect(destination);
+    oscillator.start(toneStart);
+    oscillator.stop(toneEnd + 0.04);
+    nodes.push(oscillator);
+  });
+}
+
+function scheduleNoiseBurst(
+  context: AudioContext,
+  destination: AudioNode,
+  start: number,
+  duration: number,
+  peak: number,
+  nodes: AudioNodeWithStop[],
+  filterFrequency = 1200,
+) {
+  const buffer = context.createBuffer(
+    1,
+    Math.max(1, Math.floor(context.sampleRate * duration)),
+    context.sampleRate,
+  );
+  const data = buffer.getChannelData(0);
+
+  for (let index = 0; index < data.length; index += 1) {
+    data[index] = (Math.random() * 2 - 1) * (1 - index / data.length);
+  }
+
+  const source = context.createBufferSource();
+  const filter = context.createBiquadFilter();
+  const gain = context.createGain();
+  const end = start + duration;
+
+  source.buffer = buffer;
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(filterFrequency, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.linearRampToValueAtTime(peak, start + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, end);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(destination);
+  source.start(start);
+  source.stop(end + 0.02);
+  nodes.push(source);
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
 }
 
 export type AudioScene =

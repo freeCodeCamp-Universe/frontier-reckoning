@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  type AudioAsset,
   FrontierAudioSystem,
   getAudioSceneForGameStatus,
   placeholderAudioAssets,
@@ -32,14 +33,72 @@ function createAudioFactory(playImplementation = () => Promise.resolve()) {
   return { createAudioElement, elements };
 }
 
+function createFileAudioAssets() {
+  return Object.fromEntries(
+    Object.entries(placeholderAudioAssets).map(([category, asset]) => [
+      category,
+      {
+        ...asset,
+        src: `/audio/placeholders/${asset.replacementFileName}`,
+      },
+    ]),
+  ) as Record<keyof typeof placeholderAudioAssets, AudioAsset>;
+}
+
+function createAudioContextFactory() {
+  const createAudioParam = () => ({
+    value: 0,
+    exponentialRampToValueAtTime: vi.fn(),
+    linearRampToValueAtTime: vi.fn(),
+    setValueAtTime: vi.fn(),
+  });
+  const stop = vi.fn();
+  const context = {
+    currentTime: 0,
+    destination: {},
+    sampleRate: 120,
+    state: 'running',
+    createBiquadFilter: vi.fn(() => ({
+      connect: vi.fn(),
+      frequency: createAudioParam(),
+      type: 'lowpass',
+    })),
+    createBuffer: vi.fn((_channels: number, length: number) => ({
+      getChannelData: vi.fn(() => new Float32Array(length)),
+    })),
+    createBufferSource: vi.fn(() => ({
+      buffer: null,
+      connect: vi.fn(),
+      start: vi.fn(),
+      stop,
+    })),
+    createGain: vi.fn(() => ({
+      connect: vi.fn(),
+      gain: createAudioParam(),
+    })),
+    createOscillator: vi.fn(() => ({
+      connect: vi.fn(),
+      frequency: createAudioParam(),
+      start: vi.fn(),
+      stop,
+      type: 'sine',
+    })),
+    resume: vi.fn(() => Promise.resolve()),
+  } as unknown as AudioContext;
+  const createAudioContext = vi.fn(() => context);
+
+  return { context, createAudioContext, stop };
+}
+
 describe('audio system', () => {
   it('uses audio settings to control music and sfx volume', async () => {
     const { createAudioElement, elements } = createAudioFactory();
     const system = new FrontierAudioSystem(
-      placeholderAudioAssets,
+      createFileAudioAssets(),
       createAudioElement,
     );
 
+    system.registerUserInteraction();
     system.updateSettings({
       soundEnabled: true,
       musicVolume: 25,
@@ -56,10 +115,11 @@ describe('audio system', () => {
   it('does not play audio while muted', async () => {
     const { createAudioElement, elements } = createAudioFactory();
     const system = new FrontierAudioSystem(
-      placeholderAudioAssets,
+      createFileAudioAssets(),
       createAudioElement,
     );
 
+    system.registerUserInteraction();
     system.updateSettings({
       soundEnabled: false,
       musicVolume: 100,
@@ -76,10 +136,11 @@ describe('audio system', () => {
       Promise.reject(new Error('missing asset')),
     );
     const system = new FrontierAudioSystem(
-      placeholderAudioAssets,
+      createFileAudioAssets(),
       createAudioElement,
     );
 
+    system.registerUserInteraction();
     system.updateSettings({
       soundEnabled: true,
       musicVolume: 70,
@@ -95,10 +156,11 @@ describe('audio system', () => {
 
     const { createAudioElement, elements } = createAudioFactory();
     const system = new FrontierAudioSystem(
-      placeholderAudioAssets,
+      createFileAudioAssets(),
       createAudioElement,
     );
 
+    system.registerUserInteraction();
     system.updateSettings({
       soundEnabled: true,
       musicVolume: 80,
@@ -115,6 +177,34 @@ describe('audio system', () => {
     expect(elements[1].play).toHaveBeenCalled();
 
     vi.useRealTimers();
+  });
+
+  it('loads generated audio only after user interaction', async () => {
+    const { createAudioContext, stop } = createAudioContextFactory();
+    const system = new FrontierAudioSystem(
+      placeholderAudioAssets,
+      undefined,
+      createAudioContext,
+    );
+
+    system.updateSettings({
+      soundEnabled: true,
+      musicVolume: 55,
+      sfxVolume: 70,
+    });
+
+    await expect(system.playMusic('main_menu_music', 0)).resolves.toBe(false);
+
+    expect(createAudioContext).not.toHaveBeenCalled();
+    expect(system.isAutoplayBlocked()).toBe(true);
+
+    system.registerUserInteraction();
+
+    await expect(system.playMusic('main_menu_music', 0)).resolves.toBe(true);
+    system.stopMusic(0);
+
+    expect(createAudioContext).toHaveBeenCalledTimes(1);
+    expect(stop).toHaveBeenCalled();
   });
 
   it('maps game status to scene audio categories', () => {
