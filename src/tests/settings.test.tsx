@@ -37,10 +37,14 @@ describe('settings', () => {
     expect(screen.getByLabelText('Sound on or off')).toBeInTheDocument();
     expect(screen.getByLabelText('Music volume')).toBeInTheDocument();
     expect(screen.getByLabelText('SFX volume')).toBeInTheDocument();
-    expect(screen.getByLabelText('Reduced motion')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reduced motion' })).toBeInTheDocument();
     expect(screen.getByLabelText('Text speed')).toBeInTheDocument();
-    expect(screen.getByLabelText('Autosave on or off')).toBeInTheDocument();
-    expect(screen.getByLabelText('Difficulty display')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Autosave on or off' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Difficulty display' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reset Save Data' })).toBeInTheDocument();
 
     unmount();
@@ -58,6 +62,9 @@ describe('settings', () => {
 
     expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('Frontier Controls')).not.toBeInTheDocument();
+    expect(screen.queryByText('Audio')).not.toBeInTheDocument();
+    expect(screen.queryByText('Gameplay')).not.toBeInTheDocument();
   });
 
   it('closes when clicking outside the modal content', () => {
@@ -121,8 +128,8 @@ describe('settings', () => {
   it('allows gameplay controls to change immediately', () => {
     render(<SettingsModal isOpen onClose={() => undefined} />);
 
-    const reducedMotion = screen.getByLabelText('Reduced motion');
-    const autosave = screen.getByLabelText('Autosave on or off');
+    const reducedMotion = screen.getByRole('button', { name: 'Reduced motion' });
+    const autosave = screen.getByRole('button', { name: 'Autosave on or off' });
 
     expect(reducedMotion).toBeEnabled();
     expect(autosave).toBeEnabled();
@@ -130,8 +137,29 @@ describe('settings', () => {
     fireEvent.click(reducedMotion);
     fireEvent.click(autosave);
 
-    expect(reducedMotion).toBeChecked();
-    expect(autosave).not.toBeChecked();
+    expect(reducedMotion).toHaveAttribute('aria-pressed', 'true');
+    expect(autosave).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('keeps all settings controls reachable by keyboard focus', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    const controls = [
+      screen.getByRole('button', { name: 'Close settings' }),
+      screen.getByRole('button', { name: 'Sound on or off' }),
+      screen.getByLabelText('Music volume'),
+      screen.getByLabelText('SFX volume'),
+      screen.getByRole('button', { name: 'Reduced motion' }),
+      screen.getByRole('button', { name: 'Text speed' }),
+      screen.getByRole('button', { name: 'Autosave on or off' }),
+      screen.getByRole('button', { name: 'Difficulty display' }),
+      screen.getByRole('button', { name: 'Reset Save Data' }),
+    ];
+
+    for (const control of controls) {
+      control.focus();
+      expect(control).toHaveFocus();
+    }
   });
 
   it('does not render a native text speed select', () => {
@@ -205,11 +233,11 @@ describe('settings', () => {
     fireEvent.change(screen.getByLabelText('SFX volume'), {
       target: { value: '40' },
     });
-    fireEvent.click(screen.getByLabelText('Reduced motion'));
+    fireEvent.click(screen.getByRole('button', { name: 'Reduced motion' }));
     fireEvent.click(screen.getByRole('button', { name: 'Text speed' }));
     fireEvent.mouseDown(screen.getByRole('option', { name: 'Instant' }));
-    fireEvent.click(screen.getByLabelText('Autosave on or off'));
-    fireEvent.click(screen.getByLabelText('Difficulty display'));
+    fireEvent.click(screen.getByRole('button', { name: 'Autosave on or off' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Difficulty display' }));
 
     expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).not.toBeNull();
 
@@ -222,12 +250,21 @@ describe('settings', () => {
     );
     expect(screen.getByLabelText('Music volume')).toHaveValue('25');
     expect(screen.getByLabelText('SFX volume')).toHaveValue('40');
-    expect(screen.getByLabelText('Reduced motion')).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Reduced motion' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     expect(screen.getByRole('button', { name: 'Text speed' })).toHaveTextContent(
       'Instant',
     );
-    expect(screen.getByLabelText('Autosave on or off')).not.toBeChecked();
-    expect(screen.getByLabelText('Difficulty display')).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Autosave on or off' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: 'Difficulty display' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
   });
 
   it('uses sound settings in the audio system', () => {
@@ -330,6 +367,9 @@ describe('settings', () => {
 
     expect(screen.queryByText('Save Data')).not.toBeInTheDocument();
     expect(screen.queryByText('Permanent')).not.toBeInTheDocument();
+    expect(screen.queryByText('Frontier Controls')).not.toBeInTheDocument();
+    expect(screen.queryByText('Audio')).not.toBeInTheDocument();
+    expect(screen.queryByText('Gameplay')).not.toBeInTheDocument();
     expect(
       screen.queryByText('Clear the saved expedition from this browser.'),
     ).not.toBeInTheDocument();

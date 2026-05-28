@@ -1,6 +1,12 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { ChevronDown, Volume2, VolumeX, X } from 'lucide-react';
-import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import {
   audioSystem,
@@ -28,7 +34,6 @@ const textSpeedOptions: Array<{ value: TextSpeed; label: string }> = [
 export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalProps) {
   const [settings, updateSettings] = useSettings();
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
-  const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const resetGame = useExpeditionStore((state) => state.resetGame);
@@ -128,24 +133,15 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
         role="dialog"
         aria-modal="true"
         aria-label="Settings"
-        aria-describedby={descriptionId}
         onKeyDown={handleDialogKeyDown}
-        className="max-h-full w-full max-w-3xl overflow-y-auto p-5"
+        className="max-h-full w-full max-w-2xl overflow-y-auto p-4"
       >
-        <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-3xl font-bold">
-              Frontier Controls
-            </h2>
-            <p id={descriptionId} className="mt-2 text-base text-muted">
-              Adjust audio, motion, save, and display preferences.
-            </p>
-          </div>
+        <div className="mb-3 flex justify-end">
           <Button
             ref={closeButtonRef}
             onClick={onClose}
             aria-label="Close settings"
-            className="self-start px-3"
+            className="px-3"
             size="sm"
             variant="ghost"
           >
@@ -153,26 +149,21 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
           </Button>
         </div>
 
-        <div className="mt-5 grid gap-5">
-          <fieldset className="border border-border bg-panel p-4">
-            <legend className="px-1 font-mono text-base text-muted">Audio</legend>
-            <div className="flex items-center justify-between gap-4">
-              <span className="font-bold">Sound</span>
-              <Button
-                aria-label="Sound on or off"
-                aria-pressed={settings.soundEnabled}
-                onClick={() => handleSoundToggle(!settings.soundEnabled)}
-                size="sm"
-                variant={settings.soundEnabled ? 'secondary' : 'ghost'}
-              >
-                {settings.soundEnabled ? (
+        <div className="grid gap-4">
+          <fieldset className="border border-border bg-panel p-3" aria-label="Audio">
+            <SettingToggle
+              ariaLabel="Sound on or off"
+              icon={
+                settings.soundEnabled ? (
                   <Volume2 aria-hidden="true" className="size-5" />
                 ) : (
                   <VolumeX aria-hidden="true" className="size-5" />
-                )}
-                {settings.soundEnabled ? 'On' : 'Off'}
-              </Button>
-            </div>
+                )
+              }
+              label="Sound"
+              pressed={settings.soundEnabled}
+              onToggle={(enabled) => handleSoundToggle(enabled)}
+            />
             <VolumeControl
               id="music-volume"
               label="Music volume"
@@ -187,58 +178,41 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
             />
           </fieldset>
 
-          <fieldset className="border border-border bg-panel p-4">
-            <legend className="px-1 font-mono text-base text-muted">Gameplay</legend>
-            <label className="flex items-center justify-between gap-4">
-              <span className="font-bold">Reduced motion</span>
-              <input
-                type="checkbox"
-                checked={settings.reducedMotion}
-                onChange={(event) =>
-                  updateSettings({ reducedMotion: event.target.checked })
-                }
-                aria-label="Reduced motion"
-                className="size-5"
-              />
-            </label>
+          <fieldset className="border border-border bg-panel p-3" aria-label="Gameplay">
+            <SettingToggle
+              ariaLabel="Reduced motion"
+              label="Reduced motion"
+              pressed={settings.reducedMotion}
+              onToggle={(reducedMotion) => updateSettings({ reducedMotion })}
+            />
 
             <TextSpeedDropdown
               value={settings.textSpeed}
               onChange={(textSpeed) => updateSettings({ textSpeed })}
             />
 
-            <label className="mt-4 flex items-center justify-between gap-4">
-              <span className="font-bold">Autosave</span>
-              <input
-                type="checkbox"
-                checked={settings.autosaveEnabled}
-                onChange={(event) =>
-                  updateSettings({ autosaveEnabled: event.target.checked })
-                }
-                aria-label="Autosave on or off"
-                className="size-5"
-              />
-            </label>
+            <SettingToggle
+              ariaLabel="Autosave on or off"
+              className="mt-4"
+              label="Autosave"
+              pressed={settings.autosaveEnabled}
+              onToggle={(autosaveEnabled) => updateSettings({ autosaveEnabled })}
+            />
 
-            <label className="mt-4 flex items-center justify-between gap-4">
-              <span className="font-bold">Difficulty display</span>
-              <input
-                type="checkbox"
-                checked={settings.difficultyDisplay}
-                onChange={(event) =>
-                  updateSettings({ difficultyDisplay: event.target.checked })
-                }
-                aria-label="Difficulty display"
-                className="size-5"
-              />
-            </label>
+            <SettingToggle
+              ariaLabel="Difficulty display"
+              className="mt-4"
+              label="Difficulty display"
+              pressed={settings.difficultyDisplay}
+              onToggle={(difficultyDisplay) => updateSettings({ difficultyDisplay })}
+            />
           </fieldset>
 
           <Card
             as="section"
             variant="panel"
             aria-label="Save data"
-            className="flex justify-center"
+            className="flex justify-center p-3"
           >
             <Button
               onClick={() => setResetConfirmOpen(true)}
@@ -254,6 +228,38 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
         onCancel={() => setResetConfirmOpen(false)}
         onConfirm={handleResetSave}
       />
+    </div>
+  );
+}
+
+function SettingToggle({
+  ariaLabel,
+  className = '',
+  icon,
+  label,
+  pressed,
+  onToggle,
+}: {
+  ariaLabel: string;
+  className?: string;
+  icon?: ReactNode;
+  label: string;
+  pressed: boolean;
+  onToggle: (pressed: boolean) => void;
+}) {
+  return (
+    <div className={`flex items-center justify-between gap-4 ${className}`}>
+      <span className="font-bold">{label}</span>
+      <Button
+        aria-label={ariaLabel}
+        aria-pressed={pressed}
+        onClick={() => onToggle(!pressed)}
+        size="sm"
+        variant={pressed ? 'secondary' : 'ghost'}
+      >
+        {icon}
+        {pressed ? 'On' : 'Off'}
+      </Button>
     </div>
   );
 }
