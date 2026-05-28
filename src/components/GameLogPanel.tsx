@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@components/ui/Button';
-import { ExpeditionJournal } from '@components/ExpeditionJournal';
 import { useExpeditionStore } from '@stores/expeditionStore';
 
 export function GameLogPanel() {
   const gameLog = useExpeditionStore((state) => state.gameLog);
-  const gameState = useExpeditionStore((state) => state);
-  const [journalOpen, setJournalOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const latestMessage = gameLog[0];
   const visibleEntries = expanded ? gameLog : gameLog.slice(0, 5);
   const hiddenEntryCount = Math.max(gameLog.length - visibleEntries.length, 0);
 
@@ -33,20 +29,8 @@ export function GameLogPanel() {
                 {expanded ? 'Show recent 5' : 'Show all'}
               </Button>
             ) : null}
-            <Button size="sm" variant="secondary" onClick={() => setJournalOpen(true)}>
-              Journal / Log
-            </Button>
           </div>
         </div>
-
-        {latestMessage ? (
-          <p
-            className="mt-3 border border-success bg-panel p-2 font-mono text-base text-success"
-            role="status"
-          >
-            {latestMessage}
-          </p>
-        ) : null}
 
         <ol id="game-log-entries" className="mt-3 max-h-72 space-y-2 overflow-y-auto">
           {gameLog.length === 0 ? (
@@ -68,11 +52,6 @@ export function GameLogPanel() {
           </p>
         ) : null}
       </section>
-      <ExpeditionJournal
-        isOpen={journalOpen}
-        onClose={() => setJournalOpen(false)}
-        state={gameState}
-      />
     </>
   );
 }

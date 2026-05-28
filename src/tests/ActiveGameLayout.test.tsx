@@ -235,6 +235,8 @@ describe('ActiveGameLayout', () => {
 
     expect(menuButton).toBeInTheDocument();
     expect(within(header).queryByRole('button', { name: /Reset save/i })).not.toBeInTheDocument();
+    expect(within(header).queryByText('Save ready.')).not.toBeInTheDocument();
+    expect(within(header).queryByText('No save yet.')).not.toBeInTheDocument();
     expect(
       menuButton.compareDocumentPosition(settingsButton) &
         Node.DOCUMENT_POSITION_FOLLOWING,

@@ -90,9 +90,11 @@ export function SaveControls({
           <Save aria-hidden="true" className="size-4" />
           Save
         </Button>
-        <span aria-live="polite" className="text-muted">
-          {message ?? (saveExists ? 'Save ready.' : 'No save yet.')}
-        </span>
+        {message ? (
+          <span aria-live="polite" className="text-muted">
+            {message}
+          </span>
+        ) : null}
       </section>
     );
   }

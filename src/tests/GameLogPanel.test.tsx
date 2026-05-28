@@ -58,7 +58,9 @@ describe('GameLogPanel', () => {
 
     render(<GameLogPanel />);
 
-    expect(screen.getAllByText('Traveled to day 2.')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Journal / Log' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Expedition Journal' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Traveled to day 2.')).toHaveLength(1);
     expect(
       screen.getByText('Frontier Expedition started on Trailwise.'),
     ).toBeInTheDocument();
