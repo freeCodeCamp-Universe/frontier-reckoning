@@ -1,5 +1,6 @@
 import {
   Activity,
+  ChevronDown,
   Compass,
   Crosshair,
   Stethoscope,
@@ -8,8 +9,10 @@ import {
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
+import { useId, useState } from 'react';
 import { useExpeditionStore } from '@stores/expeditionStore';
-import { Card, CardHeader } from '@components/ui/Card';
+import { Button } from '@components/ui/Button';
+import { Card } from '@components/ui/Card';
 import { StatusBadge, type BadgeVariant, type StatusKind } from '@components/ui/Badge';
 import { cx } from '@components/ui/styles';
 import type { Character } from '@game/types/character';
@@ -24,19 +27,48 @@ const roleIconMap: Record<string, LucideIcon> = {
 };
 
 export function PartyPanel() {
+  const [expanded, setExpanded] = useState(false);
+  const partyListId = useId();
   const party = useExpeditionStore((state) => state.party);
 
   return (
     <Card aria-label="Caravan party">
-      <CardHeader className="flex items-baseline justify-between gap-3">
-        <h2 className="text-xl font-bold">Caravan Party</h2>
-        <p className="font-mono text-base text-muted">{party.length} travelers</p>
-      </CardHeader>
+      <div className="flex flex-col gap-4 border-b border-border pb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-xl font-bold">Caravan Party</h2>
+            <p className="mt-1 font-mono text-base text-muted">
+              {party.length === 0 ? 'No party assembled' : `${party.length} travelers`}
+            </p>
+          </div>
+          <Button
+            aria-controls={partyListId}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse caravan party' : 'Expand caravan party'}
+            className="w-full justify-between sm:w-auto"
+            onClick={() => setExpanded((currentExpanded) => !currentExpanded)}
+            size="sm"
+            variant="ghost"
+          >
+            <span>{expanded ? 'Collapse' : 'Expand'}</span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`size-5 motion-safe:transition-transform ${
+                expanded ? 'rotate-180' : ''
+              }`}
+            />
+          </Button>
+        </div>
+      </div>
 
       {party.length === 0 ? (
         <p className="mt-4 font-mono text-base text-muted">No party assembled</p>
-      ) : (
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+      ) : expanded ? (
+        <div
+          id={partyListId}
+          className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1"
+          data-testid="caravan-party-list"
+        >
           {party.map((character) => (
             <CharacterCard
               key={character.id}
@@ -44,7 +76,7 @@ export function PartyPanel() {
             />
           ))}
         </div>
-      )}
+      ) : null}
     </Card>
   );
 }

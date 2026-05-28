@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PartyPanel } from '@components/PartyPanel';
 import { useExpeditionStore } from '@stores/expeditionStore';
@@ -14,6 +14,14 @@ describe('PartyPanel', () => {
     render(<PartyPanel />);
 
     expect(screen.getByRole('heading', { name: 'Caravan Party' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Expand caravan party' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand caravan party' }));
+
+    expect(screen.getByTestId('caravan-party-list')).toBeInTheDocument();
     expect(screen.getByText('Elias Reed')).toBeInTheDocument();
     expect(screen.getByText('Mara Bell')).toBeInTheDocument();
     expect(screen.getByText('Jonah Vale')).toBeInTheDocument();
@@ -26,6 +34,8 @@ describe('PartyPanel', () => {
     });
 
     render(<PartyPanel />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand caravan party' }));
 
     expect(screen.getByRole('article', { name: /Hazel Green, Scout, Healthy/i })).toBeInTheDocument();
     expect(screen.getByRole('article', { name: /Otto Gray, Doctor, Sick/i })).toBeInTheDocument();
@@ -46,6 +56,8 @@ describe('PartyPanel', () => {
 
     render(<PartyPanel />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expand caravan party' }));
+
     const deadCard = screen.getByRole('article', {
       name: /Cal Moss, Scout, Dead/i,
     });
@@ -62,6 +74,8 @@ describe('PartyPanel', () => {
 
     render(<PartyPanel />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expand caravan party' }));
+
     expect(
       screen.getByRole('progressbar', { name: 'Pearl Fox health 42 of 100' }),
     ).toHaveAttribute('aria-valuetext', '42 of 100');
@@ -70,6 +84,36 @@ describe('PartyPanel', () => {
     ).toHaveAttribute('aria-valuetext', '67 of 100');
     expect(screen.getByText('42/100')).toBeInTheDocument();
     expect(screen.getByText('67/100')).toBeInTheDocument();
+  });
+
+  it('starts collapsed and expands the party cards', () => {
+    useExpeditionStore.setState({
+      party: createStatusParty(),
+    });
+
+    render(<PartyPanel />);
+
+    expect(screen.getByRole('button', { name: 'Expand caravan party' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.queryByTestId('caravan-party-list')).not.toBeInTheDocument();
+    expect(screen.queryByRole('article', { name: /Hazel Green/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Caravan party summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Living summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Injured or sick summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Average health summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Average morale summary')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand caravan party' }));
+
+    expect(screen.getByRole('button', { name: 'Collapse caravan party' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(screen.getByTestId('caravan-party-list')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: /Hazel Green, Scout, Healthy/i })).toBeInTheDocument();
   });
 });
 
