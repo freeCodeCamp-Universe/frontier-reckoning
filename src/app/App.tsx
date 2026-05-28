@@ -5,7 +5,11 @@ import { EventCard } from '@components/EventCard';
 import { MainMenu } from '@components/MainMenu';
 import { NewExpeditionSetup } from '@components/NewExpeditionSetup';
 import { SettingsModal } from '@components/SettingsModal';
-import { hasSave, loadGameFromStorage } from '@game/systems/saveSystem';
+import {
+  clearSaveFromStorage,
+  hasSave,
+  loadGameFromStorage,
+} from '@game/systems/saveSystem';
 import { useExpeditionStore, type StartExpeditionOptions } from '@stores/expeditionStore';
 
 type AppScreen = 'main_menu' | 'setup' | 'active_game';
@@ -18,6 +22,7 @@ export function App() {
   );
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const startGame = useExpeditionStore((state) => state.startGame);
+  const resetGame = useExpeditionStore((state) => state.resetGame);
 
   const handleStart = (options: StartExpeditionOptions) => {
     startGame(options);
@@ -38,6 +43,13 @@ export function App() {
   const handleSaveReset = () => {
     setSaveAvailable(false);
     setAppScreen('main_menu');
+  };
+
+  const handleRestart = () => {
+    resetGame();
+    clearSaveFromStorage(window.localStorage);
+    setSaveAvailable(false);
+    setAppScreen('setup');
   };
 
   if (gameStatus === 'not_started' && appScreen !== 'setup') {
@@ -77,6 +89,7 @@ export function App() {
   return (
     <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
       <ActiveGameLayout
+        onRestart={handleRestart}
         onSaveExistsChange={setSaveAvailable}
         onSaveReset={handleSaveReset}
         onSettings={() => setSettingsOpen(true)}

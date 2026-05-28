@@ -18,7 +18,7 @@ const requiredPartySize = 4;
 
 export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps) {
   const [step, setStep] = useState<SetupStep>('name');
-  const [expeditionName, setExpeditionName] = useState('Last Lantern Company');
+  const [expeditionName, setExpeditionName] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
 

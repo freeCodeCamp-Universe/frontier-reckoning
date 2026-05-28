@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '@app/App';
-import { SAVE_STORAGE_KEY } from '@game/systems/saveSystem';
-import { useExpeditionStore } from '@stores/expeditionStore';
+import { saveGameToStorage, SAVE_STORAGE_KEY } from '@game/systems/saveSystem';
+import { createStartingGameState, useExpeditionStore } from '@stores/expeditionStore';
 
 const phaserGameModuleLoadMock = vi.hoisted(() => vi.fn());
 const phaserGameRenderMock = vi.hoisted(() => vi.fn());
@@ -201,6 +201,54 @@ describe('App', () => {
     expect(saveControls).not.toHaveClass('p-4');
   });
 
+  it('restarts from game over into a fresh expedition setup flow', () => {
+    useExpeditionStore.setState({
+      ...createStartingGameState({
+        expeditionName: 'Doomed Trail Crew',
+        difficulty: 'greenhorn',
+        partyMemberIds: ['scout', 'doctor', 'hunter', 'mechanic'],
+      }),
+      gameStatus: 'game_over',
+      gameOverReason: 'wagon_destroyed',
+    });
+    saveGameToStorage(window.localStorage, useExpeditionStore.getState());
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Game Over' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+
+    expect(screen.getByRole('heading', { name: 'Name the caravan' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Expedition name')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    expect(screen.queryByRole('heading', { name: 'Game Over' })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Expedition name'), {
+      target: { value: 'Fresh Trail Crew' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(screen.getByRole('heading', { name: 'Choose party members' })).toBeInTheDocument();
+    expect(screen.getByText('0 / 4')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select Elias Reed, Scout' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Elias Reed, Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mara Bell, Doctor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Jonah Vale, Hunter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Ada Flint, Mechanic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(screen.getByRole('heading', { name: 'Choose trail difficulty' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Greenhorn/ })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: /Trailwise/ })).not.toBeChecked();
+    expect(screen.getByDisplayValue('reckoning')).not.toBeChecked();
+  });
+
   it('lazy-loads Phaser only after the active game screen opens', async () => {
     render(<App />);
 
@@ -221,6 +269,9 @@ describe('App', () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    fireEvent.change(screen.getByLabelText('Expedition name'), {
+      target: { value: 'Validation Crew' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(
@@ -237,6 +288,9 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
 
     expect(screen.getByLabelText('Expedition name')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Expedition name'), {
+      target: { value: 'Accessible Trail Crew' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       screen.getByRole('button', { name: 'Select Elias Reed, Scout' }),

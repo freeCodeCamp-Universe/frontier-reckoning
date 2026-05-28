@@ -32,7 +32,7 @@ describe('NewExpeditionSetup', () => {
     renderSetup();
 
     expect(screen.getByRole('heading', { name: 'Name the caravan' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Expedition name')).toBeInTheDocument();
+    expect(screen.getByLabelText('Expedition name')).toHaveValue('');
     expect(screen.queryByRole('list', { name: 'Expedition setup steps' })).not.toBeInTheDocument();
     expect(screen.queryByText('Party')).not.toBeInTheDocument();
     expect(screen.queryByText('Difficulty')).not.toBeInTheDocument();

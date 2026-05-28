@@ -16,12 +16,14 @@ const LazyPhaserGame = lazy(() =>
 );
 
 type ActiveGameLayoutProps = {
+  onRestart: () => void;
   onSaveExistsChange: (saveExists: boolean) => void;
   onSaveReset: () => void;
   onSettings: () => void;
 };
 
 export function ActiveGameLayout({
+  onRestart,
   onSaveExistsChange,
   onSaveReset,
   onSettings,
@@ -39,10 +41,7 @@ export function ActiveGameLayout({
       aria-label="Active game layout"
       className="mx-auto flex max-w-7xl flex-col gap-5"
     >
-      <Card
-        as="header"
-        className="sticky top-3 z-20 !p-3 shadow-[0_12px_0_rgba(0,0,0,0.22)]"
-      >
+      <Card as="header" className="!p-3">
         <div className="grid gap-3 xl:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.8fr)_auto] xl:items-center">
           <div className="min-w-0">
             <p className="font-mono text-sm uppercase tracking-normal text-muted">
@@ -88,7 +87,7 @@ export function ActiveGameLayout({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-5">
-          <CurrentSituationPanel />
+          <CurrentSituationPanel onRestart={onRestart} />
           <TrailMapPanel
             distanceTraveled={distanceTraveled}
             totalDistance={totalDistance}

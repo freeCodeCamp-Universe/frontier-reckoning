@@ -10,7 +10,11 @@ import {
 import { useExpeditionStore } from '@stores/expeditionStore';
 import { useSettings } from '@/hooks/useSettings';
 
-export function EndingScreen() {
+type EndingScreenProps = {
+  onRestart?: () => void;
+};
+
+export function EndingScreen({ onRestart }: EndingScreenProps) {
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const gameOverReason = useExpeditionStore((state) => state.gameOverReason);
   const resetGame = useExpeditionStore((state) => state.resetGame);
@@ -55,7 +59,7 @@ export function EndingScreen() {
       </div>
 
       <Button
-        onClick={resetGame}
+        onClick={onRestart ?? resetGame}
         className="mt-5"
         variant={gameStatus === 'victory' ? 'primary' : 'danger'}
       >

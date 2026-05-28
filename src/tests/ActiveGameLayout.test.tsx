@@ -18,6 +18,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
+        onRestart={() => undefined}
         onSaveExistsChange={() => undefined}
         onSaveReset={() => undefined}
         onSettings={() => undefined}
@@ -27,7 +28,13 @@ describe('ActiveGameLayout', () => {
     expect(
       screen.getByRole('region', { name: 'Active game layout' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('banner')).toHaveTextContent('Frontier Expedition');
+    const header = screen.getByRole('banner');
+
+    expect(header).toHaveTextContent('Frontier Expedition');
+    expect(header).not.toHaveClass('sticky');
+    expect(header).not.toHaveClass('fixed');
+    expect(header.className).not.toContain('top-');
+    expect(header.className).not.toContain('z-');
     expect(screen.getByRole('region', { name: 'Current situation' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Trail Map' })).toBeInTheDocument();
     expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
@@ -40,6 +47,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
+        onRestart={() => undefined}
         onSaveExistsChange={() => undefined}
         onSaveReset={() => undefined}
         onSettings={onSettings}
