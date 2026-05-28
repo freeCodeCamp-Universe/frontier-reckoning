@@ -10,6 +10,11 @@ import {
   shouldAnimateWagon,
 } from '@game/systems/mapProgress';
 import { getEffectiveReducedMotion } from '@game/systems/settingsSystem';
+import {
+  calculateMapLabelPositions,
+  estimateMapLabelTextWidth,
+  type TrailMapLabelPosition,
+} from '@game/systems/trailMapLabels';
 
 export type TrailMapState = {
   distanceTraveled: number;
@@ -44,8 +49,9 @@ type MapLandmark = {
 
 type MarkerView = {
   landmark: MapLandmark;
-  stem: Phaser.GameObjects.Line;
+  connector: Phaser.GameObjects.Line;
   marker: Phaser.GameObjects.Arc;
+  labelBackground: Phaser.GameObjects.Graphics;
   label: Phaser.GameObjects.Text;
   status: Phaser.GameObjects.Text;
   pulseTween?: Phaser.Tweens.Tween;
@@ -78,7 +84,6 @@ const dangerZones: MapLandmark[] = [
 export class TrailMapScene extends Phaser.Scene {
   private wagon?: Phaser.GameObjects.Container;
   private trailProgressGraphics?: Phaser.GameObjects.Graphics;
-  private distanceLabel?: Phaser.GameObjects.Text;
   private tooltip?: Phaser.GameObjects.Container;
   private tooltipTitle?: Phaser.GameObjects.Text;
   private tooltipBody?: Phaser.GameObjects.Text;
@@ -107,25 +112,11 @@ export class TrailMapScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#0a0a23');
 
     this.drawParchmentBackground();
-    this.add
-      .text(32, 28, 'Frontier Reckoning', {
-        color: '#2a2a40',
-        fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
-        fontSize: '28px',
-        fontStyle: '700',
-      })
-      .setOrigin(0, 0.5);
-
     this.drawTrail();
     this.drawMilestoneMarkers();
     this.tooltip = this.createTooltip();
     this.wagon = this.createWagon();
     this.startIdleAnimation();
-    this.distanceLabel = this.add.text(32, 492, '', {
-      color: '#2a2a40',
-      fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
-      fontSize: '18px',
-    });
     this.dayNightTint = this.add.rectangle(480, 270, 960, 540, 0x0a0a23, 0).setDepth(15);
     this.updateMapProgress(this.mapState);
     this.game.events.emit('trail-map-ready');
@@ -162,9 +153,6 @@ export class TrailMapScene extends Phaser.Scene {
     this.drawProgressTrail();
     this.updateMarkerStates();
     this.updateDayNightTint();
-    this.distanceLabel?.setText(
-      `Day ${this.mapState.currentDay} / ${Math.round(this.mapState.distanceTraveled)} of ${this.mapState.totalDistance} miles`,
-    );
   }
 
   private readInitialState(): TrailMapState {
@@ -232,7 +220,7 @@ export class TrailMapScene extends Phaser.Scene {
   }
 
   private drawMilestoneMarkers() {
-    const landmarks: MapLandmark[] = [
+    const baseLandmarks: MapLandmark[] = [
       ...towns.map((town) => ({
         id: town.id,
         name: town.name,
@@ -248,43 +236,141 @@ export class TrailMapScene extends Phaser.Scene {
         description: river.description,
       })),
       ...dangerZones,
-      {
-        id: 'destination',
-        name: 'Destination',
-        distance: this.mapState.totalDistance,
-        kind: 'destination' as const,
-        description: 'The far end of the frontier trail.',
-      },
+    ];
+    const hasLastLanternLandmark = baseLandmarks.some(
+      (landmark) => landmark.name === 'Last Lantern',
+    );
+    const landmarks: MapLandmark[] = [
+      ...baseLandmarks,
+      ...(hasLastLanternLandmark
+        ? []
+        : [
+            {
+              id: 'destination',
+              name: 'Last Lantern',
+              distance: this.mapState.totalDistance,
+              kind: 'destination' as const,
+              description: 'The far end of the frontier trail.',
+            },
+          ]),
     ].sort((left, right) => left.distance - right.distance);
+    const labelPositions = calculateMapLabelPositions(
+      landmarks.map((landmark) => {
+        const pathPosition = calculateCurvedTrailPosition({
+          distanceTraveled: landmark.distance,
+          totalDistance: this.mapState.totalDistance,
+          pathPoints: TRAIL_PATH_POINTS,
+        });
+
+        return {
+          id: landmark.id,
+          kind: landmark.kind,
+          markerX: pathPosition.x,
+          markerY: pathPosition.y,
+          name: landmark.name,
+        };
+      }),
+      960,
+      540,
+    );
+    const labelPositionById = new Map(
+      labelPositions.map((labelPosition) => [labelPosition.id, labelPosition]),
+    );
 
     for (const landmark of landmarks) {
-      this.markerViews.push(this.drawMarker(landmark));
+      this.markerViews.push(this.drawMarker(landmark, labelPositionById.get(landmark.id)));
     }
   }
 
-  private drawMarker(landmark: MapLandmark): MarkerView {
+  private drawMarker(
+    landmark: MapLandmark,
+    labelPosition?: TrailMapLabelPosition,
+  ): MarkerView {
     const pathPosition = calculateCurvedTrailPosition({
       distanceTraveled: landmark.distance,
       totalDistance: this.mapState.totalDistance,
       pathPoints: TRAIL_PATH_POINTS,
     });
-    const markerOffsetY = getMarkerOffsetY(landmark.kind);
-    const markerY = pathPosition.y + markerOffsetY;
+    const markerY = pathPosition.y;
     const color = getMarkerColor(landmark.kind, 'unknown');
+    const resolvedLabelPosition =
+      labelPosition ??
+      ({
+        anchorDirection: 'above',
+        fullText: landmark.name,
+        id: landmark.id,
+        labelX: pathPosition.x,
+        labelY: markerY - 52,
+        markerX: pathPosition.x,
+        markerY,
+        text: landmark.name,
+        visible: true,
+        width: 104,
+        x: pathPosition.x,
+        y: markerY - 52,
+      } satisfies TrailMapLabelPosition);
 
-    const stem = this.add
-      .line(pathPosition.x, pathPosition.y, 0, 0, 0, markerOffsetY, color, 0.7)
-      .setOrigin(0.5, 0);
+    const labelMetrics = getMapLabelMetrics(landmark.kind, resolvedLabelPosition.text);
+    const labelX = Math.min(
+      Math.max(
+        resolvedLabelPosition.labelX,
+        labelMetrics.chipWidth / 2 + labelMetrics.mapPadding,
+      ),
+      960 - labelMetrics.chipWidth / 2 - labelMetrics.mapPadding,
+    );
+    const labelY = resolvedLabelPosition.labelY;
+    const connector = this.add
+      .line(
+        pathPosition.x,
+        markerY,
+        0,
+        0,
+        labelX - pathPosition.x,
+        labelY - markerY,
+        color,
+        0.46,
+      )
+      .setOrigin(0, 0)
+      .setVisible(resolvedLabelPosition.visible);
     const marker = this.add.circle(pathPosition.x, markerY, 10, color);
+    const labelBackground = this.add.graphics().setVisible(resolvedLabelPosition.visible);
     const label = this.add
-      .text(pathPosition.x, markerY + getLabelOffsetY(landmark.kind), landmark.name, {
+      .text(labelX, labelY, resolvedLabelPosition.text, {
         color: '#2a2a40',
         fontFamily: 'Fira Mono, Menlo, Consolas, monospace',
-        fontSize: '13px',
+        fontSize: landmark.kind === 'destination' ? '13px' : '12px',
+        fontStyle: landmark.kind === 'destination' ? '700' : undefined,
         align: 'center',
-        wordWrap: { width: 118 },
+        wordWrap: { width: labelMetrics.textWidth },
       })
-      .setOrigin(0.5, 0.5);
+      .setOrigin(0.5, 0.5)
+      .setVisible(resolvedLabelPosition.visible);
+    const measuredLabelWidth = getMeasuredLabelWidth(label, labelMetrics.textWidth);
+    const chipWidth = Math.min(
+      Math.max(measuredLabelWidth + labelMetrics.horizontalPadding * 2, labelMetrics.chipWidth),
+      labelMetrics.maxChipWidth,
+    );
+
+    labelBackground.fillStyle(0xf6e6bc, 0.92);
+    labelBackground.fillRoundedRect(
+      labelX - chipWidth / 2,
+      labelY - labelMetrics.chipHeight / 2,
+      chipWidth,
+      labelMetrics.chipHeight,
+      6,
+    );
+    labelBackground.lineStyle(
+      landmark.kind === 'destination' ? 2 : 1,
+      landmark.kind === 'destination' ? 0x5a01a7 : 0x6b4f2a,
+      landmark.kind === 'destination' ? 0.86 : 0.48,
+    );
+    labelBackground.strokeRoundedRect(
+      labelX - chipWidth / 2,
+      labelY - labelMetrics.chipHeight / 2,
+      chipWidth,
+      labelMetrics.chipHeight,
+      6,
+    );
     const status = this.add
       .text(pathPosition.x, markerY - 1, '?', {
         color: '#ffffff',
@@ -300,7 +386,7 @@ export class TrailMapScene extends Phaser.Scene {
       .on('pointerout', () => this.hideTooltip())
       .on('pointerdown', () => this.showTooltip(landmark, pathPosition.x, markerY));
 
-    return { landmark, stem, marker, label, status };
+    return { landmark, connector, marker, labelBackground, label, status };
   }
 
   private createTooltip() {
@@ -429,7 +515,8 @@ export class TrailMapScene extends Phaser.Scene {
 
       view.marker.setFillStyle(color, alpha);
       view.marker.setStrokeStyle(2, state === 'current' ? 0xf1be32 : 0x2a2a40, 0.9);
-      view.stem.setStrokeStyle(2, color, alpha);
+      view.connector.setStrokeStyle(1, color, Math.min(alpha, 0.5));
+      view.labelBackground.setAlpha(state === 'unknown' ? 0.66 : 1);
       view.label.setAlpha(state === 'unknown' ? 0.55 : 1);
       view.status.setText(getMarkerStatusText(view.landmark.kind, state));
       view.status.setAlpha(state === 'unknown' ? 0.65 : 1);
@@ -607,26 +694,6 @@ function getPathLength(pathPoints: TrailPoint[]) {
   }, 0);
 }
 
-function getMarkerOffsetY(kind: LandmarkKind) {
-  if (kind === 'river') {
-    return 30;
-  }
-
-  if (kind === 'danger') {
-    return -42;
-  }
-
-  if (kind === 'destination') {
-    return -22;
-  }
-
-  return -32;
-}
-
-function getLabelOffsetY(kind: LandmarkKind) {
-  return kind === 'river' ? 34 : -34;
-}
-
 function getMarkerColor(kind: LandmarkKind, state: LandmarkState) {
   if (state === 'completed') {
     return 0x00471b;
@@ -653,6 +720,39 @@ function getMarkerColor(kind: LandmarkKind, state: LandmarkState) {
   }
 
   return 0x1b1b32;
+}
+
+function getMapLabelMetrics(kind: LandmarkKind, text: string) {
+  const textWidth = estimateMapLabelTextWidth(text, kind);
+  const horizontalPadding = kind === 'destination' ? 14 : 10;
+  const maxChipWidth = kind === 'destination' ? 164 : 136;
+
+  return {
+    chipHeight: kind === 'destination' ? 32 : 28,
+    chipWidth: Math.min(textWidth + horizontalPadding * 2, maxChipWidth),
+    horizontalPadding,
+    mapPadding: 12,
+    maxChipWidth,
+    textWidth,
+  };
+}
+
+function getMeasuredLabelWidth(
+  label: Phaser.GameObjects.Text,
+  fallbackWidth: number,
+) {
+  const displayWidth = Number(label.displayWidth);
+  const width = Number(label.width);
+
+  if (Number.isFinite(displayWidth) && displayWidth > 0) {
+    return displayWidth;
+  }
+
+  if (Number.isFinite(width) && width > 0) {
+    return width;
+  }
+
+  return fallbackWidth;
 }
 
 function getMarkerStatusText(kind: LandmarkKind, state: LandmarkState) {

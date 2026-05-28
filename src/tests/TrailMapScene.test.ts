@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { riverCrossings } from '@game/data/riverCrossings';
+import { towns } from '@game/data/towns';
 
 vi.mock('phaser', () => {
   class Scene {
@@ -54,6 +56,7 @@ describe('TrailMapScene', () => {
     const scene = new TrailMapScene();
     const gameObject = createChainable();
     const graphics = createChainable();
+    const text = vi.fn(() => gameObject);
 
     Object.assign(scene, {
       add: {
@@ -64,7 +67,7 @@ describe('TrailMapScene', () => {
         graphics: vi.fn(() => graphics),
         line: vi.fn(() => gameObject),
         rectangle: vi.fn(() => gameObject),
-        text: vi.fn(() => gameObject),
+        text,
       },
       cameras: {
         main: {
@@ -95,9 +98,35 @@ describe('TrailMapScene', () => {
     });
 
     expect(() => scene.create()).not.toThrow();
+    const renderedText = text.mock.calls.map(
+      (call) => (call as unknown as [number, number, string, object?])[2],
+    );
+
+    expect(renderedText).not.toContain('Frontier Reckoning');
+    expect(renderedText.filter((content) => content === 'Mercy Bend')).toHaveLength(1);
+    expect(renderedText.filter((content) => content === 'Last Lantern')).toHaveLength(1);
+    expect(
+      renderedText.some((content) => typeof content === 'string' && /^Day\b/.test(content)),
+    ).toBe(false);
     expect(graphics.fillRoundedRect).toHaveBeenCalled();
     expect(graphics.lineBetween).toHaveBeenCalled();
+    expect(scene.add.circle).toHaveBeenCalled();
+    expect(scene.add.container).toHaveBeenCalled();
     expect(gameObject.setInteractive).toHaveBeenCalled();
+    expect(gameObject.setText).not.toHaveBeenCalledWith(expect.stringMatching(/^Day\b/));
     expect(emit).toHaveBeenCalledWith('trail-map-ready');
+  });
+
+  it('uses a single Mercy Bend landmark in Reckoning Trail data', () => {
+    const reckoningTrailLocations = [...towns, ...riverCrossings];
+    const mercyBendLocations = reckoningTrailLocations.filter(
+      (location) => location.name === 'Mercy Bend',
+    );
+
+    expect(mercyBendLocations).toHaveLength(1);
+    expect(mercyBendLocations[0]).toMatchObject({
+      id: 'mercy-bend',
+      distance: 1550,
+    });
   });
 });
