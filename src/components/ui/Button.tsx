@@ -41,6 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     variant = 'primary',
     'aria-describedby': ariaDescribedBy,
     onClick,
+    onKeyDown,
     ...props
   },
   ref,
@@ -63,6 +64,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         onClick={(event) => {
           playAudioCue('button', getStoredAudioEnabled(window.localStorage));
           onClick?.(event);
+        }}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+
+          if (!event.defaultPrevented && event.key === 'Enter') {
+            event.preventDefault();
+            event.currentTarget.click();
+          }
         }}
         type="button"
         {...props}

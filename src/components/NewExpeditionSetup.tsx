@@ -1,4 +1,12 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { difficultyOptions, type Difficulty } from '@game/data/difficulties';
 import { starterCharacters } from '@game/data/starterCharacters';
 import type { StartExpeditionOptions } from '@stores/expeditionStore';
@@ -21,6 +29,9 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
   const [expeditionName, setExpeditionName] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const partyButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const difficultyInputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const uniqueSelectedIds = useMemo(
     () => Array.from(new Set(selectedCharacterIds)),
@@ -29,6 +40,12 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
   const canContinueFromName = expeditionName.trim().length > 0;
   const canContinueFromParty = uniqueSelectedIds.length === requiredPartySize;
   const canStart = canContinueFromName && canContinueFromParty && difficulty !== null;
+
+  useEffect(() => {
+    if (step === 'name') {
+      nameInputRef.current?.focus();
+    }
+  }, [step]);
 
   const toggleCharacter = (characterId: string) => {
     setSelectedCharacterIds((currentIds) => {
@@ -53,6 +70,124 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
     setStep(step === 'difficulty' ? 'party' : 'name');
   };
 
+  const handleNameContinue = () => {
+    if (canContinueFromName) {
+      setStep('party');
+    }
+  };
+
+  const handleNameSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleNameContinue();
+  };
+
+  const handleNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleNameContinue();
+    }
+  };
+
+  const handlePartyContinue = () => {
+    if (canContinueFromParty) {
+      setStep('difficulty');
+    }
+  };
+
+  const focusPartyButton = (nextIndex: number, direction: 1 | -1) => {
+    const buttons = partyButtonRefs.current;
+
+    for (let offset = 0; offset < starterCharacters.length; offset += 1) {
+      const candidateIndex =
+        (nextIndex + starterCharacters.length + offset * direction) %
+        starterCharacters.length;
+      const candidate = buttons[candidateIndex];
+
+      if (candidate && !candidate.disabled) {
+        candidate.focus();
+        return;
+      }
+    }
+  };
+
+  const handlePartyKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleCharacter(starterCharacters[index].id);
+      return;
+    }
+
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusPartyButton(index + 1, 1);
+      return;
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusPartyButton(index - 1, -1);
+      return;
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      focusPartyButton(0, 1);
+      return;
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      focusPartyButton(starterCharacters.length - 1, -1);
+    }
+  };
+
+  const focusDifficultyOption = (index: number) => {
+    const nextInput = difficultyInputRefs.current[index];
+    const nextDifficulty = difficultyOptions[index];
+
+    nextInput?.focus();
+
+    if (nextDifficulty) {
+      setDifficulty(nextDifficulty.id);
+    }
+  };
+
+  const handleDifficultyKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setDifficulty(difficultyOptions[index].id);
+      return;
+    }
+
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusDifficultyOption((index + 1) % difficultyOptions.length);
+      return;
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusDifficultyOption(
+        (index - 1 + difficultyOptions.length) % difficultyOptions.length,
+      );
+      return;
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      focusDifficultyOption(0);
+      return;
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      focusDifficultyOption(difficultyOptions.length - 1);
+    }
+  };
+
   const handleStart = () => {
     if (!canStart || !difficulty) {
       return;
@@ -69,30 +204,34 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
     <section className="mx-auto flex min-h-[72vh] w-full max-w-6xl flex-col justify-center py-8 sm:py-12 lg:py-16">
       {step === 'name' ? (
         <SetupCard>
-          <CardHeader>
-            <h2 className="text-3xl font-bold sm:text-4xl">Name the caravan</h2>
-          </CardHeader>
-          <label htmlFor="expedition-name" className="mt-8 block font-mono text-base text-muted">
-            Expedition name
-          </label>
-          <input
-            id="expedition-name"
-            className="mt-3 w-full border border-border bg-panel px-4 py-4 text-xl text-foreground outline-none focus:border-highlight"
-            value={expeditionName}
-            onChange={(event) => setExpeditionName(event.target.value)}
-          />
-          <SetupActions>
-            <Button onClick={handleBack} variant="secondary">
-              Back
-            </Button>
-            <Button
-              onClick={() => setStep('party')}
-              disabled={!canContinueFromName}
-              disabledReason="Enter an expedition name before continuing."
-            >
-              Continue
-            </Button>
-          </SetupActions>
+          <form onSubmit={handleNameSubmit}>
+            <CardHeader>
+              <h2 className="text-3xl font-bold sm:text-4xl">Name the caravan</h2>
+            </CardHeader>
+            <label htmlFor="expedition-name" className="mt-8 block font-mono text-base text-muted">
+              Expedition name
+            </label>
+            <input
+              ref={nameInputRef}
+              id="expedition-name"
+              className="mt-3 w-full border border-border bg-panel px-4 py-4 text-xl text-foreground outline-none focus:border-highlight focus:ring-2 focus:ring-highlight"
+              value={expeditionName}
+              onChange={(event) => setExpeditionName(event.target.value)}
+              onKeyDown={handleNameKeyDown}
+            />
+            <SetupActions>
+              <Button onClick={handleBack} variant="secondary">
+                Back
+              </Button>
+              <Button
+                type="submit"
+                disabled={!canContinueFromName}
+                disabledReason="Enter an expedition name before continuing."
+              >
+                Continue
+              </Button>
+            </SetupActions>
+          </form>
         </SetupCard>
       ) : null}
 
@@ -105,15 +244,19 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
             </Badge>
           </CardHeader>
           <div className="mt-8 grid gap-4 lg:grid-cols-2">
-            {starterCharacters.map((character) => {
+            {starterCharacters.map((character, index) => {
               const selected = uniqueSelectedIds.includes(character.id);
               const disabled = !selected && uniqueSelectedIds.length >= requiredPartySize;
 
               return (
                 <button
+                  ref={(element) => {
+                    partyButtonRefs.current[index] = element;
+                  }}
                   key={character.id}
                   type="button"
                   onClick={() => toggleCharacter(character.id)}
+                  onKeyDown={(event) => handlePartyKeyDown(event, index)}
                   disabled={disabled}
                   aria-pressed={selected}
                   aria-label={`${selected ? 'Remove' : 'Select'} ${character.name}, ${character.role}`}
@@ -149,7 +292,13 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
               Back
             </Button>
             <Button
-              onClick={() => setStep('difficulty')}
+              onClick={handlePartyContinue}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handlePartyContinue();
+                }
+              }}
               disabled={!canContinueFromParty}
               disabledReason={`Select exactly ${requiredPartySize} party members before continuing.`}
             >
@@ -161,51 +310,68 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
 
       {step === 'difficulty' ? (
         <SetupCard>
-          <CardHeader>
-            <h2 className="text-3xl font-bold sm:text-4xl">Choose trail difficulty</h2>
-          </CardHeader>
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {difficultyOptions.map((option) => (
-              <label
-                key={option.id}
-                className="flex cursor-pointer gap-4 border border-border bg-panel p-5"
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleStart();
+            }}
+          >
+            <CardHeader>
+              <h2 className="text-3xl font-bold sm:text-4xl">Choose trail difficulty</h2>
+            </CardHeader>
+            <div className="mt-8 grid gap-4 lg:grid-cols-3">
+              {difficultyOptions.map((option, index) => (
+                <label
+                  key={option.id}
+                  className="flex cursor-pointer gap-4 border border-border bg-panel p-5 focus-within:border-highlight"
+                >
+                  <input
+                    ref={(element) => {
+                      difficultyInputRefs.current[index] = element;
+                    }}
+                    type="radio"
+                    name="difficulty"
+                    value={option.id}
+                    checked={difficulty === option.id}
+                    onChange={() => setDifficulty(option.id)}
+                    onKeyDown={(event) => handleDifficultyKeyDown(event, index)}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="block font-bold">{option.label}</span>
+                    <span className="block text-base text-muted">
+                      {option.description}
+                    </span>
+                    <span className="mt-1 block font-mono text-base text-highlight">
+                      ${option.startingMoney} start
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <SetupActions>
+              <Button onClick={handleBack} variant="secondary">
+                Back
+              </Button>
+              <Button
+                type="submit"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    handleStart();
+                  }
+                }}
+                disabled={!canStart}
+                disabledReason={
+                  difficulty === null
+                    ? 'Select a difficulty before starting.'
+                    : 'Complete expedition setup before starting.'
+                }
               >
-                <input
-                  type="radio"
-                  name="difficulty"
-                  value={option.id}
-                  checked={difficulty === option.id}
-                  onChange={() => setDifficulty(option.id)}
-                  className="mt-1"
-                />
-                <span>
-                  <span className="block font-bold">{option.label}</span>
-                  <span className="block text-base text-muted">
-                    {option.description}
-                  </span>
-                  <span className="mt-1 block font-mono text-base text-highlight">
-                    ${option.startingMoney} start
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
-          <SetupActions>
-            <Button onClick={handleBack} variant="secondary">
-              Back
-            </Button>
-            <Button
-              onClick={handleStart}
-              disabled={!canStart}
-              disabledReason={
-                difficulty === null
-                  ? 'Select a difficulty before starting.'
-                  : 'Complete expedition setup before starting.'
-              }
-            >
-              Start Expedition
-            </Button>
-          </SetupActions>
+                Start Expedition
+              </Button>
+            </SetupActions>
+          </form>
         </SetupCard>
       ) : null}
     </section>

@@ -48,6 +48,36 @@ describe('MainMenu', () => {
     expect(props.onSettings).toHaveBeenCalledTimes(1);
   });
 
+  it('activates homepage actions with Enter from keyboard focus', () => {
+    const props = renderMainMenu();
+
+    const startButton = screen.getByRole('button', { name: 'Start Expedition' });
+    startButton.focus();
+    fireEvent.keyDown(startButton, { key: 'Enter' });
+
+    const continueButton = screen.getByRole('button', { name: 'Continue' });
+    continueButton.focus();
+    fireEvent.keyDown(continueButton, { key: 'Enter' });
+
+    const settingsButton = screen.getByRole('button', { name: 'Settings' });
+    settingsButton.focus();
+    fireEvent.keyDown(settingsButton, { key: 'Enter' });
+
+    expect(props.onNewExpedition).toHaveBeenCalledTimes(1);
+    expect(props.onContinue).toHaveBeenCalledTimes(1);
+    expect(props.onSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps homepage actions reachable by keyboard focus', () => {
+    renderMainMenu();
+
+    for (const buttonName of ['Start Expedition', 'Continue', 'Settings']) {
+      const button = screen.getByRole('button', { name: buttonName });
+      button.focus();
+      expect(button).toHaveFocus();
+    }
+  });
+
   it('hides continue until a save is available', () => {
     const props = renderMainMenu(false);
 
