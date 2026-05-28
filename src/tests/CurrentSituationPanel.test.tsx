@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CurrentSituationPanel } from '@components/CurrentSituationPanel';
 import { riverCrossings } from '@game/data/riverCrossings';
@@ -17,6 +17,15 @@ describe('CurrentSituationPanel', () => {
     render(<CurrentSituationPanel />);
 
     expect(screen.getByRole('region', { name: 'Current situation' })).toBeInTheDocument();
+    const trailDashboard = screen.getByRole('region', { name: 'Trail Dashboard' });
+
+    expect(screen.getByText('Trail Dashboard')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /trail dashboard/ }),
+    ).not.toBeInTheDocument();
+    expect(within(trailDashboard).queryByText(/^Day$/)).not.toBeInTheDocument();
+    expect(within(trailDashboard).queryByText(/^Distance$/)).not.toBeInTheDocument();
+    expect(within(trailDashboard).queryByText(/^Status$/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Travel One Day' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Make Camp' })).toBeEnabled();
     expect(screen.queryByRole('heading', { name: 'Camp' })).not.toBeInTheDocument();

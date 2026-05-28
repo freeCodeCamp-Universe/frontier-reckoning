@@ -88,11 +88,11 @@ export function ActiveGameLayout({
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-5">
           <CurrentSituationPanel onRestart={onRestart} />
+          <ResourceDashboard />
           <TrailMapPanel
             distanceTraveled={distanceTraveled}
             totalDistance={totalDistance}
           />
-          <ResourceDashboard />
         </div>
 
         <aside aria-label="Secondary expedition panels" className="flex flex-col gap-5">

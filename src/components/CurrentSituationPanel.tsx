@@ -50,36 +50,34 @@ export function CurrentSituationPanel({ onRestart }: CurrentSituationPanelProps)
   }
 
   return (
-    <Card as="section" aria-label="Current situation" className="p-4">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <p className="font-mono text-base text-highlight">current situation</p>
-          <h2 className="mt-1 text-2xl font-bold">Choose the next move</h2>
-          <p className="mt-2 max-w-2xl text-muted">
-            The trail is open. Push forward while conditions hold, or make camp to
-            recover and manage the caravan.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button
-            onClick={advanceDay}
-            disabled={gameStatus !== 'traveling'}
-            disabledReason="Travel is available only while the expedition is traveling."
-            className="sm:min-w-44"
+    <section aria-label="Current situation">
+      <Card as="section" aria-label="Trail Dashboard" className="p-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <h2 className="text-2xl font-bold">Trail Dashboard</h2>
+          <div
+            className="grid gap-3 sm:grid-cols-2 md:min-w-[24rem]"
+            data-testid="trail-dashboard-actions"
           >
-            Travel One Day
-          </Button>
-          <Button
-            onClick={enterCamp}
-            disabled={gameStatus !== 'traveling'}
-            disabledReason="Camp can be made only while the expedition is traveling."
-            className="sm:min-w-36"
-            variant="secondary"
-          >
-            Make Camp
-          </Button>
+            <Button
+              onClick={advanceDay}
+              disabled={gameStatus !== 'traveling'}
+              disabledReason="Travel is available only while the expedition is traveling."
+              className="w-full"
+            >
+              Travel One Day
+            </Button>
+            <Button
+              onClick={enterCamp}
+              disabled={gameStatus !== 'traveling'}
+              disabledReason="Camp can be made only while the expedition is traveling."
+              className="w-full"
+              variant="secondary"
+            >
+              Make Camp
+            </Button>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </section>
   );
 }

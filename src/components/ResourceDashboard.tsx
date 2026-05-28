@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useExpeditionStore, type ResourceName } from '@stores/expeditionStore';
 import { getDifficultyConfig } from '@game/data/difficulties';
 import { Badge } from '@components/ui/Badge';
+import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 import { ResourceIcon } from '@components/ui/ResourceIcon';
 import { cx } from '@components/ui/styles';
@@ -33,6 +35,8 @@ const resources: Array<{
 ];
 
 export function ResourceDashboard() {
+  const [expanded, setExpanded] = useState(false);
+  const resourceGridId = useId();
   const distanceTraveled = useExpeditionStore((state) => state.distanceTraveled);
   const totalDistance = useExpeditionStore((state) => state.totalDistance);
   const expeditionName = useExpeditionStore((state) => state.expeditionName);
@@ -44,10 +48,10 @@ export function ResourceDashboard() {
 
   return (
     <Card aria-label="Resource dashboard">
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border pb-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-bold">Trail Dashboard</h2>
+            <h2 className="text-2xl font-bold">Resource Summary</h2>
             <Badge variant="info">{clampedProgress}% complete</Badge>
           </div>
           <p className="mt-1 font-mono text-base text-muted">
@@ -55,7 +59,30 @@ export function ResourceDashboard() {
             {settings.difficultyDisplay ? ` / ${difficultyLabel}` : null}
           </p>
         </div>
-        <div className="min-w-0 lg:w-72">
+
+        <div className="lg:self-start">
+          <Button
+            aria-controls={resourceGridId}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse resource summary' : 'Expand resource summary'}
+            className="w-full justify-between lg:w-auto"
+            onClick={() => setExpanded((currentExpanded) => !currentExpanded)}
+            size="sm"
+            variant="ghost"
+          >
+            <span>{expanded ? 'Collapse' : 'Expand'}</span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`size-5 motion-safe:transition-transform ${
+                expanded ? 'rotate-180' : ''
+              }`}
+            />
+          </Button>
+        </div>
+      </div>
+
+      {expanded ? (
+        <div className="mt-4">
           <div className="mb-1 flex items-center justify-between gap-3 font-mono text-base">
             <span className="text-muted">Trail progress</span>
             <span className="font-bold text-foreground">
@@ -72,22 +99,26 @@ export function ResourceDashboard() {
           >
             <div className="h-full bg-cta" style={{ width: `${clampedProgress}%` }} />
           </div>
-        </div>
-      </div>
 
-      <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-8">
-        {resources.map(({ label, key, unit, warningAt, criticalAt }) => (
-          <ResourceStat
-            key={key}
-            label={label}
-            resourceName={key}
-            reducedMotion={settings.reducedMotion}
-            unit={unit}
-            warningAt={warningAt}
-            criticalAt={criticalAt}
-          />
-        ))}
-      </dl>
+          <dl
+            id={resourceGridId}
+            className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4"
+            data-testid="resource-summary-grid"
+          >
+            {resources.map(({ label, key, unit, warningAt, criticalAt }) => (
+              <ResourceStat
+                key={key}
+                label={label}
+                resourceName={key}
+                reducedMotion={settings.reducedMotion}
+                unit={unit}
+                warningAt={warningAt}
+                criticalAt={criticalAt}
+              />
+            ))}
+          </dl>
+        </div>
+      ) : null}
     </Card>
   );
 }

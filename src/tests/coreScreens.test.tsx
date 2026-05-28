@@ -30,7 +30,7 @@ describe('core screens', () => {
       </>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Trail Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Resource Summary' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Caravan Party' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Game Log' })).toBeInTheDocument();
   });

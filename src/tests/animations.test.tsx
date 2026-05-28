@@ -17,13 +17,16 @@ describe('animation layer', () => {
     useExpeditionStore.getState().startGame();
 
     const { rerender } = render(<ResourceDashboard />);
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resource summary' }));
 
     act(() => {
       useExpeditionStore.getState().updateResource('food', -12);
       rerender(<ResourceDashboard />);
     });
 
-    expect(screen.getByText('Food').closest('div')).not.toHaveClass('fr-resource-pulse');
+    expect(screen.getByRole('group', { name: 'Food resource' })).not.toHaveClass(
+      'fr-resource-pulse',
+    );
     expect(screen.getByText('-12')).toBeInTheDocument();
   });
 
@@ -31,6 +34,7 @@ describe('animation layer', () => {
     useExpeditionStore.getState().startGame();
 
     const { rerender } = render(<ResourceDashboard />);
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resource summary' }));
 
     act(() => {
       useExpeditionStore.getState().updateResource('morale', -5);
@@ -38,8 +42,12 @@ describe('animation layer', () => {
     });
 
     expect(screen.getByText('-5')).toBeInTheDocument();
-    expect(screen.getByText('Morale').closest('div')).toHaveClass('fr-resource-pulse');
-    expect(screen.getByText('Morale').closest('div')).toHaveClass('fr-vital-change');
+    expect(screen.getByRole('group', { name: 'Morale resource' })).toHaveClass(
+      'fr-resource-pulse',
+    );
+    expect(screen.getByRole('group', { name: 'Morale resource' })).toHaveClass(
+      'fr-vital-change',
+    );
   });
 
   it('keeps the event card accessible while it animates in', () => {

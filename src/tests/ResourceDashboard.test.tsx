@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ResourceDashboard } from '@components/ResourceDashboard';
 import { createStartingGameState, useExpeditionStore } from '@stores/expeditionStore';
@@ -23,6 +23,8 @@ describe('ResourceDashboard', () => {
     });
 
     render(<ResourceDashboard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resource summary' }));
 
     expectResourceValue('Food', '180');
     expectResourceValue('Medicine', '6');
@@ -49,6 +51,8 @@ describe('ResourceDashboard', () => {
 
     render(<ResourceDashboard />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resource summary' }));
+
     const food = screen.getByRole('group', { name: 'Food resource' });
 
     expect(within(food).getByLabelText('Food warning')).toHaveTextContent('Low supply');
@@ -59,10 +63,65 @@ describe('ResourceDashboard', () => {
 
     render(<ResourceDashboard />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resource summary' }));
+
     expect(
       screen.getByRole('region', { name: 'Resource dashboard' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('progressbar', { name: /Trail progress/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('group')).toHaveLength(8);
+  });
+
+  it('is collapsed by default with a collapsible full resource grid', () => {
+    useExpeditionStore.setState(createStartingGameState());
+
+    render(<ResourceDashboard />);
+
+    expect(screen.getByRole('heading', { name: 'Resource Summary' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Expand resource summary' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.queryByTestId('resource-summary-grid')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resource summary' }));
+
+    expect(screen.getByTestId('resource-summary-grid')).toHaveClass(
+      'grid',
+      'grid-cols-2',
+      'md:grid-cols-4',
+    );
+    expect(screen.getAllByRole('group')).toHaveLength(8);
+  });
+
+  it('keeps resource cards hidden while collapsed and expands the full grid', () => {
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      food: 180,
+      medicine: 6,
+      ammo: 34,
+      morale: 78,
+    });
+
+    render(<ResourceDashboard />);
+
+    expect(screen.getByRole('button', { name: 'Expand resource summary' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.queryByTestId('resource-summary-grid')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('group')).toHaveLength(0);
+    expect(screen.queryByLabelText('Food summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Medicine summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Ammo summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Morale summary')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resource summary' }));
+
+    expect(screen.getByRole('button', { name: 'Collapse resource summary' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
     expect(screen.getAllByRole('group')).toHaveLength(8);
   });
 });
