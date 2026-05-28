@@ -74,7 +74,7 @@ test('saves, reloads, and continues', async ({ page }) => {
   });
 
   await travelDays(page, 1);
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Save game' }).click();
   await expect(page.getByText('Game saved.')).toBeVisible();
 
   await page.reload();

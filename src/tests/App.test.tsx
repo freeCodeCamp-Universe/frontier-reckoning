@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '@app/App';
+import { SAVE_STORAGE_KEY } from '@game/systems/saveSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
 
 const phaserGameModuleLoadMock = vi.hoisted(() => vi.fn());
@@ -31,6 +32,7 @@ describe('App', () => {
   beforeEach(() => {
     phaserGameModuleLoadMock.mockClear();
     phaserGameRenderMock.mockClear();
+    window.localStorage.clear();
     useExpeditionStore.getState().resetGame();
   });
 
@@ -59,10 +61,144 @@ describe('App', () => {
     expect(screen.getByText(/Cinder Ridge Crew \/ Greenhorn/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Travel One Day' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Make Camp' })).toBeEnabled();
-    expect(screen.getByText('Loading trail map...')).toBeInTheDocument();
+    const trailMap = screen.getByRole('region', { name: 'Trail Map' });
+    expect(within(trailMap).getByRole('heading', { name: 'Trail Map' })).toBeInTheDocument();
+    expect(within(trailMap).getByRole('status')).toHaveTextContent('Loading trail map...');
     expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
     expect(phaserGameModuleLoadMock).toHaveBeenCalledTimes(1);
     expect(phaserGameRenderMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the active survival dashboard panels', async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites();
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+
+    const statusBar = screen.getByRole('banner');
+
+    expect(
+      screen.getByRole('region', { name: 'Active game layout' }),
+    ).toBeInTheDocument();
+    expect(statusBar).toHaveTextContent('Cinder Ridge Crew');
+    expect(statusBar).toHaveTextContent('Day');
+    expect(statusBar).toHaveTextContent('1');
+    expect(statusBar).toHaveTextContent('Distance');
+    expect(statusBar).toHaveTextContent('0 / 2000');
+    expect(statusBar).toHaveTextContent('Status');
+    expect(statusBar).toHaveTextContent('traveling');
+    expect(statusBar).toHaveTextContent('Location');
+    expect(statusBar).toHaveTextContent('Open trail');
+    expect(screen.getByRole('region', { name: 'Current situation' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Travel One Day' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Make Camp' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
+    expect(
+      within(statusBar).getByRole('region', { name: 'Save controls' }),
+    ).toBeInTheDocument();
+    expect(within(statusBar).getByRole('button', { name: 'Save game' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Trail Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Trail Map' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('progressbar', { name: 'Trail map distance progress 0%' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Caravan Party' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Game Log' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('complementary', { name: 'Secondary expedition panels' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
+  });
+
+  it('keeps right rail panels available in the responsive active game layout', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites();
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+
+    const rightRail = screen.getByRole('complementary', {
+      name: 'Secondary expedition panels',
+    });
+
+    expect(within(rightRail).getByRole('heading', { name: 'Caravan Party' })).toBeInTheDocument();
+    expect(within(rightRail).getByRole('heading', { name: 'Game Log' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Current situation' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Resource dashboard' })).toBeInTheDocument();
+  });
+
+  it('does not repeat the large homepage title in the active game header', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites('North Pass Company');
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+
+    expect(
+      screen.queryByRole('heading', { name: 'Frontier Reckoning' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'North Pass Company' }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens settings and saves from the expedition status bar', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites();
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+
+    expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save game' }));
+
+    expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).not.toBeNull();
+    expect(screen.getByText('Game saved.')).toBeInTheDocument();
+  });
+
+  it('opens settings from the main menu and active game screens', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close settings' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites();
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('keeps save controls compact in the status bar instead of the main stack', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites();
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+
+    const statusBar = screen.getByRole('banner');
+    const saveControls = within(statusBar).getByRole('region', {
+      name: 'Save controls',
+    });
+
+    expect(saveControls).toBeInTheDocument();
+    expect(saveControls).not.toHaveClass('bg-surface');
+    expect(saveControls).not.toHaveClass('p-4');
   });
 
   it('lazy-loads Phaser only after the active game screen opens', async () => {

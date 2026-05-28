@@ -108,7 +108,7 @@ describe('core screens', () => {
 
     render(<GameLogPanel />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Journal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Journal / Log' }));
 
     expect(screen.getByRole('dialog', { name: 'Expedition Journal' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Current run summary' })).toBeInTheDocument();

@@ -1,0 +1,75 @@
+import { render, screen, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { ResourceDashboard } from '@components/ResourceDashboard';
+import { createStartingGameState, useExpeditionStore } from '@stores/expeditionStore';
+
+describe('ResourceDashboard', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    useExpeditionStore.getState().resetGame();
+  });
+
+  it('renders all resource values in compact stat cards', () => {
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      food: 180,
+      medicine: 6,
+      ammo: 34,
+      wagonParts: 4,
+      money: 125,
+      morale: 78,
+      health: 88,
+      wagonCondition: 92,
+    });
+
+    render(<ResourceDashboard />);
+
+    expectResourceValue('Food', '180');
+    expectResourceValue('Medicine', '6');
+    expectResourceValue('Ammo', '34');
+    expectResourceValue('Wagon Parts', '4');
+    expectResourceValue('Money', '125');
+    expectResourceValue('Morale', '78%');
+    expectResourceValue('Health', '88%');
+    expectResourceValue('Wagon Condition', '92%');
+  });
+
+  it('renders a text warning for low resources', () => {
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      food: 60,
+      medicine: 6,
+      ammo: 34,
+      wagonParts: 4,
+      money: 125,
+      morale: 78,
+      health: 88,
+      wagonCondition: 92,
+    });
+
+    render(<ResourceDashboard />);
+
+    const food = screen.getByRole('group', { name: 'Food resource' });
+
+    expect(within(food).getByLabelText('Food warning')).toHaveTextContent('Low supply');
+  });
+
+  it('remains accessible as a named dashboard with resource groups', () => {
+    useExpeditionStore.setState(createStartingGameState());
+
+    render(<ResourceDashboard />);
+
+    expect(
+      screen.getByRole('region', { name: 'Resource dashboard' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: /Trail progress/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('group')).toHaveLength(8);
+  });
+});
+
+function expectResourceValue(label: string, value: string) {
+  const resource = screen.getByRole('group', { name: `${label} resource` });
+
+  expect(within(resource).getByText(label)).toBeInTheDocument();
+  expect(within(resource).getByText(value)).toBeInTheDocument();
+}

@@ -35,9 +35,8 @@ describe('PartyPanel', () => {
     expect(screen.getByLabelText('Sick')).toBeInTheDocument();
     expect(screen.getByLabelText('Injured')).toBeInTheDocument();
     expect(screen.getByLabelText('Dead')).toBeInTheDocument();
-    expect(screen.getByText('Recent change: stable')).toBeInTheDocument();
-    expect(screen.getByText('Recent change: health -38')).toBeInTheDocument();
-    expect(screen.getByText('Recent change: life signs lost')).toBeInTheDocument();
+    expect(screen.getByText('44/100')).toBeInTheDocument();
+    expect(screen.getAllByText('0/100')).toHaveLength(2);
   });
 
   it('announces dead characters to screen readers', () => {
@@ -53,7 +52,7 @@ describe('PartyPanel', () => {
 
     expect(deadCard).toBeInTheDocument();
     expect(within(deadCard).getByText(/Cal Moss has died/i)).toBeInTheDocument();
-    expect(within(deadCard).getByText('Deceased')).toBeInTheDocument();
+    expect(within(deadCard).getByLabelText('Dead')).toBeInTheDocument();
   });
 
   it('exposes health and morale bars with text labels', () => {

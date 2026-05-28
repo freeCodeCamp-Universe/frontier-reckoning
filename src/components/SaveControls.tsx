@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Save } from 'lucide-react';
 import { Button } from '@components/ui/Button';
 import {
   clearSaveFromStorage,
@@ -8,7 +9,17 @@ import {
 } from '@game/systems/saveSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
 
-export function SaveControls() {
+type SaveControlsProps = {
+  onReset?: () => void;
+  onSaveExistsChange?: (saveExists: boolean) => void;
+  variant?: 'card' | 'compact';
+};
+
+export function SaveControls({
+  onReset,
+  onSaveExistsChange,
+  variant = 'card',
+}: SaveControlsProps) {
   const [saveExists, setSaveExists] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
@@ -21,6 +32,7 @@ export function SaveControls() {
   const handleManualSave = () => {
     saveGameToStorage(window.localStorage, useExpeditionStore.getState());
     setSaveExists(true);
+    onSaveExistsChange?.(true);
     setMessage('Game saved.');
   };
 
@@ -30,6 +42,7 @@ export function SaveControls() {
     if (result.status === 'loaded') {
       useExpeditionStore.setState(result.save.state);
       setMessage('Save loaded.');
+      onSaveExistsChange?.(true);
       return;
     }
 
@@ -42,6 +55,7 @@ export function SaveControls() {
       clearSaveFromStorage(window.localStorage);
       resetGame();
       setSaveExists(false);
+      onSaveExistsChange?.(false);
       setMessage(result.message ?? 'Invalid save ignored. Starting fresh.');
       return;
     }
@@ -53,8 +67,40 @@ export function SaveControls() {
     clearSaveFromStorage(window.localStorage);
     resetGame();
     setSaveExists(false);
+    onSaveExistsChange?.(false);
     setMessage('Save reset.');
+    onReset?.();
   };
+
+  if (variant === 'compact') {
+    return (
+      <section
+        className="flex flex-wrap items-center gap-2 font-mono text-sm text-muted"
+        aria-label="Save controls"
+      >
+        <Button
+          aria-label="Save game"
+          className="min-h-10 px-3 py-2"
+          onClick={handleManualSave}
+          disabled={gameStatus === 'not_started'}
+          disabledReason="Save is available after starting an expedition."
+          size="sm"
+          variant="secondary"
+        >
+          <Save aria-hidden="true" className="size-4" />
+          Save
+        </Button>
+        {saveExists ? (
+          <Button onClick={handleResetSave} size="sm" variant="ghost">
+            Reset save
+          </Button>
+        ) : null}
+        <span aria-live="polite" className="text-muted">
+          {message ?? (saveExists ? 'Save ready.' : 'No save yet.')}
+        </span>
+      </section>
+    );
+  }
 
   return (
     <section className="border border-border bg-surface p-4" aria-label="Save controls">

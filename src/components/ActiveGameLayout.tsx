@@ -1,0 +1,208 @@
+import { lazy, Suspense } from 'react';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { CurrentSituationPanel } from '@components/CurrentSituationPanel';
+import { GameLogPanel } from '@components/GameLogPanel';
+import { PartyPanel } from '@components/PartyPanel';
+import { ResourceDashboard } from '@components/ResourceDashboard';
+import { SaveControls } from '@components/SaveControls';
+import { Button } from '@components/ui/Button';
+import { Card } from '@components/ui/Card';
+import { useExpeditionStore } from '@stores/expeditionStore';
+
+const LazyPhaserGame = lazy(() =>
+  import('@components/PhaserGame').then((module) => ({
+    default: module.PhaserGame,
+  })),
+);
+
+type ActiveGameLayoutProps = {
+  onSaveExistsChange: (saveExists: boolean) => void;
+  onSaveReset: () => void;
+  onSettings: () => void;
+};
+
+export function ActiveGameLayout({
+  onSaveExistsChange,
+  onSaveReset,
+  onSettings,
+}: ActiveGameLayoutProps) {
+  const gameStatus = useExpeditionStore((state) => state.gameStatus);
+  const expeditionName = useExpeditionStore((state) => state.expeditionName);
+  const currentDay = useExpeditionStore((state) => state.currentDay);
+  const distanceTraveled = useExpeditionStore((state) => state.distanceTraveled);
+  const totalDistance = useExpeditionStore((state) => state.totalDistance);
+  const currentTown = useExpeditionStore((state) => state.currentTown);
+  const currentRiver = useExpeditionStore((state) => state.currentRiver);
+
+  return (
+    <section
+      aria-label="Active game layout"
+      className="mx-auto flex max-w-7xl flex-col gap-5"
+    >
+      <Card
+        as="header"
+        className="sticky top-3 z-20 !p-3 shadow-[0_12px_0_rgba(0,0,0,0.22)]"
+      >
+        <div className="grid gap-3 xl:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.8fr)_auto] xl:items-center">
+          <div className="min-w-0">
+            <p className="font-mono text-sm uppercase tracking-normal text-muted">
+              Expedition
+            </p>
+            <h1 className="truncate text-xl font-bold tracking-normal text-foreground">
+              {expeditionName || 'Unnamed expedition'}
+            </h1>
+          </div>
+
+          <dl
+            aria-label="Expedition status"
+            aria-live="polite"
+            className="grid gap-2 font-mono text-sm text-muted sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <StatusStat label="Day" value={String(currentDay)} />
+            <StatusStat label="Distance" value={`${distanceTraveled} / ${totalDistance}`} />
+            <StatusStat label="Status" value={formatGameStatus(gameStatus)} />
+            <StatusStat
+              label="Location"
+              value={getTrailPhase(gameStatus, currentTown?.name, currentRiver?.name)}
+            />
+          </dl>
+
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <Button
+              aria-label="Settings"
+              className="size-10 p-0"
+              onClick={onSettings}
+              size="sm"
+              variant="ghost"
+            >
+              <SettingsIcon aria-hidden="true" className="size-5" />
+            </Button>
+            <SaveControls
+              onReset={onSaveReset}
+              onSaveExistsChange={onSaveExistsChange}
+              variant="compact"
+            />
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex flex-col gap-5">
+          <CurrentSituationPanel />
+          <TrailMapPanel
+            distanceTraveled={distanceTraveled}
+            totalDistance={totalDistance}
+          />
+          <ResourceDashboard />
+        </div>
+
+        <aside aria-label="Secondary expedition panels" className="flex flex-col gap-5">
+          <PartyPanel />
+          <GameLogPanel />
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+type GameStatus = ReturnType<typeof useExpeditionStore.getState>['gameStatus'];
+
+function StatusStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 border border-border bg-panel px-3 py-2">
+      <dt className="text-muted">{label}</dt>
+      <dd className="mt-1 truncate font-bold capitalize text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+function formatGameStatus(status: GameStatus) {
+  return status.replace('_', ' ');
+}
+
+function getTrailPhase(
+  status: GameStatus,
+  currentTownName?: string,
+  currentRiverName?: string,
+) {
+  if (currentTownName) {
+    return currentTownName;
+  }
+
+  if (currentRiverName) {
+    return currentRiverName;
+  }
+
+  if (status === 'camp') {
+    return 'Camp';
+  }
+
+  if (status === 'event') {
+    return 'Trail event';
+  }
+
+  if (status === 'victory') {
+    return 'Last Lantern';
+  }
+
+  if (status === 'game_over') {
+    return 'Trail ended';
+  }
+
+  return 'Open trail';
+}
+
+function TrailMapPanel({
+  distanceTraveled,
+  totalDistance,
+}: {
+  distanceTraveled: number;
+  totalDistance: number;
+}) {
+  const progressPercentage = Math.floor((distanceTraveled / totalDistance) * 100);
+  const clampedProgress = Math.min(Math.max(progressPercentage, 0), 100);
+
+  return (
+    <Card as="section" aria-label="Trail Map" className="!p-3">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-mono text-sm uppercase text-highlight">route view</p>
+          <h2 className="mt-1 text-2xl font-bold">Trail Map</h2>
+        </div>
+        <div className="min-w-0 sm:w-72">
+          <div className="mb-1 flex items-center justify-between gap-3 font-mono text-base">
+            <span className="text-muted">Distance progress</span>
+            <span className="font-bold text-foreground">
+              {distanceTraveled} / {totalDistance} mi
+            </span>
+          </div>
+          <div
+            aria-label={`Trail map distance progress ${clampedProgress}%`}
+            aria-valuemax={100}
+            aria-valuemin={0}
+            aria-valuenow={clampedProgress}
+            className="h-3 border border-border bg-panel"
+            role="progressbar"
+          >
+            <div className="h-full bg-cta" style={{ width: `${clampedProgress}%` }} />
+          </div>
+        </div>
+      </div>
+      <Suspense fallback={<PhaserGameLoadingFallback />}>
+        <LazyPhaserGame />
+      </Suspense>
+    </Card>
+  );
+}
+
+function PhaserGameLoadingFallback() {
+  return (
+    <div className="overflow-hidden border border-border bg-panel">
+      <div className="flex min-h-60 w-full items-center justify-center px-4 sm:min-h-[320px]">
+        <p className="font-mono text-base text-muted" role="status">
+          Loading trail map...
+        </p>
+      </div>
+    </div>
+  );
+}

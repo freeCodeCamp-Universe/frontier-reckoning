@@ -112,12 +112,12 @@ export function PhaserGame() {
 
   return (
     <section
-      className="overflow-hidden rounded border border-border bg-panel"
+      className="overflow-hidden border border-border bg-panel"
       aria-label="Frontier Reckoning game canvas"
     >
       <div
         ref={containerRef}
-        className="min-h-[360px] w-full"
+        className="min-h-60 w-full sm:min-h-[360px]"
         data-testid="phaser-game"
       />
     </section>

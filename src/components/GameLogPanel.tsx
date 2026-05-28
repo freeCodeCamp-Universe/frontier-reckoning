@@ -7,36 +7,52 @@ export function GameLogPanel() {
   const gameLog = useExpeditionStore((state) => state.gameLog);
   const gameState = useExpeditionStore((state) => state);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const latestMessage = gameLog[0];
+  const visibleEntries = expanded ? gameLog : gameLog.slice(0, 5);
+  const hiddenEntryCount = Math.max(gameLog.length - visibleEntries.length, 0);
 
   return (
     <>
-      <section className="border border-border bg-surface p-4" aria-label="Game log">
+      <section className="border border-border bg-surface p-3" aria-label="Game log">
         <div className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="font-mono text-base text-highlight">trail dispatch</p>
-            <h2 className="mt-1 text-2xl font-bold">Game Log</h2>
+            <p className="font-mono text-sm uppercase text-highlight">trail dispatch</p>
+            <h2 className="mt-1 text-xl font-bold">Game Log</h2>
             <p className="mt-1 font-mono text-base text-muted">{gameLog.length} entries</p>
           </div>
-          <Button size="sm" variant="secondary" onClick={() => setJournalOpen(true)}>
-            Journal
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {gameLog.length > 5 ? (
+              <Button
+                aria-expanded={expanded}
+                aria-controls="game-log-entries"
+                size="sm"
+                variant="ghost"
+                onClick={() => setExpanded((current) => !current)}
+              >
+                {expanded ? 'Show recent 5' : 'Show all'}
+              </Button>
+            ) : null}
+            <Button size="sm" variant="secondary" onClick={() => setJournalOpen(true)}>
+              Journal / Log
+            </Button>
+          </div>
         </div>
 
         {latestMessage ? (
           <p
-            className="mt-4 border border-success bg-panel p-3 font-mono text-base text-success"
+            className="mt-3 border border-success bg-panel p-2 font-mono text-base text-success"
             role="status"
           >
             {latestMessage}
           </p>
         ) : null}
 
-        <ol className="mt-4 max-h-72 space-y-2 overflow-y-auto">
+        <ol id="game-log-entries" className="mt-3 max-h-72 space-y-2 overflow-y-auto">
           {gameLog.length === 0 ? (
             <li className="font-mono text-base text-muted">No trail events recorded yet</li>
           ) : (
-            gameLog.map((entry, index) => (
+            visibleEntries.map((entry, index) => (
               <li
                 key={`${entry}-${index}`}
                 className="border border-border bg-panel px-3 py-2 font-mono text-base text-muted"
@@ -46,6 +62,11 @@ export function GameLogPanel() {
             ))
           )}
         </ol>
+        {hiddenEntryCount > 0 ? (
+          <p className="mt-3 font-mono text-sm text-muted">
+            {hiddenEntryCount} older entries hidden
+          </p>
+        ) : null}
       </section>
       <ExpeditionJournal
         isOpen={journalOpen}

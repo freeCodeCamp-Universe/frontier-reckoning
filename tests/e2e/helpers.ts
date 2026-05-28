@@ -49,10 +49,16 @@ export async function startNewGame(page: Page, options: StartNewGameOptions = {}
   const difficulty = options.difficulty ?? 'Trailwise';
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'New Expedition' }).click();
+  await page.getByRole('button', { name: 'Start Expedition' }).click();
   await page.getByLabel('Expedition name').fill(expeditionName);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Select Elias Reed, Scout' }).click();
+  await page.getByRole('button', { name: 'Select Mara Bell, Doctor' }).click();
+  await page.getByRole('button', { name: 'Select Jonah Vale, Hunter' }).click();
+  await page.getByRole('button', { name: 'Select Ada Flint, Mechanic' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('radio', { name: new RegExp(difficulty) }).check();
-  await page.getByRole('button', { name: 'Start Custom Expedition' }).click();
+  await page.getByRole('button', { name: 'Start Expedition' }).click();
 
   await expect(page.getByRole('button', { name: 'Travel One Day' })).toBeEnabled();
   await expect(page.getByTestId('phaser-game')).toBeVisible();

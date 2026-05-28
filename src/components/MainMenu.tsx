@@ -16,7 +16,7 @@ export function MainMenu({
   canContinue,
 }: MainMenuProps) {
   return (
-    <section className="mx-auto flex min-h-[78vh] max-w-6xl flex-col justify-center gap-6 overflow-hidden">
+    <section className="mx-auto mt-6 flex min-h-[78vh] max-w-6xl flex-col justify-center gap-6 overflow-hidden sm:mt-8 lg:mt-10">
       <div className="relative border border-border bg-surface p-5 sm:p-7 lg:p-8">
         <div
           aria-hidden="true"
