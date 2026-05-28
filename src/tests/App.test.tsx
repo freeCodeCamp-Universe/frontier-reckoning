@@ -15,6 +15,18 @@ vi.mock('@components/PhaserGame', () => ({
   },
 }));
 
+function completeSetupPrerequisites(expeditionName = 'Cinder Ridge Crew') {
+  fireEvent.change(screen.getByLabelText('Expedition name'), {
+    target: { value: expeditionName },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Select Elias Reed, Scout' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Select Mara Bell, Doctor' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Select Jonah Vale, Hunter' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Select Ada Flint, Mechanic' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+}
+
 describe('App', () => {
   beforeEach(() => {
     phaserGameModuleLoadMock.mockClear();
@@ -40,11 +52,9 @@ describe('App', () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
-    fireEvent.change(screen.getByLabelText('Expedition name'), {
-      target: { value: 'Cinder Ridge Crew' },
-    });
+    completeSetupPrerequisites();
     fireEvent.click(screen.getByRole('radio', { name: /Greenhorn/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start Custom Expedition' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
 
     expect(screen.getByText(/Cinder Ridge Crew \/ Greenhorn/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Travel One Day' })).toBeEnabled();
@@ -63,7 +73,9 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
     expect(phaserGameModuleLoadMock).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Custom Expedition' }));
+    completeSetupPrerequisites();
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
 
     expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
     expect(phaserGameRenderMock).toHaveBeenCalledTimes(1);
@@ -73,14 +85,14 @@ describe('App', () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
-    fireEvent.click(screen.getByRole('button', { name: /Elias Reed/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(
-      screen.getByRole('button', { name: 'Start Custom Expedition' }),
+      screen.getByRole('button', { name: 'Continue' }),
     ).toBeDisabled();
     expect(
-      screen.getByRole('button', { name: 'Start Custom Expedition' }),
-    ).toHaveAccessibleDescription('Select exactly 4 party members before starting.');
+      screen.getByRole('button', { name: 'Continue' }),
+    ).toHaveAccessibleDescription('Select exactly 4 party members before continuing.');
   });
 
   it('exposes important setup controls with accessible names', () => {
@@ -89,13 +101,20 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
 
     expect(screen.getByLabelText('Expedition name')).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Greenhorn/ })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Trailwise/ })).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
-      screen.getByRole('button', { name: 'Remove Elias Reed, Scout' }),
-    ).toHaveAttribute('aria-pressed', 'true');
+      screen.getByRole('button', { name: 'Select Elias Reed, Scout' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Select Nell Carter, Child' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Select Elias Reed, Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mara Bell, Doctor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Jonah Vale, Hunter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Ada Flint, Mechanic' }));
     expect(
       screen.getByRole('button', { name: 'Select Nell Carter, Child' }),
     ).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('radio', { name: /Greenhorn/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Trailwise/ })).not.toBeChecked();
   });
 });
