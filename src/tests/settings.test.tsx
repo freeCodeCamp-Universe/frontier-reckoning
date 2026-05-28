@@ -33,7 +33,7 @@ describe('settings', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
 
-    expect(screen.getByRole('dialog', { name: 'Frontier Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.getByLabelText('Sound on or off')).toBeInTheDocument();
     expect(screen.getByLabelText('Music volume')).toBeInTheDocument();
     expect(screen.getByLabelText('SFX volume')).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe('settings', () => {
     expect(screen.getByLabelText('Text speed')).toBeInTheDocument();
     expect(screen.getByLabelText('Autosave on or off')).toBeInTheDocument();
     expect(screen.getByLabelText('Difficulty display')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reset save data' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reset Save Data' })).toBeInTheDocument();
 
     unmount();
     useExpeditionStore.getState().startGame();
@@ -50,13 +50,155 @@ describe('settings', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
 
-    expect(screen.getByRole('dialog', { name: 'Frontier Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('does not render visible settings text inside the modal', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+  });
+
+  it('closes when clicking outside the modal content', () => {
+    const onClose = vi.fn();
+
+    render(<SettingsModal isOpen onClose={onClose} />);
+
+    fireEvent.mouseDown(screen.getByTestId('settings-backdrop'));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes with the close icon button', () => {
+    const onClose = vi.fn();
+
+    render(<SettingsModal isOpen onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close settings' }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes with Escape', () => {
+    const onClose = vi.fn();
+
+    render(<SettingsModal isOpen onClose={onClose} />);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render parent Audio or Gameplay checkboxes', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    expect(screen.queryByRole('checkbox', { name: 'Audio' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Gameplay' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', { name: 'Sound on or off' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('allows audio controls to change immediately', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    const musicVolume = screen.getByLabelText('Music volume');
+    const sfxVolume = screen.getByLabelText('SFX volume');
+    const soundToggle = screen.getByRole('button', { name: 'Sound on or off' });
+
+    expect(soundToggle).toHaveAttribute('aria-pressed', 'false');
+    expect(musicVolume).toBeEnabled();
+    expect(sfxVolume).toBeEnabled();
+
+    fireEvent.change(musicVolume, { target: { value: '25' } });
+    fireEvent.change(sfxVolume, { target: { value: '40' } });
+
+    expect(musicVolume).toHaveValue('25');
+    expect(sfxVolume).toHaveValue('40');
+  });
+
+  it('allows gameplay controls to change immediately', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    const reducedMotion = screen.getByLabelText('Reduced motion');
+    const autosave = screen.getByLabelText('Autosave on or off');
+
+    expect(reducedMotion).toBeEnabled();
+    expect(autosave).toBeEnabled();
+
+    fireEvent.click(reducedMotion);
+    fireEvent.click(autosave);
+
+    expect(reducedMotion).toBeChecked();
+    expect(autosave).not.toBeChecked();
+  });
+
+  it('does not render a native text speed select', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    expect(screen.queryByRole('combobox', { name: 'Text speed' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Text speed' })).toHaveTextContent(
+      'Normal',
+    );
+  });
+
+  it('opens the custom text speed dropdown on click', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Text speed' }));
+
+    expect(screen.getByRole('listbox', { name: 'Text speed' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Slow' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Normal' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('option', { name: 'Fast' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Instant' })).toBeInTheDocument();
+  });
+
+  it('updates text speed from the custom dropdown', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Text speed' }));
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'Instant' }));
+
+    expect(screen.getByRole('button', { name: 'Text speed' })).toHaveTextContent(
+      'Instant',
+    );
+    expect(getStoredSettings(window.localStorage).textSpeed).toBe('instant');
+  });
+
+  it('supports keyboard text speed selection', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    const trigger = screen.getByRole('button', { name: 'Text speed' });
+
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+
+    expect(trigger).toHaveTextContent('Fast');
+    expect(getStoredSettings(window.localStorage).textSpeed).toBe('fast');
+  });
+
+  it('closes the text speed dropdown with Escape', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    const trigger = screen.getByRole('button', { name: 'Text speed' });
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole('listbox', { name: 'Text speed' })).toBeInTheDocument();
+
+    fireEvent.keyDown(trigger, { key: 'Escape' });
+
+    expect(screen.queryByRole('listbox', { name: 'Text speed' })).not.toBeInTheDocument();
   });
 
   it('persists settings after reload', () => {
     const { unmount } = render(<SettingsModal isOpen onClose={() => undefined} />);
 
-    fireEvent.click(screen.getByLabelText('Sound on or off'));
+    fireEvent.click(screen.getByRole('button', { name: 'Sound on or off' }));
     fireEvent.change(screen.getByLabelText('Music volume'), {
       target: { value: '25' },
     });
@@ -64,9 +206,8 @@ describe('settings', () => {
       target: { value: '40' },
     });
     fireEvent.click(screen.getByLabelText('Reduced motion'));
-    fireEvent.change(screen.getByLabelText('Text speed'), {
-      target: { value: 'fast' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Text speed' }));
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'Instant' }));
     fireEvent.click(screen.getByLabelText('Autosave on or off'));
     fireEvent.click(screen.getByLabelText('Difficulty display'));
 
@@ -75,11 +216,16 @@ describe('settings', () => {
     unmount();
     render(<SettingsModal isOpen onClose={() => undefined} />);
 
-    expect(screen.getByLabelText('Sound on or off')).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Sound on or off' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     expect(screen.getByLabelText('Music volume')).toHaveValue('25');
     expect(screen.getByLabelText('SFX volume')).toHaveValue('40');
     expect(screen.getByLabelText('Reduced motion')).toBeChecked();
-    expect(screen.getByLabelText('Text speed')).toHaveValue('fast');
+    expect(screen.getByRole('button', { name: 'Text speed' })).toHaveTextContent(
+      'Instant',
+    );
     expect(screen.getByLabelText('Autosave on or off')).not.toBeChecked();
     expect(screen.getByLabelText('Difficulty display')).not.toBeChecked();
   });
@@ -179,7 +325,64 @@ describe('settings', () => {
     ).toBe(false);
   });
 
-  it('clears save data from settings reset', () => {
+  it('does not render permanent reset explanatory text', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    expect(screen.queryByText('Save Data')).not.toBeInTheDocument();
+    expect(screen.queryByText('Permanent')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Clear the saved expedition from this browser.'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reset Save Data' })).toBeInTheDocument();
+  });
+
+  it('opens reset save confirmation from reset save data', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Save Data' }));
+
+    expect(
+      screen.getByRole('dialog', { name: 'Reset save data confirmation' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Are you sure?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm reset' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Close reset confirmation' }),
+    ).toBeInTheDocument();
+  });
+
+  it('does not clear save data when reset confirmation is canceled', () => {
+    useExpeditionStore.getState().startGame();
+    saveGameToStorage(window.localStorage, useExpeditionStore.getState());
+
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Save Data' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).not.toBeNull();
+    expect(
+      screen.queryByRole('dialog', { name: 'Reset save data confirmation' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not clear save data when clicking outside reset confirmation', () => {
+    useExpeditionStore.getState().startGame();
+    saveGameToStorage(window.localStorage, useExpeditionStore.getState());
+
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Save Data' }));
+    fireEvent.mouseDown(screen.getByTestId('reset-save-confirmation-backdrop'));
+
+    expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).not.toBeNull();
+    expect(
+      screen.queryByRole('dialog', { name: 'Reset save data confirmation' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('clears save data from reset confirmation', () => {
     useExpeditionStore.getState().startGame();
     saveGameToStorage(window.localStorage, useExpeditionStore.getState());
 
@@ -187,9 +390,13 @@ describe('settings', () => {
 
     expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset save data' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Save Data' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm reset' }));
 
     expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).toBeNull();
     expect(useExpeditionStore.getState().gameStatus).toBe('not_started');
+    expect(
+      screen.queryByRole('dialog', { name: 'Reset save data confirmation' }),
+    ).not.toBeInTheDocument();
   });
 });

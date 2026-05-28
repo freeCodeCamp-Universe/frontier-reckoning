@@ -236,7 +236,8 @@ function normalizeSettings(value: unknown): FrontierSettings {
     textSpeed:
       maybeSettings.textSpeed === 'slow' ||
       maybeSettings.textSpeed === 'normal' ||
-      maybeSettings.textSpeed === 'fast'
+      maybeSettings.textSpeed === 'fast' ||
+      maybeSettings.textSpeed === 'instant'
         ? maybeSettings.textSpeed
         : defaultSettings.textSpeed,
     autosaveEnabled:

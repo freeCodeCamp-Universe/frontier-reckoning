@@ -22,20 +22,24 @@ describe('App', () => {
     useExpeditionStore.getState().resetGame();
   });
 
-  it('renders the main menu', () => {
+  it('renders the homepage without the main menu label', () => {
     render(<App />);
 
     expect(
       screen.getByRole('heading', { name: 'Frontier Reckoning' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'New Expedition' })).toBeInTheDocument();
+    expect(screen.queryByText('Main Menu')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start Expedition' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
     expect(phaserGameModuleLoadMock).not.toHaveBeenCalled();
   });
 
   it('user can start a custom expedition', async () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'New Expedition' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
     fireEvent.change(screen.getByLabelText('Expedition name'), {
       target: { value: 'Cinder Ridge Crew' },
     });
@@ -56,7 +60,7 @@ describe('App', () => {
 
     expect(phaserGameModuleLoadMock).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'New Expedition' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
     expect(phaserGameModuleLoadMock).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Custom Expedition' }));
@@ -68,7 +72,7 @@ describe('App', () => {
   it('cannot start without selecting required party members', () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'New Expedition' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
     fireEvent.click(screen.getByRole('button', { name: /Elias Reed/ }));
 
     expect(
@@ -82,7 +86,7 @@ describe('App', () => {
   it('exposes important setup controls with accessible names', () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'New Expedition' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
 
     expect(screen.getByLabelText('Expedition name')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Greenhorn/ })).toBeInTheDocument();

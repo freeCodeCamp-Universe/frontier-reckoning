@@ -3,7 +3,7 @@ import { clearSaveFromStorage } from '@game/systems/saveSystem';
 export const SETTINGS_STORAGE_KEY = 'frontier-reckoning-settings';
 export const SETTINGS_CHANGED_EVENT = 'frontier-reckoning-settings-changed';
 
-export type TextSpeed = 'slow' | 'normal' | 'fast';
+export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
 
 export type FrontierSettings = {
   soundEnabled: boolean;
@@ -25,7 +25,7 @@ export const defaultSettings: FrontierSettings = {
   difficultyDisplay: true,
 };
 
-const validTextSpeeds = new Set<TextSpeed>(['slow', 'normal', 'fast']);
+const validTextSpeeds = new Set<TextSpeed>(['slow', 'normal', 'fast', 'instant']);
 
 const clampVolume = (value: unknown, fallback: number) => {
   if (typeof value !== 'number' || Number.isNaN(value)) {
