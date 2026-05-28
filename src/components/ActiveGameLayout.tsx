@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Home, Settings as SettingsIcon } from 'lucide-react';
 import { CurrentSituationPanel } from '@components/CurrentSituationPanel';
 import { GameLogPanel } from '@components/GameLogPanel';
 import { PartyPanel } from '@components/PartyPanel';
@@ -17,15 +17,15 @@ const LazyPhaserGame = lazy(() =>
 
 type ActiveGameLayoutProps = {
   onRestart: () => void;
+  onReturnToMenu: () => void;
   onSaveExistsChange: (saveExists: boolean) => void;
-  onSaveReset: () => void;
   onSettings: () => void;
 };
 
 export function ActiveGameLayout({
   onRestart,
+  onReturnToMenu,
   onSaveExistsChange,
-  onSaveReset,
   onSettings,
 }: ActiveGameLayoutProps) {
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
@@ -42,31 +42,46 @@ export function ActiveGameLayout({
       className="mx-auto flex max-w-7xl flex-col gap-5"
     >
       <Card as="header" className="!p-3">
-        <div className="grid gap-3 xl:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.8fr)_auto] xl:items-center">
-          <div className="min-w-0">
-            <p className="font-mono text-sm uppercase tracking-normal text-muted">
-              Expedition
-            </p>
-            <h1 className="truncate text-xl font-bold tracking-normal text-foreground">
-              {expeditionName || 'Unnamed expedition'}
-            </h1>
+        <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)] xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center">
+          <div className="flex lg:items-start">
+            <Button
+              aria-label="Return to Menu"
+              className="min-h-10 px-3 py-2"
+              onClick={onReturnToMenu}
+              size="sm"
+              variant="ghost"
+            >
+              <Home aria-hidden="true" className="size-4" />
+              Menu
+            </Button>
           </div>
 
-          <dl
-            aria-label="Expedition status"
-            aria-live="polite"
-            className="grid gap-2 font-mono text-sm text-muted sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <StatusStat label="Day" value={String(currentDay)} />
-            <StatusStat label="Distance" value={`${distanceTraveled} / ${totalDistance}`} />
-            <StatusStat label="Status" value={formatGameStatus(gameStatus)} />
-            <StatusStat
-              label="Location"
-              value={getTrailPhase(gameStatus, currentTown?.name, currentRiver?.name)}
-            />
-          </dl>
+          <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.5fr)] xl:items-center">
+            <div className="min-w-0">
+              <p className="font-mono text-sm uppercase tracking-normal text-muted">
+                Expedition
+              </p>
+              <h1 className="truncate text-xl font-bold tracking-normal text-foreground">
+                {expeditionName || 'Unnamed expedition'}
+              </h1>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <dl
+              aria-label="Expedition status"
+              aria-live="polite"
+              className="grid gap-x-4 gap-y-2 font-mono text-sm text-muted sm:grid-cols-2 lg:grid-cols-4"
+            >
+              <StatusStat label="Day" value={String(currentDay)} />
+              <StatusStat label="Distance" value={`${distanceTraveled} / ${totalDistance}`} />
+              <StatusStat label="Status" value={formatGameStatus(gameStatus)} />
+              <StatusStat
+                label="Location"
+                value={getTrailPhase(gameStatus, currentTown?.name, currentRiver?.name)}
+              />
+            </dl>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 lg:col-start-2 xl:col-start-auto xl:justify-end">
             <Button
               aria-label="Settings"
               className="size-10 p-0"
@@ -77,7 +92,6 @@ export function ActiveGameLayout({
               <SettingsIcon aria-hidden="true" className="size-5" />
             </Button>
             <SaveControls
-              onReset={onSaveReset}
               onSaveExistsChange={onSaveExistsChange}
               variant="compact"
             />
@@ -108,9 +122,13 @@ type GameStatus = ReturnType<typeof useExpeditionStore.getState>['gameStatus'];
 
 function StatusStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 border border-border bg-panel px-3 py-2">
-      <dt className="text-muted">{label}</dt>
-      <dd className="mt-1 truncate font-bold capitalize text-foreground">{value}</dd>
+    <div
+      aria-label={`${label} status`}
+      className="min-w-0 border-l border-border/80 px-3 py-1"
+      role="group"
+    >
+      <dt className="text-xs uppercase tracking-normal text-muted">{label}</dt>
+      <dd className="mt-0.5 truncate font-bold capitalize text-foreground">{value}</dd>
     </div>
   );
 }

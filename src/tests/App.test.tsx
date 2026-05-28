@@ -199,6 +199,88 @@ describe('App', () => {
     expect(saveControls).toBeInTheDocument();
     expect(saveControls).not.toHaveClass('bg-surface');
     expect(saveControls).not.toHaveClass('p-4');
+    expect(within(statusBar).queryByRole('button', { name: /Reset save/i })).not.toBeInTheDocument();
+    expect(within(statusBar).getByRole('button', { name: 'Return to Menu' })).toBeInTheDocument();
+  });
+
+  it('opens and cancels the return to menu confirmation', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites();
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return to Menu' }));
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Return to menu confirmation',
+    });
+
+    expect(dialog).toHaveTextContent(
+      'The current expedition can be continued later if saves exist.',
+    );
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Return to menu confirmation' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Active game layout' })).toBeInTheDocument();
+  });
+
+  it('closes return to menu confirmation from outside click and Escape', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites();
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return to Menu' }));
+    fireEvent.mouseDown(screen.getByTestId('return-to-menu-confirmation-backdrop'));
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Return to menu confirmation' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Active game layout' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return to Menu' }));
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Return to menu confirmation' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Active game layout' })).toBeInTheDocument();
+  });
+
+  it('returns to the main menu and preserves continue from saved data', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    completeSetupPrerequisites('Saved Trail Crew');
+    fireEvent.click(screen.getByRole('radio', { name: /Trailwise/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Expedition' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save game' }));
+
+    expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return to Menu' }));
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Return to menu confirmation',
+    });
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Return to Menu' }));
+
+    expect(screen.getByRole('heading', { name: 'Frontier Reckoning' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
+    expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(screen.getByRole('region', { name: 'Active game layout' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Saved Trail Crew' })).toBeInTheDocument();
   });
 
   it('restarts from game over into a fresh expedition setup flow', () => {

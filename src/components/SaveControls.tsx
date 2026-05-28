@@ -90,11 +90,6 @@ export function SaveControls({
           <Save aria-hidden="true" className="size-4" />
           Save
         </Button>
-        {saveExists ? (
-          <Button onClick={handleResetSave} size="sm" variant="ghost">
-            Reset save
-          </Button>
-        ) : null}
         <span aria-live="polite" className="text-muted">
           {message ?? (saveExists ? 'Save ready.' : 'No save yet.')}
         </span>

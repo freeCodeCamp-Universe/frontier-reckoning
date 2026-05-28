@@ -19,8 +19,8 @@ describe('ActiveGameLayout', () => {
     render(
       <ActiveGameLayout
         onRestart={() => undefined}
+        onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
-        onSaveReset={() => undefined}
         onSettings={() => undefined}
       />,
     );
@@ -48,8 +48,8 @@ describe('ActiveGameLayout', () => {
     render(
       <ActiveGameLayout
         onRestart={() => undefined}
+        onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
-        onSaveReset={() => undefined}
         onSettings={() => undefined}
       />,
     );
@@ -78,8 +78,8 @@ describe('ActiveGameLayout', () => {
     render(
       <ActiveGameLayout
         onRestart={() => undefined}
+        onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
-        onSaveReset={() => undefined}
         onSettings={() => undefined}
       />,
     );
@@ -110,8 +110,8 @@ describe('ActiveGameLayout', () => {
     render(
       <ActiveGameLayout
         onRestart={() => undefined}
+        onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
-        onSaveReset={() => undefined}
         onSettings={() => undefined}
       />,
     );
@@ -135,8 +135,8 @@ describe('ActiveGameLayout', () => {
     render(
       <ActiveGameLayout
         onRestart={() => undefined}
+        onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
-        onSaveReset={() => undefined}
         onSettings={() => undefined}
       />,
     );
@@ -154,8 +154,8 @@ describe('ActiveGameLayout', () => {
     render(
       <ActiveGameLayout
         onRestart={() => undefined}
+        onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
-        onSaveReset={() => undefined}
         onSettings={() => undefined}
       />,
     );
@@ -177,8 +177,8 @@ describe('ActiveGameLayout', () => {
     render(
       <ActiveGameLayout
         onRestart={() => undefined}
+        onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
-        onSaveReset={() => undefined}
         onSettings={onSettings}
       />,
     );
@@ -186,5 +186,66 @@ describe('ActiveGameLayout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
 
     expect(onSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders expedition status as passive non-focusable information', () => {
+    useExpeditionStore.setState(createStartingGameState());
+
+    render(
+      <ActiveGameLayout
+        onRestart={() => undefined}
+        onReturnToMenu={() => undefined}
+        onSaveExistsChange={() => undefined}
+        onSettings={() => undefined}
+      />,
+    );
+
+    const status = screen.getByLabelText('Expedition status');
+
+    for (const label of ['Day', 'Distance', 'Status', 'Location']) {
+      const stat = within(status).getByRole('group', { name: `${label} status` });
+
+      expect(within(status).queryByRole('button', { name: label })).not.toBeInTheDocument();
+      expect(stat).not.toHaveAttribute('tabindex');
+      stat.focus();
+      expect(stat).not.toHaveFocus();
+      expect(stat).not.toHaveClass('bg-panel');
+      expect(stat).not.toHaveClass('hover:border-highlight');
+    }
+  });
+
+  it('renders return to menu and omits reset save from the status bar', () => {
+    const onReturnToMenu = vi.fn();
+
+    useExpeditionStore.setState(createStartingGameState());
+
+    render(
+      <ActiveGameLayout
+        onRestart={() => undefined}
+        onReturnToMenu={onReturnToMenu}
+        onSaveExistsChange={() => undefined}
+        onSettings={() => undefined}
+      />,
+    );
+
+    const header = screen.getByRole('banner');
+    const menuButton = within(header).getByRole('button', { name: 'Return to Menu' });
+    const settingsButton = within(header).getByRole('button', { name: 'Settings' });
+    const saveButton = within(header).getByRole('button', { name: 'Save game' });
+
+    expect(menuButton).toBeInTheDocument();
+    expect(within(header).queryByRole('button', { name: /Reset save/i })).not.toBeInTheDocument();
+    expect(
+      menuButton.compareDocumentPosition(settingsButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      menuButton.compareDocumentPosition(saveButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fireEvent.click(menuButton);
+
+    expect(onReturnToMenu).toHaveBeenCalledTimes(1);
   });
 });
