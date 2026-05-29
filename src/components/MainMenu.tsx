@@ -17,7 +17,7 @@ export function MainMenu({
 }: MainMenuProps) {
   return (
     <section className="mx-auto mt-6 flex min-h-[78vh] max-w-6xl flex-col justify-center gap-6 overflow-hidden sm:mt-8 lg:mt-10">
-      <div className="relative border border-border bg-surface p-5 sm:p-7 lg:p-8">
+      <div className="relative border border-border bg-surface p-5 sm:p-7 lg:p-10">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(59,59,79,0.34)_1px,transparent_1px),linear-gradient(90deg,rgba(59,59,79,0.24)_1px,transparent_1px)] bg-[size:28px_28px] opacity-30"
@@ -27,52 +27,30 @@ export function MainMenu({
           className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-cta"
         />
 
-        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-          <header>
-            <h1 className="text-5xl font-bold leading-tight sm:text-6xl lg:text-7xl">
-              Frontier Reckoning
-            </h1>
-            <p className="mt-4 max-w-2xl text-xl text-muted">
-              Lead a caravan through scarce supplies, uneasy crossings, and the
-              hard choices waiting beyond the map.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button onClick={onNewExpedition} className="sm:min-w-48">
-                <Play aria-hidden="true" className="size-5" />
-                Start Expedition
+        <header className="relative mx-auto max-w-4xl text-center">
+          <h1 className="text-5xl font-bold leading-tight sm:text-6xl lg:text-7xl">
+            Frontier Reckoning
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-xl text-muted">
+            Lead a caravan through scarce supplies, uneasy crossings, and the hard choices
+            waiting beyond the map.
+          </p>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button onClick={onNewExpedition} className="sm:min-w-48">
+              <Play aria-hidden="true" className="size-5" />
+              Start Expedition
+            </Button>
+            {canContinue ? (
+              <Button onClick={onContinue} variant="secondary" className="sm:min-w-36">
+                Continue
               </Button>
-              {canContinue ? (
-                <Button
-                  onClick={onContinue}
-                  variant="secondary"
-                  className="sm:min-w-36"
-                >
-                  Continue
-                </Button>
-              ) : null}
-              <Button onClick={onSettings} variant="ghost" className="sm:min-w-32">
-                <Settings aria-hidden="true" className="size-5" />
-                Settings
-              </Button>
-            </div>
-          </header>
-
-          <Card
-            as="div"
-            variant="panel"
-            aria-label="Caravan status"
-            role="complementary"
-            className="p-5"
-          >
-            <p className="font-mono text-base text-highlight">caravan status</p>
-            <dl className="mt-4 grid gap-3">
-              <StatusRow label="Trail" value="Uncharted" />
-              <StatusRow label="Supplies" value="Carefully packed" />
-              <StatusRow label="Morale" value="Holding steady" />
-              <StatusRow label="Destination" value="Last Lantern" />
-            </dl>
-          </Card>
-        </div>
+            ) : null}
+            <Button onClick={onSettings} variant="ghost" className="sm:min-w-32">
+              <Settings aria-hidden="true" className="size-5" />
+              Settings
+            </Button>
+          </div>
+        </header>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -93,15 +71,6 @@ export function MainMenu({
         />
       </div>
     </section>
-  );
-}
-
-function StatusRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-border pb-2 last:border-b-0 last:pb-0">
-      <dt className="font-mono text-base text-muted">{label}</dt>
-      <dd className="text-right font-bold text-foreground">{value}</dd>
-    </div>
   );
 }
 

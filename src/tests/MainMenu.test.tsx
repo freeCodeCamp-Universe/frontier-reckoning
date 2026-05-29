@@ -22,18 +22,30 @@ describe('MainMenu', () => {
     expect(
       screen.getByRole('heading', { name: 'Frontier Reckoning' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: 'Caravan status' })).toBeInTheDocument();
-    expect(screen.getByText('Trail')).toBeInTheDocument();
-    expect(screen.getByText('Uncharted')).toBeInTheDocument();
-    expect(screen.getByText('Supplies')).toBeInTheDocument();
-    expect(screen.getByText('Carefully packed')).toBeInTheDocument();
-    expect(screen.getByText('Morale')).toBeInTheDocument();
-    expect(screen.getByText('Holding steady')).toBeInTheDocument();
-    expect(screen.getByText('Destination')).toBeInTheDocument();
-    expect(screen.getByText('Last Lantern')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Manage Supplies' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Survive Events' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cross Rivers' })).toBeInTheDocument();
+  });
+
+  it('does not render decorative caravan status content', () => {
+    renderMainMenu();
+
+    expect(
+      screen.queryByRole('complementary', { name: 'Caravan status' }),
+    ).not.toBeInTheDocument();
+
+    for (const text of [
+      'Trail',
+      'Uncharted',
+      'Supplies',
+      'Carefully packed',
+      'Morale',
+      'Holding steady',
+      'Destination',
+      'Last Lantern',
+    ]) {
+      expect(screen.queryByText(text)).not.toBeInTheDocument();
+    }
   });
 
   it('calls the correct handlers from homepage actions', () => {
