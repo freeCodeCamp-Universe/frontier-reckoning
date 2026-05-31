@@ -16,6 +16,10 @@ export function AudioEffects() {
   const previousGameStatus = useRef(gameStatus);
 
   useEffect(() => {
+    return () => audioSystem.mute();
+  }, []);
+
+  useEffect(() => {
     audioSystem.updateSettings({
       soundEnabled: settings.soundEnabled,
       musicVolume: settings.musicVolume,

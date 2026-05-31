@@ -39,7 +39,7 @@ function createFileAudioAssets() {
       category,
       {
         ...asset,
-        src: `/audio/placeholders/${asset.replacementFileName}`,
+        src: asset.src ?? `/audio/placeholders/${asset.replacementFileName}`,
       },
     ]),
   ) as Record<keyof typeof placeholderAudioAssets, AudioAsset>;
@@ -171,15 +171,16 @@ describe('audio system', () => {
     system.requestSceneAudio('river');
     vi.runAllTimers();
 
-    expect(elements[0].src).toBe('/audio/placeholders/camp-ambience.ogg');
-    expect(elements[0].pause).toHaveBeenCalled();
-    expect(elements[1].src).toBe('/audio/placeholders/river-ambience.ogg');
-    expect(elements[1].play).toHaveBeenCalled();
+    expect(elements).toHaveLength(1);
+    expect(elements[0].src).toBe('/audio/nature-ambience.mp3');
+    expect(elements[0].loop).toBe(true);
+    expect(elements[0].pause).not.toHaveBeenCalled();
+    expect(elements[0].play).toHaveBeenCalledTimes(1);
 
     vi.useRealTimers();
   });
 
-  it('loads generated audio only after user interaction', async () => {
+  it('loads procedural audio only after user interaction', async () => {
     const { createAudioContext, stop } = createAudioContextFactory();
     const system = new FrontierAudioSystem(
       placeholderAudioAssets,
@@ -205,6 +206,29 @@ describe('audio system', () => {
 
     expect(createAudioContext).toHaveBeenCalledTimes(1);
     expect(stop).toHaveBeenCalled();
+  });
+
+  it('reuses the ambient audio instance when scenes share the same soundtrack', async () => {
+    const { createAudioElement, elements } = createAudioFactory();
+    const system = new FrontierAudioSystem(
+      createFileAudioAssets(),
+      createAudioElement,
+    );
+
+    system.registerUserInteraction();
+    system.updateSettings({
+      soundEnabled: true,
+      musicVolume: 65,
+      sfxVolume: 80,
+    });
+
+    await system.playAmbience('trail_ambience', 0);
+    await system.playAmbience('camp_ambience', 0);
+
+    expect(elements).toHaveLength(1);
+    expect(elements[0].src).toBe('/audio/nature-ambience.mp3');
+    expect(elements[0].play).toHaveBeenCalledTimes(1);
+    expect(elements[0].pause).not.toHaveBeenCalled();
   });
 
   it('maps game status to scene audio categories', () => {

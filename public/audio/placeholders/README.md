@@ -1,18 +1,14 @@
-# Frontier Reckoning audio
+# Frontier Reckoning placeholder audio
 
-The game currently uses original procedural Web Audio compositions from
-`src/game/systems/audioSystem.ts`. There are no bundled copyrighted music or sound
-effect files, which keeps the production payload small.
+The primary gameplay ambience now lives at `public/audio/nature-ambience.mp3`
+and is registered in `src/game/systems/audioSystem.ts`.
 
-To replace the generated audio later, add final assets in this folder and set the
-matching `src` fields in `generatedAudioAssets`:
+The remaining menu music and sound effects use original procedural Web Audio
+compositions until final short assets are available. To replace those generated
+sounds later, add final assets in this folder and set the matching `src` fields
+in `generatedAudioAssets`:
 
 - `main-menu.ogg`
-- `trail-ambience.ogg`
-- `camp-ambience.ogg`
-- `town-ambience.ogg`
-- `storm-ambience.ogg`
-- `river-ambience.ogg`
 - `button-click.ogg`
 - `event-alert.ogg`
 - `hunting-shot.ogg`

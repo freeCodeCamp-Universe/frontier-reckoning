@@ -50,6 +50,7 @@ type ManagedAudio = {
   pause: () => void;
   play: () => Promise<void> | void;
   preload: string;
+  src?: string;
   volume: number;
 };
 
@@ -65,6 +66,8 @@ type AudioNodeWithStop = AudioScheduledSourceNode & {
   stop: (when?: number) => void;
 };
 
+const PRIMARY_AMBIENT_SOUNDTRACK = '/audio/nature-ambience.mp3';
+
 export const generatedAudioAssets: Record<AudioCategory, AudioAsset> = {
   main_menu_music: {
     category: 'main_menu_music',
@@ -78,35 +81,40 @@ export const generatedAudioAssets: Record<AudioCategory, AudioAsset> = {
     loop: true,
     channel: 'ambience',
     composition: 'trail_ambience',
-    replacementFileName: 'trail-ambience.ogg',
+    replacementFileName: 'nature-ambience.mp3',
+    src: PRIMARY_AMBIENT_SOUNDTRACK,
   },
   camp_ambience: {
     category: 'camp_ambience',
     loop: true,
     channel: 'ambience',
     composition: 'campfire_ambience',
-    replacementFileName: 'camp-ambience.ogg',
+    replacementFileName: 'nature-ambience.mp3',
+    src: PRIMARY_AMBIENT_SOUNDTRACK,
   },
   town_ambience: {
     category: 'town_ambience',
     loop: true,
     channel: 'ambience',
     composition: 'town_ambience',
-    replacementFileName: 'town-ambience.ogg',
+    replacementFileName: 'nature-ambience.mp3',
+    src: PRIMARY_AMBIENT_SOUNDTRACK,
   },
   storm_ambience: {
     category: 'storm_ambience',
     loop: true,
     channel: 'ambience',
     composition: 'storm_ambience',
-    replacementFileName: 'storm-ambience.ogg',
+    replacementFileName: 'nature-ambience.mp3',
+    src: PRIMARY_AMBIENT_SOUNDTRACK,
   },
   river_ambience: {
     category: 'river_ambience',
     loop: true,
     channel: 'ambience',
     composition: 'river_ambience',
-    replacementFileName: 'river-ambience.ogg',
+    replacementFileName: 'nature-ambience.mp3',
+    src: PRIMARY_AMBIENT_SOUNDTRACK,
   },
   button_click: {
     category: 'button_click',
@@ -232,7 +240,11 @@ export class FrontierAudioSystem {
       return false;
     }
 
-    if (this.ambience?.__frontierCategory === category) {
+    if (
+      this.ambience?.__frontierCategory === category ||
+      (asset.src && this.ambience?.src === asset.src)
+    ) {
+      this.ambience.__frontierCategory = category;
       this.applyVolume(this.ambience);
       return true;
     }
@@ -500,21 +512,6 @@ class GeneratedAudioComposition {
       case 'menu_theme':
         scheduleMenuTheme(this.context, this.output, start, this.activeNodes);
         break;
-      case 'trail_ambience':
-        scheduleTrailAmbience(this.context, this.output, start, this.activeNodes);
-        break;
-      case 'campfire_ambience':
-        scheduleCampfireAmbience(this.context, this.output, start, this.activeNodes);
-        break;
-      case 'town_ambience':
-        scheduleTownAmbience(this.context, this.output, start, this.activeNodes);
-        break;
-      case 'storm_ambience':
-        scheduleStormAmbience(this.context, this.output, start, this.activeNodes);
-        break;
-      case 'river_ambience':
-        scheduleRiverAmbience(this.context, this.output, start, this.activeNodes);
-        break;
       case 'button_click':
         scheduleToneSequence(this.context, this.output, start, this.activeNodes, [
           [660, 0, 0.045, 'triangle', 0.08],
@@ -590,79 +587,6 @@ function scheduleMenuTheme(
     [247, 3.1, 0.8, 'sine', 0.035],
     [330, 3.9, 0.9, 'triangle', 0.03],
   ]);
-}
-
-function scheduleTrailAmbience(
-  context: AudioContext,
-  destination: AudioNode,
-  start: number,
-  nodes: AudioNodeWithStop[],
-) {
-  scheduleToneSequence(context, destination, start, nodes, [
-    [73, 0, 5.1, 'sine', 0.025],
-    [110, 1.2, 3.8, 'sine', 0.012],
-  ]);
-  scheduleNoiseBurst(context, destination, start, 5.2, 0.018, nodes, 900);
-}
-
-function scheduleCampfireAmbience(
-  context: AudioContext,
-  destination: AudioNode,
-  start: number,
-  nodes: AudioNodeWithStop[],
-) {
-  scheduleToneSequence(context, destination, start, nodes, [
-    [82, 0, 5.2, 'sine', 0.015],
-  ]);
-
-  for (let index = 0; index < 16; index += 1) {
-    scheduleNoiseBurst(
-      context,
-      destination,
-      start + index * 0.31,
-      0.05 + (index % 3) * 0.02,
-      0.035,
-      nodes,
-      2600,
-    );
-  }
-}
-
-function scheduleTownAmbience(
-  context: AudioContext,
-  destination: AudioNode,
-  start: number,
-  nodes: AudioNodeWithStop[],
-) {
-  scheduleToneSequence(context, destination, start, nodes, [
-    [147, 0, 1.8, 'triangle', 0.025],
-    [196, 2.1, 1.2, 'triangle', 0.02],
-    [247, 3.6, 0.8, 'triangle', 0.018],
-  ]);
-  scheduleNoiseBurst(context, destination, start + 0.5, 4.2, 0.012, nodes, 1300);
-}
-
-function scheduleStormAmbience(
-  context: AudioContext,
-  destination: AudioNode,
-  start: number,
-  nodes: AudioNodeWithStop[],
-) {
-  scheduleNoiseBurst(context, destination, start, 5.2, 0.06, nodes, 500);
-  scheduleToneSequence(context, destination, start, nodes, [
-    [55, 0.6, 1.4, 'sine', 0.04],
-    [46, 2.7, 1.8, 'sine', 0.05],
-  ]);
-}
-
-function scheduleRiverAmbience(
-  context: AudioContext,
-  destination: AudioNode,
-  start: number,
-  nodes: AudioNodeWithStop[],
-) {
-  scheduleNoiseBurst(context, destination, start, 5.2, 0.05, nodes, 750);
-  scheduleNoiseBurst(context, destination, start + 0.35, 4.5, 0.025, nodes, 1700);
 }
 
 function scheduleToneSequence(
@@ -747,11 +671,11 @@ export type AudioScene =
 
 const audioSceneAmbience: Partial<Record<AudioScene, AudioCategory>> = {
   trail: 'trail_ambience',
-  camp: 'camp_ambience',
-  town: 'town_ambience',
-  storm: 'storm_ambience',
-  river: 'river_ambience',
-  event: 'storm_ambience',
+  camp: 'trail_ambience',
+  town: 'trail_ambience',
+  storm: 'trail_ambience',
+  river: 'trail_ambience',
+  event: 'trail_ambience',
 };
 
 export function getAudioSceneForGameStatus(
