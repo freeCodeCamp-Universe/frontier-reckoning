@@ -283,7 +283,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Saved Trail Crew' })).toBeInTheDocument();
   });
 
-  it('restarts from game over into a fresh expedition setup flow', () => {
+  it('starts a new game from game over into a fresh expedition setup flow', () => {
     useExpeditionStore.setState({
       ...createStartingGameState({
         expeditionName: 'Doomed Trail Crew',
@@ -298,8 +298,10 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Game Over' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Restart' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New Game' }));
 
     expect(screen.getByRole('heading', { name: 'Name the caravan' })).toBeInTheDocument();
     expect(screen.getByLabelText('Expedition name')).toHaveValue('');

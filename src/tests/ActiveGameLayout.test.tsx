@@ -18,7 +18,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
         onSettings={() => undefined}
@@ -47,7 +47,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
         onSettings={() => undefined}
@@ -77,7 +77,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
         onSettings={() => undefined}
@@ -109,7 +109,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
         onSettings={() => undefined}
@@ -134,7 +134,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
         onSettings={() => undefined}
@@ -153,7 +153,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
         onSettings={() => undefined}
@@ -176,7 +176,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
         onSettings={onSettings}
@@ -193,7 +193,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={() => undefined}
         onSaveExistsChange={() => undefined}
         onSettings={() => undefined}
@@ -221,7 +221,7 @@ describe('ActiveGameLayout', () => {
 
     render(
       <ActiveGameLayout
-        onRestart={() => undefined}
+        onNewGame={() => undefined}
         onReturnToMenu={onReturnToMenu}
         onSaveExistsChange={() => undefined}
         onSettings={() => undefined}

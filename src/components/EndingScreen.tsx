@@ -11,10 +11,10 @@ import { useExpeditionStore } from '@stores/expeditionStore';
 import { useSettings } from '@/hooks/useSettings';
 
 type EndingScreenProps = {
-  onRestart?: () => void;
+  onNewGame?: () => void;
 };
 
-export function EndingScreen({ onRestart }: EndingScreenProps) {
+export function EndingScreen({ onNewGame }: EndingScreenProps) {
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const gameOverReason = useExpeditionStore((state) => state.gameOverReason);
   const resetGame = useExpeditionStore((state) => state.resetGame);
@@ -59,11 +59,12 @@ export function EndingScreen({ onRestart }: EndingScreenProps) {
       </div>
 
       <Button
-        onClick={onRestart ?? resetGame}
+        aria-label="New Game"
+        onClick={onNewGame ?? resetGame}
         className="mt-5"
         variant={gameStatus === 'victory' ? 'primary' : 'danger'}
       >
-        Restart
+        New Game
       </Button>
     </Card>
   );

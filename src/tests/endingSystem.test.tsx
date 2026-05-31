@@ -37,6 +37,8 @@ describe('endingSystem', () => {
     expect(screen.getByRole('heading', { name: 'Victory' })).toBeInTheDocument();
     expect(screen.getByText('Reputation')).toBeInTheDocument();
     expect(screen.getByText('Score')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Restart' })).not.toBeInTheDocument();
   });
 
   it('renders the game over screen', () => {
@@ -50,9 +52,11 @@ describe('endingSystem', () => {
 
     expect(screen.getByRole('heading', { name: 'Game Over' })).toBeInTheDocument();
     expect(screen.getByText('The wagon was destroyed.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
+    expect(screen.queryByText('Restart')).not.toBeInTheDocument();
   });
 
-  it('restart resets state', () => {
+  it('new game resets state', () => {
     useExpeditionStore.setState({
       ...createStartingGameState(),
       gameStatus: 'victory',
@@ -60,7 +64,7 @@ describe('endingSystem', () => {
     });
 
     render(<EndingScreen />);
-    fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New Game' }));
 
     expect(useExpeditionStore.getState()).toMatchObject(initialGameState);
   });

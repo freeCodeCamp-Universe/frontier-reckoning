@@ -51,7 +51,7 @@ export function App() {
     setAppScreen('main_menu');
   };
 
-  const handleRestart = () => {
+  const handleNewGame = () => {
     resetGame();
     clearSaveFromStorage(window.localStorage);
     setSaveAvailable(false);
@@ -101,7 +101,7 @@ export function App() {
   return (
     <main className="min-h-screen bg-canvas px-4 py-6 text-foreground sm:px-6 lg:px-8">
       <ActiveGameLayout
-        onRestart={handleRestart}
+        onNewGame={handleNewGame}
         onReturnToMenu={() => setReturnToMenuOpen(true)}
         onSaveExistsChange={setSaveAvailable}
         onSettings={() => setSettingsOpen(true)}

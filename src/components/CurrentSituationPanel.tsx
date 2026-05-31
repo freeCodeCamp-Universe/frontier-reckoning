@@ -7,10 +7,10 @@ import { Card } from '@components/ui/Card';
 import { useExpeditionStore } from '@stores/expeditionStore';
 
 type CurrentSituationPanelProps = {
-  onRestart?: () => void;
+  onNewGame?: () => void;
 };
 
-export function CurrentSituationPanel({ onRestart }: CurrentSituationPanelProps) {
+export function CurrentSituationPanel({ onNewGame }: CurrentSituationPanelProps) {
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const currentRiver = useExpeditionStore((state) => state.currentRiver);
   const currentTown = useExpeditionStore((state) => state.currentTown);
@@ -44,7 +44,7 @@ export function CurrentSituationPanel({ onRestart }: CurrentSituationPanelProps)
   if (gameStatus === 'victory' || gameStatus === 'game_over') {
     return (
       <section aria-label="Current situation">
-        <EndingScreen onRestart={onRestart} />
+        <EndingScreen onNewGame={onNewGame} />
       </section>
     );
   }

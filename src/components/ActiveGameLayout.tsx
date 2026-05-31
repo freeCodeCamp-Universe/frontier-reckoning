@@ -16,14 +16,14 @@ const LazyPhaserGame = lazy(() =>
 );
 
 type ActiveGameLayoutProps = {
-  onRestart: () => void;
+  onNewGame: () => void;
   onReturnToMenu: () => void;
   onSaveExistsChange: (saveExists: boolean) => void;
   onSettings: () => void;
 };
 
 export function ActiveGameLayout({
-  onRestart,
+  onNewGame,
   onReturnToMenu,
   onSaveExistsChange,
   onSettings,
@@ -101,7 +101,7 @@ export function ActiveGameLayout({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-5">
-          <CurrentSituationPanel onRestart={onRestart} />
+          <CurrentSituationPanel onNewGame={onNewGame} />
           <ResourceDashboard />
           <TrailMapPanel
             distanceTraveled={distanceTraveled}
