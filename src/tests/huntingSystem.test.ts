@@ -7,6 +7,10 @@ import {
   isHuntingTimerExpired,
   resolveHuntingShot,
 } from '@game/systems/huntingSystem';
+import {
+  getHuntingAnimalHitRadius,
+  huntingSpriteProfiles,
+} from '@game/systems/huntingSpriteProfiles';
 import { createStartingGameState } from '@stores/expeditionStore';
 import { createSeededRng } from '@utils/rng';
 
@@ -60,7 +64,15 @@ describe('huntingSystem', () => {
   it('successful mini-game hit adds food and consumes ammo', () => {
     const state = createStartingGameState();
     const shot = resolveHuntingShot({
-      animals: [{ id: 'deer-1', type: 'deer', x: 100, y: 100, size: 24 }],
+      animals: [
+        {
+          id: 'deer-1',
+          type: 'deer',
+          x: 100,
+          y: 100,
+          size: getHuntingAnimalHitRadius('deer'),
+        },
+      ],
       target: { x: 105, y: 100 },
       ammoRemaining: 3,
       state,
@@ -75,7 +87,15 @@ describe('huntingSystem', () => {
   it('mini-game miss consumes ammo without food', () => {
     const state = createStartingGameState();
     const shot = resolveHuntingShot({
-      animals: [{ id: 'rabbit-1', type: 'rabbit', x: 100, y: 100, size: 15 }],
+      animals: [
+        {
+          id: 'rabbit-1',
+          type: 'rabbit',
+          x: 100,
+          y: 100,
+          size: getHuntingAnimalHitRadius('rabbit'),
+        },
+      ],
       target: { x: 300, y: 100 },
       ammoRemaining: 2,
       state,
@@ -90,6 +110,27 @@ describe('huntingSystem', () => {
   it('timer ends the hunting scene after 30 seconds', () => {
     expect(isHuntingTimerExpired(HUNTING_DURATION_SECONDS - 1)).toBe(false);
     expect(isHuntingTimerExpired(HUNTING_DURATION_SECONDS)).toBe(true);
+  });
+
+  it('defines distinct sprite profiles for rabbit, deer, and elk', () => {
+    expect(huntingSpriteProfiles.rabbit).toMatchObject({
+      movement: 'quick-hop',
+      hasAntlers: false,
+    });
+    expect(huntingSpriteProfiles.deer).toMatchObject({
+      movement: 'graceful-run',
+      hasAntlers: true,
+    });
+    expect(huntingSpriteProfiles.elk).toMatchObject({
+      movement: 'heavy-lope',
+      hasAntlers: true,
+    });
+    expect(getHuntingAnimalHitRadius('rabbit')).toBeLessThan(
+      getHuntingAnimalHitRadius('deer'),
+    );
+    expect(getHuntingAnimalHitRadius('deer')).toBeLessThan(
+      getHuntingAnimalHitRadius('elk'),
+    );
   });
 
   it('mini-game predator result can injure a party member', () => {
