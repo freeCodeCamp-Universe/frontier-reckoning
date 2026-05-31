@@ -29,7 +29,8 @@ describe('endingSystem', () => {
     useExpeditionStore.setState({
       ...createStartingGameState(),
       gameStatus: 'victory',
-      distanceTraveled: 2000,
+      distanceTraveled: 1999.99999999997,
+      money: 104.80000000000008,
     });
 
     render(<EndingScreen />);
@@ -37,8 +38,11 @@ describe('endingSystem', () => {
     expect(screen.getByRole('heading', { name: 'Victory' })).toBeInTheDocument();
     expect(screen.getByText('Reputation')).toBeInTheDocument();
     expect(screen.getByText('Score')).toBeInTheDocument();
+    expect(screen.getByText('$105')).toBeInTheDocument();
+    expect(screen.getByText('2000 / 2000 mi')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Restart' })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('104.80000000000008');
   });
 
   it('renders the game over screen', () => {

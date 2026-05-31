@@ -4,6 +4,7 @@ import { Card, CardEyebrow, CardHeader } from '@components/ui/Card';
 import { ResourceIcon } from '@components/ui/ResourceIcon';
 import { useExpeditionStore } from '@stores/expeditionStore';
 import { getDifficultyPrice } from '@game/systems/townSystem';
+import { formatMoneyValue } from '@utils/formatResourceValue';
 
 export function TownScreen() {
   const currentTown = useExpeditionStore((state) => state.currentTown);
@@ -100,7 +101,7 @@ export function TownScreen() {
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         <Badge variant="warning" className="md:col-span-2 lg:col-span-3">
-          Money ${money}
+          Money ${formatMoneyValue(money)}
         </Badge>
         <Button
           onClick={restAtInn}

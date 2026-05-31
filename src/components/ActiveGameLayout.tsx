@@ -8,6 +8,7 @@ import { SaveControls } from '@components/SaveControls';
 import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 import { useExpeditionStore } from '@stores/expeditionStore';
+import { formatWholeNumber } from '@utils/formatResourceValue';
 
 const LazyPhaserGame = lazy(() =>
   import('@components/PhaserGame').then((module) => ({
@@ -71,8 +72,11 @@ export function ActiveGameLayout({
               aria-live="polite"
               className="grid gap-x-4 gap-y-2 font-mono text-sm text-muted sm:grid-cols-2 lg:grid-cols-4"
             >
-              <StatusStat label="Day" value={String(currentDay)} />
-              <StatusStat label="Distance" value={`${distanceTraveled} / ${totalDistance}`} />
+              <StatusStat label="Day" value={formatWholeNumber(currentDay)} />
+              <StatusStat
+                label="Distance"
+                value={`${formatWholeNumber(distanceTraveled)} / ${formatWholeNumber(totalDistance)}`}
+              />
               <StatusStat label="Status" value={formatGameStatus(gameStatus)} />
               <StatusStat
                 label="Location"
@@ -190,7 +194,7 @@ function TrailMapPanel({
           <div className="mb-1 flex items-center justify-between gap-3 font-mono text-base">
             <span className="text-muted">Distance progress</span>
             <span className="font-bold text-foreground">
-              {distanceTraveled} / {totalDistance} mi
+              {formatWholeNumber(distanceTraveled)} / {formatWholeNumber(totalDistance)} mi
             </span>
           </div>
           <div

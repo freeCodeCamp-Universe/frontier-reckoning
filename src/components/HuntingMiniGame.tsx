@@ -11,6 +11,7 @@ import {
 } from '@game/systems/huntingSystem';
 import { audioSystem } from '@game/systems/audioSystem';
 import type { FrontierReckoningData } from '@stores/expeditionStore';
+import { formatWholeNumber } from '@utils/formatResourceValue';
 
 type HuntingMiniGameProps = {
   ammoAvailable: number;
@@ -283,7 +284,7 @@ class HuntingScene extends Phaser.Scene {
   }
 
   private updateHud() {
-    this.ammoText?.setText(`Ammo ${this.ammoRemaining}`);
+    this.ammoText?.setText(`Ammo ${formatWholeNumber(this.ammoRemaining)}`);
     this.timerText?.setText(
       `Time ${Math.max(0, HUNTING_DURATION_SECONDS - this.elapsedSeconds)}s`,
     );

@@ -42,6 +42,28 @@ describe('ActiveGameLayout', () => {
     expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
   });
 
+  it('formats header and trail map distance values as whole numbers', async () => {
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      distanceTraveled: 104.80000000000008,
+      totalDistance: 1999.99999999997,
+    });
+
+    render(
+      <ActiveGameLayout
+        onNewGame={() => undefined}
+        onReturnToMenu={() => undefined}
+        onSaveExistsChange={() => undefined}
+        onSettings={() => undefined}
+      />,
+    );
+
+    expect(screen.getAllByText('105 / 2000')).toHaveLength(1);
+    expect(screen.getByText('105 / 2000 mi')).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('104.80000000000008');
+    expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
+  });
+
   it('places the compact trail dashboard above the trail map', () => {
     useExpeditionStore.setState(createStartingGameState());
 

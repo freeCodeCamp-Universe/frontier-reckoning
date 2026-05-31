@@ -7,6 +7,11 @@ import {
   getRiverOptionAvailability,
 } from '@game/systems/riverSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
+import {
+  formatMoneyValue,
+  formatResourceValue,
+  formatWholeNumber,
+} from '@utils/formatResourceValue';
 
 export function RiverEventScreen() {
   const currentRiver = useExpeditionStore((state) => state.currentRiver);
@@ -139,10 +144,14 @@ function RiskMeter({ value }: { value: number }) {
 
 function formatCost(cost: ReturnType<typeof getRiverCostPreview>) {
   const parts = [
-    cost.money ? `$${cost.money}` : null,
-    cost.wagonParts ? `${cost.wagonParts} part${cost.wagonParts === 1 ? '' : 's'}` : null,
-    cost.food ? `${cost.food} food` : null,
-    cost.days ? `${cost.days} day${cost.days === 1 ? '' : 's'}` : null,
+    cost.money ? `$${formatMoneyValue(cost.money)}` : null,
+    cost.wagonParts
+      ? `${formatResourceValue('wagonParts', cost.wagonParts)} part${Math.round(cost.wagonParts) === 1 ? '' : 's'}`
+      : null,
+    cost.food ? `${formatResourceValue('food', cost.food)} food` : null,
+    cost.days
+      ? `${formatWholeNumber(cost.days)} day${Math.round(cost.days) === 1 ? '' : 's'}`
+      : null,
   ].filter(Boolean);
 
   return parts.length > 0 ? parts.join(', ') : 'none';

@@ -69,7 +69,13 @@ describe('PartyPanel', () => {
 
   it('exposes health and morale bars with text labels', () => {
     useExpeditionStore.setState({
-      party: [createCharacter({ name: 'Pearl Fox', health: 42, morale: 67 })],
+      party: [
+        createCharacter({
+          name: 'Pearl Fox',
+          health: 42.49999999997,
+          morale: 66.80000000000008,
+        }),
+      ],
     });
 
     render(<PartyPanel />);
@@ -84,6 +90,8 @@ describe('PartyPanel', () => {
     ).toHaveAttribute('aria-valuetext', '67 of 100');
     expect(screen.getByText('42/100')).toBeInTheDocument();
     expect(screen.getByText('67/100')).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('42.49999999997');
+    expect(document.body).not.toHaveTextContent('66.80000000000008');
   });
 
   it('starts collapsed and expands the party cards', () => {

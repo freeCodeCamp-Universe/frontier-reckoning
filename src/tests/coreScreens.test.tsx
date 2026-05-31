@@ -59,9 +59,12 @@ describe('core screens', () => {
       ...createStartingGameState(),
       gameStatus: 'town',
       currentTown: towns[0],
+      money: 104.80000000000008,
     });
     const town = render(<TownScreen />);
     expect(screen.getByRole('heading', { name: 'Ash Hollow' })).toBeInTheDocument();
+    expect(screen.getByText('Money $105')).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('104.80000000000008');
     town.unmount();
 
     useExpeditionStore.setState({

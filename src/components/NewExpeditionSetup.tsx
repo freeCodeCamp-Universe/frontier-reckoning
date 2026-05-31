@@ -14,6 +14,7 @@ import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
 import { Card, CardHeader } from '@components/ui/Card';
 import { CharacterPortrait } from '@components/ui/Portrait';
+import { formatResourceValue } from '@utils/formatResourceValue';
 
 type NewExpeditionSetupProps = {
   onBack: () => void;
@@ -281,7 +282,8 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
                     </Badge>
                   </span>
                   <span className="mt-2 block text-base">
-                    Health {character.health} / Morale {character.morale}
+                    Health {formatResourceValue('health', character.health)} / Morale{' '}
+                    {formatResourceValue('morale', character.morale)}
                   </span>
                 </button>
               );

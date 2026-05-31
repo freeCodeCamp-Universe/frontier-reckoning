@@ -36,6 +36,40 @@ describe('ResourceDashboard', () => {
     expectResourceValue('Wagon Condition', '92%');
   });
 
+  it('formats resource precision artifacts without changing stored values', () => {
+    const artifactFood = 104.80000000000008;
+    const artifactMorale = 99.99999999997;
+
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      food: artifactFood,
+      medicine: 3.2,
+      ammo: 43.2,
+      wagonParts: 1.8,
+      money: 99.99999999997,
+      morale: artifactMorale,
+      health: 67.6,
+      wagonCondition: 88.4,
+    });
+
+    render(<ResourceDashboard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resource summary' }));
+
+    expectResourceValue('Food', '105');
+    expectResourceValue('Medicine', '3');
+    expectResourceValue('Ammo', '43');
+    expectResourceValue('Wagon Parts', '2');
+    expectResourceValue('Money', '100');
+    expectResourceValue('Morale', '100%');
+    expectResourceValue('Health', '68%');
+    expectResourceValue('Wagon Condition', '88%');
+    expect(document.body).not.toHaveTextContent('104.80000000000008');
+    expect(document.body).not.toHaveTextContent('99.99999999997');
+    expect(useExpeditionStore.getState().food).toBe(artifactFood);
+    expect(useExpeditionStore.getState().morale).toBe(artifactMorale);
+  });
+
   it('renders a text warning for low resources', () => {
     useExpeditionStore.setState({
       ...createStartingGameState(),

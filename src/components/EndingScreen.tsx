@@ -8,6 +8,7 @@ import {
   getSurvivors,
 } from '@game/systems/endingSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
+import { formatMoneyValue, formatWholeNumber } from '@utils/formatResourceValue';
 import { useSettings } from '@/hooks/useSettings';
 
 type EndingScreenProps = {
@@ -47,13 +48,13 @@ export function EndingScreen({ onNewGame }: EndingScreenProps) {
       </p>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <SummaryCard label="Days traveled" value={state.currentDay} />
+        <SummaryCard label="Days traveled" value={formatWholeNumber(state.currentDay)} />
         <SummaryCard label="Survivors" value={survivors.length} />
         <SummaryCard
           label="Distance traveled"
-          value={`${state.distanceTraveled} / ${state.totalDistance} mi`}
+          value={`${formatWholeNumber(state.distanceTraveled)} / ${formatWholeNumber(state.totalDistance)} mi`}
         />
-        <SummaryCard label="Final money" value={`$${state.money}`} />
+        <SummaryCard label="Final money" value={`$${formatMoneyValue(state.money)}`} />
         <SummaryCard label="Reputation" value="Frontier-tested" />
         <SummaryCard label="Score" value={score} />
       </div>

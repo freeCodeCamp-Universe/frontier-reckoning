@@ -16,6 +16,7 @@ import { Card } from '@components/ui/Card';
 import { StatusBadge, type BadgeVariant, type StatusKind } from '@components/ui/Badge';
 import { cx } from '@components/ui/styles';
 import type { Character } from '@game/types/character';
+import { formatWholeNumber } from '@utils/formatResourceValue';
 
 const roleIconMap: Record<string, LucideIcon> = {
   Child: UserRound,
@@ -140,20 +141,21 @@ function ConditionBar({
   value: number;
 }) {
   const clampedValue = Math.max(0, Math.min(100, value));
+  const displayValue = formatWholeNumber(clampedValue);
 
   return (
     <div>
       <div className="mb-1 flex items-center justify-between gap-3 font-mono text-sm">
         <span className="text-muted">{label}</span>
-        <span className="font-bold text-foreground">{clampedValue}/100</span>
+        <span className="font-bold text-foreground">{displayValue}/100</span>
       </div>
       <div
         role="progressbar"
-        aria-label={`${label} ${clampedValue} of 100`}
+        aria-label={`${label} ${displayValue} of 100`}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={clampedValue}
-        aria-valuetext={`${clampedValue} of 100`}
+        aria-valuenow={Math.round(clampedValue)}
+        aria-valuetext={`${displayValue} of 100`}
         className="h-3 overflow-hidden border border-border bg-canvas"
       >
         <div

@@ -7,6 +7,7 @@ import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 import { ResourceIcon } from '@components/ui/ResourceIcon';
 import { cx } from '@components/ui/styles';
+import { formatResourceValue, formatWholeNumber } from '@utils/formatResourceValue';
 import { useSettings } from '@/hooks/useSettings';
 
 type DashboardResourceKey = ResourceName | 'wagonCondition';
@@ -86,7 +87,7 @@ export function ResourceDashboard() {
           <div className="mb-1 flex items-center justify-between gap-3 font-mono text-base">
             <span className="text-muted">Trail progress</span>
             <span className="font-bold text-foreground">
-              {distanceTraveled} / {totalDistance} mi
+              {formatWholeNumber(distanceTraveled)} / {formatWholeNumber(totalDistance)} mi
             </span>
           </div>
           <div
@@ -140,7 +141,7 @@ function ResourceStat({
 }) {
   const value = useExpeditionStore((state) => state[resourceName]);
   const warning = getResourceWarning(Number(value), warningAt, criticalAt);
-  const displayValue = `${value}${unit ?? ''}`;
+  const displayValue = `${formatResourceValue(resourceName, Number(value))}${unit ?? ''}`;
 
   return (
     <Stat
@@ -175,6 +176,8 @@ function Stat({
   const previousValueRef = useRef(numericValue);
   const [changeAmount, setChangeAmount] = useState<number | null>(null);
   const changed = changeAmount !== null;
+  const roundedChangeAmount =
+    changeAmount === null ? null : Math.round(changeAmount);
 
   useEffect(() => {
     const previousValue = previousValueRef.current;
@@ -211,10 +214,10 @@ function Stat({
       </dt>
       <dd className="mt-1 flex min-h-8 items-baseline justify-between gap-2 text-xl font-bold capitalize text-foreground">
         <span>{value}</span>
-        {changeAmount !== null ? (
+        {roundedChangeAmount !== null ? (
           <span className="font-mono text-base text-cta" aria-live="polite">
-            {changeAmount > 0 ? '+' : ''}
-            {changeAmount}
+            {roundedChangeAmount > 0 ? '+' : ''}
+            {roundedChangeAmount}
           </span>
         ) : null}
       </dd>
