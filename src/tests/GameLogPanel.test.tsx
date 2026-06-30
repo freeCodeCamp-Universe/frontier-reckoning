@@ -18,8 +18,10 @@ describe('GameLogPanel', () => {
     render(<GameLogPanel />);
 
     const log = screen.getByRole('region', { name: 'Game log' });
-    const entryList = within(log).getByRole('list');
+    const entryList = within(log).getByRole('log');
 
+    expect(entryList).toHaveAttribute('aria-live', 'polite');
+    expect(entryList).toHaveAttribute('aria-relevant', 'additions text');
     expect(within(entryList).getByText('Trail entry 1')).toBeInTheDocument();
     expect(within(entryList).getByText('Trail entry 5')).toBeInTheDocument();
     expect(within(entryList).queryByText('Trail entry 6')).not.toBeInTheDocument();
@@ -58,8 +60,12 @@ describe('GameLogPanel', () => {
 
     render(<GameLogPanel />);
 
-    expect(screen.queryByRole('button', { name: 'Journal / Log' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('dialog', { name: 'Expedition Journal' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Journal / Log' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'Expedition Journal' }),
+    ).not.toBeInTheDocument();
     expect(screen.getAllByText('Traveled to day 2.')).toHaveLength(1);
     expect(
       screen.getByText('Frontier Expedition started on Trailwise.'),

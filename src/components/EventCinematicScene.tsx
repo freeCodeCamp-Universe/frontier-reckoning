@@ -84,7 +84,7 @@ export function EventCinematicScene({ config }: SceneProps) {
         <style>
           {`
             .fr-cinematic-dust {
-              animation: fr-cinematic-dust-drift 12s ease-in-out infinite alternate;
+              animation: fr-cinematic-dust-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-cinematic-fire {
@@ -101,11 +101,11 @@ export function EventCinematicScene({ config }: SceneProps) {
             }
 
             .fr-cinematic-fog {
-              animation: fr-cinematic-fog-drift 14s ease-in-out infinite alternate;
+              animation: fr-cinematic-fog-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-cinematic-grass {
-              animation: fr-cinematic-grass-shift 5.2s ease-in-out infinite alternate;
+              animation: fr-cinematic-grass-shift 4.8s ease-in-out infinite alternate;
               transform-origin: bottom center;
             }
 

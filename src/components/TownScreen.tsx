@@ -37,20 +37,34 @@ export function TownScreen() {
       </CardHeader>
 
       {townOutcomeText ? (
-        <p className="mt-4 border border-success bg-panel p-3 font-mono text-base text-success">
+        <p
+          role="status"
+          aria-atomic="true"
+          className="mt-4 border border-success bg-panel p-3 font-mono text-base text-success"
+        >
           {townOutcomeText}
         </p>
       ) : null}
 
       <div className="mt-4 overflow-x-auto border border-border">
-        <table className="w-full min-w-[720px] border-collapse bg-panel text-left">
+        <table className="w-full border-collapse bg-panel text-left">
           <thead className="border-b border-border bg-surface font-mono text-base text-muted">
             <tr>
-              <th className="p-3">Supply</th>
-              <th className="p-3">Qty</th>
-              <th className="p-3">Buy</th>
-              <th className="p-3">Sell</th>
-              <th className="p-3">Actions</th>
+              <th className="p-2 sm:p-3" scope="col">
+                Supply
+              </th>
+              <th className="p-2 sm:p-3" scope="col">
+                Qty
+              </th>
+              <th className="p-2 sm:p-3" scope="col">
+                Buy
+              </th>
+              <th className="p-2 sm:p-3" scope="col">
+                Sell
+              </th>
+              <th className="p-2 sm:p-3" scope="col">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -62,21 +76,23 @@ export function TownScreen() {
                   key={item.resource}
                   className="border-b border-border last:border-b-0"
                 >
-                  <td className="p-3 font-bold">
-                    <span className="inline-flex items-center gap-2">
+                  <td className="p-2 font-bold sm:p-3">
+                    <span className="inline-flex flex-wrap items-center gap-2">
                       <ResourceIcon resource={item.resource} />
                       {item.label}
                     </span>
                   </td>
-                  <td className="p-3 font-mono text-base text-muted">{item.quantity}</td>
-                  <td className="p-3 font-mono text-base">${buyPrice}</td>
-                  <td className="p-3 font-mono text-base">${item.sellPrice}</td>
-                  <td className="flex gap-2 p-3">
+                  <td className="p-2 font-mono text-base text-muted sm:p-3">
+                    {item.quantity}
+                  </td>
+                  <td className="p-2 font-mono text-base sm:p-3">${buyPrice}</td>
+                  <td className="p-2 font-mono text-base sm:p-3">${item.sellPrice}</td>
+                  <td className="flex flex-wrap gap-2 p-2 sm:p-3">
                     <Button
                       onClick={() => buySupplyInTown(item.resource)}
                       disabled={money < buyPrice}
                       disabledReason={`Buying ${item.label.toLowerCase()} requires $${buyPrice}.`}
-                      className="min-h-10 px-3 py-2"
+                      className="min-h-10 flex-1 px-3 py-2 sm:flex-none"
                       size="sm"
                     >
                       Buy
@@ -85,7 +101,7 @@ export function TownScreen() {
                       onClick={() => sellSupplyInTown(item.resource)}
                       disabled={resources[item.resource] < item.quantity}
                       disabledReason={`Selling ${item.label.toLowerCase()} requires ${item.quantity} available.`}
-                      className="min-h-10 px-3 py-2"
+                      className="min-h-10 flex-1 px-3 py-2 sm:flex-none"
                       size="sm"
                       variant="secondary"
                     >

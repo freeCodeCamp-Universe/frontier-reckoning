@@ -33,11 +33,17 @@ describe('NewExpeditionSetup', () => {
 
     expect(screen.getByRole('heading', { name: 'Name the caravan' })).toBeInTheDocument();
     expect(screen.getByLabelText('Expedition name')).toHaveValue('');
-    expect(screen.queryByRole('list', { name: 'Expedition setup steps' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('list', { name: 'Expedition setup steps' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText('Party')).not.toBeInTheDocument();
     expect(screen.queryByText('Difficulty')).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Choose party members' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Start Expedition' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Choose party members' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Start Expedition' }),
+    ).not.toBeInTheDocument();
   });
 
   it('autofocuses the expedition name input', () => {
@@ -53,7 +59,9 @@ describe('NewExpeditionSetup', () => {
     fireEvent.change(nameInput, { target: { value: 'Cinder Ridge Crew' } });
     fireEvent.keyDown(nameInput, { key: 'Enter' });
 
-    expect(screen.getByRole('heading', { name: 'Choose party members' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Choose party members' }),
+    ).toBeInTheDocument();
   });
 
   it('does not advance when Enter is pressed on an empty expedition name', () => {
@@ -62,7 +70,9 @@ describe('NewExpeditionSetup', () => {
     fireEvent.keyDown(screen.getByLabelText('Expedition name'), { key: 'Enter' });
 
     expect(screen.getByRole('heading', { name: 'Name the caravan' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Choose party members' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Choose party members' }),
+    ).not.toBeInTheDocument();
   });
 
   it('goes back to the main menu from the name screen', () => {
@@ -80,10 +90,30 @@ describe('NewExpeditionSetup', () => {
       target: { value: '' },
     });
 
+    expect(screen.getByLabelText('Expedition name')).toHaveAccessibleDescription(
+      'Enter an expedition name before continuing.',
+    );
+    expect(screen.getByLabelText('Expedition name')).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Continue' })).toHaveAccessibleDescription(
       'Enter an expedition name before continuing.',
     );
+  });
+
+  it('removes invalid state when the expedition name is valid', () => {
+    renderSetup();
+
+    const nameInput = screen.getByLabelText('Expedition name');
+
+    fireEvent.change(nameInput, { target: { value: 'Cinder Ridge Crew' } });
+
+    expect(nameInput).toHaveAccessibleDescription(
+      'Enter an expedition name before continuing.',
+    );
+    expect(nameInput).not.toHaveAttribute('aria-invalid');
   });
 
   it('starts the party screen with zero selected members', () => {
@@ -91,12 +121,20 @@ describe('NewExpeditionSetup', () => {
 
     continueFromName();
 
-    expect(screen.getByRole('heading', { name: 'Choose party members' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Choose party members' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('group', { name: 'Party member selection' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('group', { name: 'Party member selection' }),
+    ).toHaveAccessibleDescription('Select exactly 4 party members before continuing.');
+    expect(screen.getAllByRole('listitem')).toHaveLength(6);
     expect(screen.getByText('0 / 4')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select Elias Reed, Scout' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Select Elias Reed, Scout' }),
+    ).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('cannot continue from the party screen with no party selected', () => {
@@ -119,25 +157,25 @@ describe('NewExpeditionSetup', () => {
     elias.focus();
     fireEvent.keyDown(elias, { key: 'Enter' });
 
-    expect(screen.getByRole('button', { name: 'Remove Elias Reed, Scout' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Remove Elias Reed, Scout' }),
+    ).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.keyDown(screen.getByRole('button', { name: 'Remove Elias Reed, Scout' }), {
       key: 'ArrowDown',
     });
 
-    expect(screen.getByRole('button', { name: 'Select Mara Bell, Doctor' })).toHaveFocus();
+    expect(
+      screen.getByRole('button', { name: 'Select Mara Bell, Doctor' }),
+    ).toHaveFocus();
 
     fireEvent.keyDown(screen.getByRole('button', { name: 'Select Mara Bell, Doctor' }), {
       key: ' ',
     });
 
-    expect(screen.getByRole('button', { name: 'Remove Mara Bell, Doctor' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Remove Mara Bell, Doctor' }),
+    ).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('preserves selected party members after going back and forward', () => {
@@ -149,16 +187,17 @@ describe('NewExpeditionSetup', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
     expect(screen.getByText('4 / 4')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Remove Elias Reed, Scout' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Remove Elias Reed, Scout' }),
+    ).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByLabelText('Expedition name')).toHaveValue('Cinder Ridge Crew');
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('button', { name: 'Remove Elias Reed, Scout' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Remove Elias Reed, Scout' }),
+    ).toBeInTheDocument();
   });
 
   it('renders the difficulty screen after party selection', () => {
@@ -168,8 +207,21 @@ describe('NewExpeditionSetup', () => {
     selectRequiredParty();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    expect(screen.getByRole('heading', { name: 'Choose trail difficulty' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Greenhorn/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Choose trail difficulty' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Trail difficulty' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('group', { name: 'Trail difficulty' }),
+    ).toHaveAccessibleDescription('Select a difficulty before starting.');
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.getByRole('radio', { name: /Greenhorn/ })).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+    expect(screen.getByRole('radio', { name: /Greenhorn/ })).toHaveAccessibleDescription(
+      'Select a difficulty before starting.',
+    );
     expect(screen.getByRole('radio', { name: /Trailwise/ })).toBeInTheDocument();
     expect(screen.getByDisplayValue('reckoning')).toBeInTheDocument();
   });
@@ -186,6 +238,7 @@ describe('NewExpeditionSetup', () => {
     fireEvent.keyDown(greenhorn, { key: 'Enter' });
 
     expect(greenhorn).toBeChecked();
+    expect(greenhorn).not.toHaveAttribute('aria-invalid');
 
     fireEvent.keyDown(greenhorn, { key: 'ArrowRight' });
 
@@ -198,7 +251,9 @@ describe('NewExpeditionSetup', () => {
     renderSetup();
 
     continueFromName();
-    expect(screen.getByRole('heading', { name: 'Choose party members' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Choose party members' }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByRole('heading', { name: 'Name the caravan' })).toBeInTheDocument();
@@ -208,16 +263,22 @@ describe('NewExpeditionSetup', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
-    expect(screen.getByRole('heading', { name: 'Choose party members' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Choose party members' }),
+    ).toBeInTheDocument();
   });
 
   it('shows start expedition only on the difficulty screen', () => {
     renderSetup();
 
-    expect(screen.queryByRole('button', { name: 'Start Expedition' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Start Expedition' }),
+    ).not.toBeInTheDocument();
 
     continueFromName();
-    expect(screen.queryByRole('button', { name: 'Start Expedition' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Start Expedition' }),
+    ).not.toBeInTheDocument();
 
     selectRequiredParty();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -286,9 +347,12 @@ describe('NewExpeditionSetup', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: 'Remove Jonah Vale, Hunter' }), {
       key: 'ArrowDown',
     });
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Select Ada Flint, Mechanic' }), {
-      key: ' ',
-    });
+    fireEvent.keyDown(
+      screen.getByRole('button', { name: 'Select Ada Flint, Mechanic' }),
+      {
+        key: ' ',
+      },
+    );
 
     const continueButton = screen.getByRole('button', { name: 'Continue' });
     continueButton.focus();

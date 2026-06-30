@@ -33,17 +33,21 @@ describe('settings', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
 
-    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Sound on or off')).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog', { name: 'Settings' });
+
+    expect(dialog).toBeInTheDocument();
+    expect(dialog.tagName).toBe('DIALOG');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(screen.getByRole('button', { name: 'Sound Off' })).toBeInTheDocument();
     expect(screen.getByLabelText('Music volume')).toBeInTheDocument();
     expect(screen.getByLabelText('SFX volume')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reduced motion' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Text speed')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Autosave on or off' }),
+      screen.getByRole('button', { name: 'Reduced motion Off' }),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText('Text speed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Autosave On' })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Difficulty display' }),
+      screen.getByRole('button', { name: 'Difficulty display On' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reset Save Data' })).toBeInTheDocument();
 
@@ -102,9 +106,7 @@ describe('settings', () => {
 
     expect(screen.queryByRole('checkbox', { name: 'Audio' })).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Gameplay' })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('checkbox', { name: 'Sound on or off' }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Sound Off' })).not.toBeInTheDocument();
   });
 
   it('allows audio controls to change immediately', () => {
@@ -112,7 +114,7 @@ describe('settings', () => {
 
     const musicVolume = screen.getByLabelText('Music volume');
     const sfxVolume = screen.getByLabelText('SFX volume');
-    const soundToggle = screen.getByRole('button', { name: 'Sound on or off' });
+    const soundToggle = screen.getByRole('button', { name: 'Sound Off' });
 
     expect(soundToggle).toHaveAttribute('aria-pressed', 'false');
     expect(musicVolume).toBeEnabled();
@@ -128,8 +130,8 @@ describe('settings', () => {
   it('allows gameplay controls to change immediately', () => {
     render(<SettingsModal isOpen onClose={() => undefined} />);
 
-    const reducedMotion = screen.getByRole('button', { name: 'Reduced motion' });
-    const autosave = screen.getByRole('button', { name: 'Autosave on or off' });
+    const reducedMotion = screen.getByRole('button', { name: 'Reduced motion Off' });
+    const autosave = screen.getByRole('button', { name: 'Autosave On' });
 
     expect(reducedMotion).toBeEnabled();
     expect(autosave).toBeEnabled();
@@ -146,13 +148,13 @@ describe('settings', () => {
 
     const controls = [
       screen.getByRole('button', { name: 'Close settings' }),
-      screen.getByRole('button', { name: 'Sound on or off' }),
+      screen.getByRole('button', { name: 'Sound Off' }),
       screen.getByLabelText('Music volume'),
       screen.getByLabelText('SFX volume'),
-      screen.getByRole('button', { name: 'Reduced motion' }),
+      screen.getByRole('button', { name: 'Reduced motion Off' }),
       screen.getByRole('button', { name: 'Text speed' }),
-      screen.getByRole('button', { name: 'Autosave on or off' }),
-      screen.getByRole('button', { name: 'Difficulty display' }),
+      screen.getByRole('button', { name: 'Autosave On' }),
+      screen.getByRole('button', { name: 'Difficulty display On' }),
       screen.getByRole('button', { name: 'Reset Save Data' }),
     ];
 
@@ -162,10 +164,64 @@ describe('settings', () => {
     }
   });
 
+  it('traps focus inside the settings modal', () => {
+    render(<SettingsModal isOpen onClose={() => undefined} />);
+
+    const closeSettings = screen.getByRole('button', { name: 'Close settings' });
+    const resetSave = screen.getByRole('button', { name: 'Reset Save Data' });
+    const dialog = screen.getByRole('dialog', { name: 'Settings' });
+
+    expect(dialog.tagName).toBe('DIALOG');
+    closeSettings.focus();
+    fireEvent.keyDown(closeSettings, { key: 'Tab', shiftKey: true });
+
+    expect(resetSave).toHaveFocus();
+
+    fireEvent.keyDown(resetSave, { key: 'Tab' });
+
+    expect(closeSettings).toHaveFocus();
+  });
+
+  it('keeps focus inside reset confirmation and returns focus after Escape', () => {
+    const onClose = vi.fn();
+
+    render(<SettingsModal isOpen onClose={onClose} />);
+
+    const resetSave = screen.getByRole('button', { name: 'Reset Save Data' });
+    fireEvent.click(resetSave);
+
+    const closeReset = screen.getByRole('button', { name: 'Close reset confirmation' });
+    const confirmReset = screen.getByRole('button', { name: 'Confirm reset' });
+    const resetDialog = screen.getByRole('dialog', {
+      name: 'Reset save data confirmation',
+    });
+
+    expect(resetDialog.tagName).toBe('DIALOG');
+    expect(resetDialog).toHaveAttribute('aria-modal', 'true');
+    expect(closeReset).toHaveFocus();
+
+    fireEvent.keyDown(closeReset, { key: 'Tab', shiftKey: true });
+    expect(confirmReset).toHaveFocus();
+
+    fireEvent.keyDown(confirmReset, { key: 'Tab' });
+    expect(closeReset).toHaveFocus();
+
+    fireEvent.keyDown(closeReset, { key: 'Escape' });
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Reset save data confirmation' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+    expect(resetSave).toHaveFocus();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('does not render a native text speed select', () => {
     render(<SettingsModal isOpen onClose={() => undefined} />);
 
-    expect(screen.queryByRole('combobox', { name: 'Text speed' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: 'Text speed' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Text speed' })).toHaveTextContent(
       'Normal',
     );
@@ -226,45 +282,44 @@ describe('settings', () => {
   it('persists settings after reload', () => {
     const { unmount } = render(<SettingsModal isOpen onClose={() => undefined} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sound on or off' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sound Off' }));
     fireEvent.change(screen.getByLabelText('Music volume'), {
       target: { value: '25' },
     });
     fireEvent.change(screen.getByLabelText('SFX volume'), {
       target: { value: '40' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Reduced motion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reduced motion Off' }));
     fireEvent.click(screen.getByRole('button', { name: 'Text speed' }));
     fireEvent.mouseDown(screen.getByRole('option', { name: 'Instant' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Autosave on or off' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Difficulty display' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Autosave On' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Difficulty display On' }));
 
     expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).not.toBeNull();
 
     unmount();
     render(<SettingsModal isOpen onClose={() => undefined} />);
 
-    expect(screen.getByRole('button', { name: 'Sound on or off' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Sound On' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
     expect(screen.getByLabelText('Music volume')).toHaveValue('25');
     expect(screen.getByLabelText('SFX volume')).toHaveValue('40');
-    expect(screen.getByRole('button', { name: 'Reduced motion' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Reduced motion On' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
     expect(screen.getByRole('button', { name: 'Text speed' })).toHaveTextContent(
       'Instant',
     );
-    expect(screen.getByRole('button', { name: 'Autosave on or off' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Autosave Off' })).toHaveAttribute(
       'aria-pressed',
       'false',
     );
-    expect(screen.getByRole('button', { name: 'Difficulty display' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Difficulty display Off' }),
+    ).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('uses sound settings in the audio system', () => {

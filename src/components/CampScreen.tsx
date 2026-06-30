@@ -50,33 +50,56 @@ export function CampScreen() {
       </CardHeader>
 
       {campOutcomeText ? (
-        <p className="mt-4 border border-success bg-panel p-3 font-mono text-base text-success">
+        <p
+          role="status"
+          aria-atomic="true"
+          className="mt-4 border border-success bg-panel p-3 font-mono text-base text-success"
+        >
           {campOutcomeText}
         </p>
       ) : null}
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <Button onClick={restAtCamp} className="justify-start text-left">
-          Rest
-        </Button>
-        <Button
-          onClick={repairWagonAtCamp}
-          disabled={wagonParts <= 0}
-          disabledReason="Repair wagon requires at least one wagon part."
-          className="justify-start text-left"
-        >
-          Repair wagon
-        </Button>
-        <Button onClick={tellCampfireStoriesAtCamp} className="justify-start text-left">
-          Tell campfire stories
-        </Button>
-        <Button onClick={rationFoodAtCamp} className="justify-start text-left">
-          Ration food
-        </Button>
-        <Button onClick={resumeTravel} className="justify-start text-left">
-          Resume travel
-        </Button>
-      </div>
+      <ul className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <li>
+          <Button onClick={restAtCamp} className="h-full w-full justify-start text-left">
+            Rest
+          </Button>
+        </li>
+        <li>
+          <Button
+            onClick={repairWagonAtCamp}
+            disabled={wagonParts <= 0}
+            disabledReason="Repair wagon requires at least one wagon part."
+            className="h-full w-full justify-start text-left"
+          >
+            Repair wagon
+          </Button>
+        </li>
+        <li>
+          <Button
+            onClick={tellCampfireStoriesAtCamp}
+            className="h-full w-full justify-start text-left"
+          >
+            Tell campfire stories
+          </Button>
+        </li>
+        <li>
+          <Button
+            onClick={rationFoodAtCamp}
+            className="h-full w-full justify-start text-left"
+          >
+            Ration food
+          </Button>
+        </li>
+        <li>
+          <Button
+            onClick={resumeTravel}
+            className="h-full w-full justify-start text-left"
+          >
+            Resume travel
+          </Button>
+        </li>
+      </ul>
 
       <div className="mt-5">
         <Badge variant="muted">Hunt</Badge>
@@ -96,7 +119,10 @@ export function CampScreen() {
           <div className="mt-4">
             <Suspense
               fallback={
-                <div className="border border-border bg-panel p-4 font-mono text-base text-muted">
+                <div
+                  role="status"
+                  className="border border-border bg-panel p-4 font-mono text-base text-muted"
+                >
                   Loading hunting range...
                 </div>
               }
@@ -122,19 +148,20 @@ export function CampScreen() {
             No sick or injured party members
           </p>
         ) : (
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <ul className="mt-3 grid gap-3 md:grid-cols-2">
             {treatableParty.map((character) => (
-              <Button
-                key={character.id}
-                onClick={() => treatPartyMemberAtCamp(character.id)}
-                disabled={medicine <= 0}
-                disabledReason="Treating a party member requires medicine."
-                className="justify-start text-left"
-              >
-                Treat {character.name}
-              </Button>
+              <li key={character.id}>
+                <Button
+                  onClick={() => treatPartyMemberAtCamp(character.id)}
+                  disabled={medicine <= 0}
+                  disabledReason="Treating a party member requires medicine."
+                  className="h-full w-full justify-start text-left"
+                >
+                  Treat {character.name}
+                </Button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </Card>

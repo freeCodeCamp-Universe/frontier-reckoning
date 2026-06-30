@@ -8,7 +8,7 @@ import { ResourceIcon } from '@components/ui/ResourceIcon';
 
 describe('design system UI components', () => {
   it('renders core UI components', () => {
-    render(
+    const { container } = render(
       <Card aria-label="System card">
         <CardEyebrow>system</CardEyebrow>
         <CharacterPortrait character={{ name: 'Elias Reed', role: 'Scout' }} />
@@ -21,6 +21,8 @@ describe('design system UI components', () => {
     expect(screen.getByText('system')).toBeInTheDocument();
     expect(screen.getByText('ER')).toBeInTheDocument();
     expect(screen.getByLabelText('Healthy')).toBeInTheDocument();
+    expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it('buttons expose accessible names across variants', () => {
@@ -41,6 +43,24 @@ describe('design system UI components', () => {
     expect(screen.getByRole('button', { name: 'Start trail' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Open settings' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Reset save data' })).toBeEnabled();
+  });
+
+  it('uses higher-contrast borders for ghost and disabled controls', () => {
+    render(
+      <>
+        <Button variant="ghost">Open inventory</Button>
+        <Button disabled disabledReason="Complete setup first.">
+          Continue
+        </Button>
+      </>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Open inventory' })).toHaveClass(
+      'border-muted-ui',
+    );
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveClass(
+      'disabled:border-muted-ui',
+    );
   });
 
   it('status badges render correct labels', () => {

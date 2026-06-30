@@ -106,11 +106,19 @@ describe('TrailMapScene', () => {
     expect(renderedText.filter((content) => content === 'Mercy Bend')).toHaveLength(1);
     expect(renderedText.filter((content) => content === 'Last Lantern')).toHaveLength(1);
     expect(
-      renderedText.some((content) => typeof content === 'string' && /^Day\b/.test(content)),
+      renderedText.some(
+        (content) => typeof content === 'string' && /^Day\b/.test(content),
+      ),
     ).toBe(false);
     expect(graphics.fillRoundedRect).toHaveBeenCalled();
     expect(graphics.lineBetween).toHaveBeenCalled();
     expect(scene.add.circle).toHaveBeenCalled();
+    expect(scene.add.circle).toHaveBeenCalledWith(
+      expect.any(Number),
+      expect.any(Number),
+      12,
+      expect.any(Number),
+    );
     expect(scene.add.container).toHaveBeenCalled();
     expect(gameObject.setInteractive).toHaveBeenCalled();
     expect(gameObject.setText).not.toHaveBeenCalledWith(expect.stringMatching(/^Day\b/));

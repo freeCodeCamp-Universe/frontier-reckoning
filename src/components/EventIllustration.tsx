@@ -17,7 +17,6 @@ export function EventIllustration({
 }) {
   const kind = getEventIllustrationKind(event);
   const sceneConfig = getEventSceneConfig(event.id);
-  const label = `Event illustration: ${kind.replaceAll('_', ' ')}`;
 
   return (
     <figure
@@ -26,7 +25,12 @@ export function EventIllustration({
         className,
       )}
     >
-      <svg role="img" aria-label={label} viewBox="0 0 640 220" className="h-40 w-full">
+      <svg
+        aria-hidden="true"
+        focusable="false"
+        viewBox="0 0 640 220"
+        className="h-40 w-full"
+      >
         <rect width="640" height="220" fill="rgb(var(--color-canvas))" />
         <rect y="155" width="640" height="65" fill="rgb(var(--color-panel))" />
         <circle cx="548" cy="48" r="26" fill="rgb(var(--color-cta))" opacity="0.8" />
@@ -353,11 +357,11 @@ function RidgeScoutingScene() {
         <style>
           {`
             .fr-ridge-cloud {
-              animation: fr-ridge-cloud-drift 18s ease-in-out infinite alternate;
+              animation: fr-ridge-cloud-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-ridge-dust {
-              animation: fr-ridge-dust-drift 12s ease-in-out infinite alternate;
+              animation: fr-ridge-dust-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-ridge-water {
@@ -551,7 +555,7 @@ function BadWaterScene() {
         <style>
           {`
             .fr-bad-water-sheen {
-              animation: fr-bad-water-sheen 5.4s ease-in-out infinite alternate;
+              animation: fr-bad-water-sheen 4.8s ease-in-out infinite alternate;
             }
 
             .fr-bad-water-ripple {
@@ -798,7 +802,7 @@ function PredatorHuntScene() {
         <style>
           {`
             .fr-predator-fog {
-              animation: fr-predator-fog-drift 14s ease-in-out infinite alternate;
+              animation: fr-predator-fog-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-predator-eyes {
@@ -1053,7 +1057,7 @@ function StolenTackScene() {
         <style>
           {`
             .fr-stolen-fog {
-              animation: fr-stolen-fog-drift 15s ease-in-out infinite alternate;
+              animation: fr-stolen-fog-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-stolen-fire {
@@ -1066,7 +1070,7 @@ function StolenTackScene() {
             }
 
             .fr-stolen-thief {
-              animation: fr-stolen-shadow-shift 6.5s ease-in-out infinite alternate;
+              animation: fr-stolen-shadow-shift 4.8s ease-in-out infinite alternate;
             }
 
             @keyframes fr-stolen-fog-drift {
@@ -1331,7 +1335,7 @@ function NightWatchSongScene() {
             }
 
             .fr-night-song-smoke {
-              animation: fr-night-song-smoke-drift 9s ease-in-out infinite alternate;
+              animation: fr-night-song-smoke-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-night-song-stars {
@@ -1582,7 +1586,7 @@ function RattlesnakeStrikeScene() {
         <style>
           {`
             .fr-snake-dust {
-              animation: fr-snake-dust-drift 8s ease-in-out infinite alternate;
+              animation: fr-snake-dust-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-snake-rattle {
@@ -1833,7 +1837,7 @@ function GuideForAmmoScene() {
         <style>
           {`
             .fr-guide-dust {
-              animation: fr-guide-dust-drift 12s ease-in-out infinite alternate;
+              animation: fr-guide-dust-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-guide-glow {
@@ -2106,7 +2110,7 @@ function RationDisputeScene() {
         <style>
           {`
             .fr-ration-dust {
-              animation: fr-ration-dust-drift 11s ease-in-out infinite alternate;
+              animation: fr-ration-dust-drift 4.8s ease-in-out infinite alternate;
             }
 
             .fr-ration-lantern {

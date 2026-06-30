@@ -90,11 +90,9 @@ export function SaveControls({
           <Save aria-hidden="true" className="size-4" />
           Save
         </Button>
-        {message ? (
-          <span aria-live="polite" className="text-muted">
-            {message}
-          </span>
-        ) : null}
+        <span role="status" aria-atomic="true" className="text-muted">
+          {message}
+        </span>
       </section>
     );
   }
@@ -112,11 +110,11 @@ export function SaveControls({
         </Button>
         <Button onClick={handleResetSave}>Reset save</Button>
       </div>
-      {message ? (
-        <p className="mt-3 font-mono text-base text-muted" aria-live="polite">
-          {message}
-        </p>
-      ) : null}
+      <div role="status" aria-atomic="true">
+        {message ? (
+          <p className="mt-3 font-mono text-base text-muted">{message}</p>
+        ) : null}
+      </div>
     </section>
   );
 }

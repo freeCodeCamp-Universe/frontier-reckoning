@@ -8,14 +8,17 @@ import {
 } from 'react';
 import { ChevronDown, Volume2, VolumeX, X } from 'lucide-react';
 import { Button } from '@components/ui/Button';
-import {
-  audioSystem,
-  getAudioSceneForGameStatus,
-} from '@game/systems/audioSystem';
+import { audioSystem, getAudioSceneForGameStatus } from '@game/systems/audioSystem';
 import { Card } from '@components/ui/Card';
 import { resetSaveData, type TextSpeed } from '@game/systems/settingsSystem';
 import { useExpeditionStore } from '@stores/expeditionStore';
 import { stopAmbience } from '@utils/audio';
+import {
+  closeModalDialog,
+  openModalDialog,
+  supportsNativeModalDialog,
+  trapFocus,
+} from '@utils/dialog';
 import { useSettings } from '@/hooks/useSettings';
 
 type SettingsModalProps = {
@@ -34,8 +37,10 @@ const textSpeedOptions: Array<{ value: TextSpeed; label: string }> = [
 export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalProps) {
   const [settings, updateSettings] = useSettings();
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const resetButtonRef = useRef<HTMLButtonElement>(null);
   const resetGame = useExpeditionStore((state) => state.resetGame);
   const gameStatus = useExpeditionStore((state) => state.gameStatus);
   const currentEvent = useExpeditionStore((state) => state.currentEvent);
@@ -45,9 +50,35 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
       return;
     }
 
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+
+    if (dialog) {
+      openModalDialog(dialog);
+    }
     closeButtonRef.current?.focus();
 
+    return () => {
+      if (dialog) {
+        closeModalDialog(dialog);
+      }
+
+      restoreFocusRef.current?.focus();
+      restoreFocusRef.current = null;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (resetConfirmOpen) {
+        return;
+      }
+
       if (event.key === 'Escape') {
         onClose();
       }
@@ -58,37 +89,18 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, resetConfirmOpen]);
 
   if (!isOpen) {
     return null;
   }
 
-  const handleDialogKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const handleDialogKeyDown = (event: KeyboardEvent<HTMLDialogElement>) => {
     if (event.key !== 'Tab' || !dialogRef.current) {
       return;
     }
 
-    const focusableElements = Array.from(
-      dialogRef.current.querySelectorAll<HTMLElement>(
-        'button, input, select, [href], [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((element) => !element.hasAttribute('disabled'));
-
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-
-    if (!firstElement || !lastElement) {
-      return;
-    }
-
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-    } else if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
+    trapFocus(event, dialogRef.current);
   };
 
   const handleSoundToggle = (enabled: boolean) => {
@@ -117,148 +129,160 @@ export function SettingsModal({ isOpen, onClose, onSaveReset }: SettingsModalPro
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/90 px-4 py-6"
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <dialog
+      ref={dialogRef}
+      open={supportsNativeModalDialog() ? undefined : true}
+      aria-label="Settings"
+      aria-modal="true"
+      className="fixed inset-0 z-50 m-0 h-auto max-h-none w-auto max-w-none overflow-visible border-0 bg-transparent p-0 text-foreground backdrop:bg-canvas/90"
       data-testid="settings-backdrop"
-      role="presentation"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
         }
       }}
+      onKeyDown={handleDialogKeyDown}
     >
       <Card
         as="div"
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Settings"
-        onKeyDown={handleDialogKeyDown}
-        className="max-h-full w-full max-w-2xl overflow-y-auto p-4"
+        className="flex min-h-screen items-center justify-center border-0 bg-transparent p-4"
       >
-        <div className="mb-3 flex justify-end">
-          <Button
-            ref={closeButtonRef}
-            onClick={onClose}
-            aria-label="Close settings"
-            className="px-3"
-            size="sm"
-            variant="ghost"
-          >
-            <X aria-hidden="true" className="size-5" />
-          </Button>
-        </div>
-
-        <div className="grid gap-4">
-          <fieldset className="border border-border bg-panel p-3" aria-label="Audio">
-            <SettingToggle
-              ariaLabel="Sound on or off"
-              icon={
-                settings.soundEnabled ? (
-                  <Volume2 aria-hidden="true" className="size-5" />
-                ) : (
-                  <VolumeX aria-hidden="true" className="size-5" />
-                )
-              }
-              label="Sound"
-              pressed={settings.soundEnabled}
-              onToggle={(enabled) => handleSoundToggle(enabled)}
-            />
-            <VolumeControl
-              id="music-volume"
-              label="Music volume"
-              value={settings.musicVolume}
-              onChange={(musicVolume) => updateSettings({ musicVolume })}
-            />
-            <VolumeControl
-              id="sfx-volume"
-              label="SFX volume"
-              value={settings.sfxVolume}
-              onChange={(sfxVolume) => updateSettings({ sfxVolume })}
-            />
-          </fieldset>
-
-          <fieldset className="border border-border bg-panel p-3" aria-label="Gameplay">
-            <SettingToggle
-              ariaLabel="Reduced motion"
-              label="Reduced motion"
-              pressed={settings.reducedMotion}
-              onToggle={(reducedMotion) => updateSettings({ reducedMotion })}
-            />
-
-            <TextSpeedDropdown
-              value={settings.textSpeed}
-              onChange={(textSpeed) => updateSettings({ textSpeed })}
-            />
-
-            <SettingToggle
-              ariaLabel="Autosave on or off"
-              className="mt-4"
-              label="Autosave"
-              pressed={settings.autosaveEnabled}
-              onToggle={(autosaveEnabled) => updateSettings({ autosaveEnabled })}
-            />
-
-            <SettingToggle
-              ariaLabel="Difficulty display"
-              className="mt-4"
-              label="Difficulty display"
-              pressed={settings.difficultyDisplay}
-              onToggle={(difficultyDisplay) => updateSettings({ difficultyDisplay })}
-            />
-          </fieldset>
-
-          <Card
-            as="section"
-            variant="panel"
-            aria-label="Save data"
-            className="flex justify-center p-3"
-          >
+        <Card
+          as="div"
+          className="max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto p-4"
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <div className="mb-3 flex justify-end">
             <Button
-              onClick={() => setResetConfirmOpen(true)}
-              className="border-danger-deep bg-danger-deep text-danger hover:border-danger hover:bg-danger-deep hover:text-foreground"
+              ref={closeButtonRef}
+              onClick={onClose}
+              aria-label="Close settings"
+              className="px-3"
+              size="sm"
+              variant="ghost"
             >
-              Reset Save Data
+              <X aria-hidden="true" className="size-5" />
             </Button>
-          </Card>
-        </div>
+          </div>
+
+          <div className="grid gap-4">
+            <fieldset className="border border-muted-ui bg-panel p-3">
+              <legend className="sr-only">Audio settings</legend>
+              <SettingToggle
+                icon={
+                  settings.soundEnabled ? (
+                    <Volume2 aria-hidden="true" className="size-5" />
+                  ) : (
+                    <VolumeX aria-hidden="true" className="size-5" />
+                  )
+                }
+                label="Sound"
+                pressed={settings.soundEnabled}
+                onToggle={(enabled) => handleSoundToggle(enabled)}
+              />
+              <VolumeControl
+                id="music-volume"
+                label="Music volume"
+                value={settings.musicVolume}
+                onChange={(musicVolume) => updateSettings({ musicVolume })}
+              />
+              <VolumeControl
+                id="sfx-volume"
+                label="SFX volume"
+                value={settings.sfxVolume}
+                onChange={(sfxVolume) => updateSettings({ sfxVolume })}
+              />
+            </fieldset>
+
+            <fieldset className="border border-muted-ui bg-panel p-3">
+              <legend className="sr-only">Gameplay settings</legend>
+              <SettingToggle
+                label="Reduced motion"
+                pressed={settings.reducedMotion}
+                onToggle={(reducedMotion) => updateSettings({ reducedMotion })}
+              />
+
+              <TextSpeedDropdown
+                value={settings.textSpeed}
+                onChange={(textSpeed) => updateSettings({ textSpeed })}
+              />
+
+              <SettingToggle
+                className="mt-4"
+                label="Autosave"
+                pressed={settings.autosaveEnabled}
+                onToggle={(autosaveEnabled) => updateSettings({ autosaveEnabled })}
+              />
+
+              <SettingToggle
+                className="mt-4"
+                label="Difficulty display"
+                pressed={settings.difficultyDisplay}
+                onToggle={(difficultyDisplay) => updateSettings({ difficultyDisplay })}
+              />
+            </fieldset>
+
+            <Card
+              as="section"
+              variant="panel"
+              aria-label="Save data"
+              className="flex justify-center p-3"
+            >
+              <Button
+                ref={resetButtonRef}
+                onClick={() => setResetConfirmOpen(true)}
+                className="border-danger-deep bg-danger-deep text-danger hover:border-danger hover:bg-danger-deep hover:text-foreground"
+              >
+                Reset Save Data
+              </Button>
+            </Card>
+          </div>
+          <ResetSaveConfirmationModal
+            isOpen={resetConfirmOpen}
+            onCancel={() => {
+              setResetConfirmOpen(false);
+              resetButtonRef.current?.focus();
+            }}
+            onConfirm={handleResetSave}
+          />
+        </Card>
       </Card>
-      <ResetSaveConfirmationModal
-        isOpen={resetConfirmOpen}
-        onCancel={() => setResetConfirmOpen(false)}
-        onConfirm={handleResetSave}
-      />
-    </div>
+    </dialog>
   );
 }
 
 function SettingToggle({
-  ariaLabel,
   className = '',
   icon,
   label,
   pressed,
   onToggle,
 }: {
-  ariaLabel: string;
   className?: string;
   icon?: ReactNode;
   label: string;
   pressed: boolean;
   onToggle: (pressed: boolean) => void;
 }) {
+  const stateLabel = pressed ? 'On' : 'Off';
+
   return (
     <div className={`flex items-center justify-between gap-4 ${className}`}>
       <span className="font-bold">{label}</span>
       <Button
-        aria-label={ariaLabel}
+        aria-label={`${label} ${stateLabel}`}
         aria-pressed={pressed}
         onClick={() => onToggle(!pressed)}
         size="sm"
         variant={pressed ? 'secondary' : 'ghost'}
       >
         {icon}
-        {pressed ? 'On' : 'Off'}
+        {stateLabel}
       </Button>
     </div>
   );
@@ -308,66 +332,102 @@ function ResetSaveConfirmationModal({
 }) {
   const descriptionId = useId();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
+    const dialog = dialogRef.current;
+
+    if (dialog) {
+      openModalDialog(dialog);
+    }
     closeButtonRef.current?.focus();
+
+    return () => {
+      if (dialog) {
+        closeModalDialog(dialog);
+      }
+    };
   }, [isOpen]);
 
   if (!isOpen) {
     return null;
   }
 
+  const handleDialogKeyDown = (event: KeyboardEvent<HTMLDialogElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCancel();
+      return;
+    }
+
+    if (event.key === 'Tab' && dialogRef.current) {
+      trapFocus(event, dialogRef.current);
+    }
+  };
+
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-canvas/90 px-4 py-6"
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <dialog
+      ref={dialogRef}
+      open={supportsNativeModalDialog() ? undefined : true}
+      aria-label="Reset save data confirmation"
+      aria-describedby={descriptionId}
+      aria-modal="true"
+      className="fixed inset-0 z-[60] m-0 h-auto max-h-none w-auto max-w-none overflow-visible border-0 bg-transparent p-0 text-foreground backdrop:bg-canvas/90"
       data-testid="reset-save-confirmation-backdrop"
-      role="presentation"
+      onCancel={(event) => {
+        event.preventDefault();
+        onCancel();
+      }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onCancel();
         }
       }}
+      onKeyDown={handleDialogKeyDown}
     >
       <Card
         as="div"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Reset save data confirmation"
-        aria-describedby={descriptionId}
-        className="w-full max-w-md p-5"
+        className="flex min-h-screen items-center justify-center border-0 bg-transparent p-4"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
-          <div>
-            <h3 className="text-2xl font-bold">Are you sure?</h3>
-            <p id={descriptionId} className="mt-2 text-base text-muted">
-              This will clear the saved expedition from this browser.
-            </p>
+        <Card
+          as="div"
+          className="w-full max-w-md p-5"
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
+            <div>
+              <h3 className="text-2xl font-bold">Are you sure?</h3>
+              <p id={descriptionId} className="mt-2 text-base text-muted">
+                This will clear the saved expedition from this browser.
+              </p>
+            </div>
+            <Button
+              ref={closeButtonRef}
+              onClick={onCancel}
+              aria-label="Close reset confirmation"
+              className="shrink-0 px-3"
+              size="sm"
+              variant="ghost"
+            >
+              <X aria-hidden="true" className="size-5" />
+            </Button>
           </div>
-          <Button
-            ref={closeButtonRef}
-            onClick={onCancel}
-            aria-label="Close reset confirmation"
-            className="shrink-0 px-3"
-            size="sm"
-            variant="ghost"
-          >
-            <X aria-hidden="true" className="size-5" />
-          </Button>
-        </div>
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button onClick={onCancel} variant="secondary">
-            Cancel
-          </Button>
-          <Button onClick={onConfirm} variant="danger">
-            Confirm reset
-          </Button>
-        </div>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Button onClick={onCancel} variant="secondary">
+              Cancel
+            </Button>
+            <Button onClick={onConfirm} variant="danger">
+              Confirm reset
+            </Button>
+          </div>
+        </Card>
       </Card>
-    </div>
+    </dialog>
   );
 }
 
@@ -480,7 +540,7 @@ function TextSpeedDropdown({
           setActiveIndex(selectedIndex);
         }}
         onKeyDown={handleKeyDown}
-        className="mt-2 flex min-h-12 w-full items-center justify-between gap-3 border border-border bg-canvas px-3 py-3 text-left text-foreground outline-none focus:border-highlight"
+        className="mt-2 flex min-h-12 w-full items-center justify-between gap-3 border border-muted-ui bg-canvas px-3 py-3 text-left text-foreground focus:border-highlight"
       >
         <span>{selectedOption.label}</span>
         <ChevronDown

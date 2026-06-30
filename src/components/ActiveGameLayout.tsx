@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Home, Settings as SettingsIcon } from 'lucide-react';
 import { CurrentSituationPanel } from '@components/CurrentSituationPanel';
 import { GameLogPanel } from '@components/GameLogPanel';
@@ -7,6 +7,8 @@ import { ResourceDashboard } from '@components/ResourceDashboard';
 import { SaveControls } from '@components/SaveControls';
 import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
+import { getTrailMapLandmarks } from '@game/data/mapLandmarks';
+import { getLandmarkState } from '@game/systems/mapProgress';
 import { useExpeditionStore } from '@stores/expeditionStore';
 import { formatWholeNumber } from '@utils/formatResourceValue';
 
@@ -34,6 +36,8 @@ export function ActiveGameLayout({
   const currentDay = useExpeditionStore((state) => state.currentDay);
   const distanceTraveled = useExpeditionStore((state) => state.distanceTraveled);
   const totalDistance = useExpeditionStore((state) => state.totalDistance);
+  const visitedTownIds = useExpeditionStore((state) => state.visitedTownIds);
+  const crossedRiverIds = useExpeditionStore((state) => state.crossedRiverIds);
   const currentTown = useExpeditionStore((state) => state.currentTown);
   const currentRiver = useExpeditionStore((state) => state.currentRiver);
 
@@ -70,6 +74,7 @@ export function ActiveGameLayout({
             <dl
               aria-label="Expedition status"
               aria-live="polite"
+              aria-atomic="true"
               className="grid gap-x-4 gap-y-2 font-mono text-sm text-muted sm:grid-cols-2 lg:grid-cols-4"
             >
               <StatusStat label="Day" value={formatWholeNumber(currentDay)} />
@@ -95,10 +100,7 @@ export function ActiveGameLayout({
             >
               <SettingsIcon aria-hidden="true" className="size-5" />
             </Button>
-            <SaveControls
-              onSaveExistsChange={onSaveExistsChange}
-              variant="compact"
-            />
+            <SaveControls onSaveExistsChange={onSaveExistsChange} variant="compact" />
           </div>
         </div>
       </Card>
@@ -108,8 +110,10 @@ export function ActiveGameLayout({
           <CurrentSituationPanel onNewGame={onNewGame} />
           <ResourceDashboard />
           <TrailMapPanel
+            crossedRiverIds={crossedRiverIds}
             distanceTraveled={distanceTraveled}
             totalDistance={totalDistance}
+            visitedTownIds={visitedTownIds}
           />
         </div>
 
@@ -174,14 +178,24 @@ function getTrailPhase(
 }
 
 function TrailMapPanel({
+  crossedRiverIds,
   distanceTraveled,
   totalDistance,
+  visitedTownIds,
 }: {
+  crossedRiverIds: string[];
   distanceTraveled: number;
   totalDistance: number;
+  visitedTownIds: string[];
 }) {
   const progressPercentage = Math.floor((distanceTraveled / totalDistance) * 100);
   const clampedProgress = Math.min(Math.max(progressPercentage, 0), 100);
+  const landmarks = getTrailMapLandmarks(totalDistance);
+  const [selectedLandmarkId, setSelectedLandmarkId] = useState(
+    landmarks[0]?.id ?? 'destination',
+  );
+  const selectedLandmark =
+    landmarks.find((landmark) => landmark.id === selectedLandmarkId) ?? landmarks[0];
 
   return (
     <Card as="section" aria-label="Trail Map" className="!p-3">
@@ -194,7 +208,8 @@ function TrailMapPanel({
           <div className="mb-1 flex items-center justify-between gap-3 font-mono text-base">
             <span className="text-muted">Distance progress</span>
             <span className="font-bold text-foreground">
-              {formatWholeNumber(distanceTraveled)} / {formatWholeNumber(totalDistance)} mi
+              {formatWholeNumber(distanceTraveled)} / {formatWholeNumber(totalDistance)}{' '}
+              mi
             </span>
           </div>
           <div
@@ -212,6 +227,56 @@ function TrailMapPanel({
       <Suspense fallback={<PhaserGameLoadingFallback />}>
         <LazyPhaserGame />
       </Suspense>
+      {selectedLandmark ? (
+        <div
+          aria-label="Trail landmarks"
+          className="mt-3 border border-border bg-panel p-3"
+        >
+          <h3 className="font-mono text-base text-muted">Route landmarks</h3>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {landmarks.map((landmark) => {
+              const state = getLandmarkState({
+                id: landmark.id,
+                distance: landmark.distance,
+                kind: landmark.kind,
+                distanceTraveled,
+                visitedTownIds,
+                crossedRiverIds,
+              });
+              const selected = landmark.id === selectedLandmark.id;
+
+              return (
+                <li key={landmark.id}>
+                  <Button
+                    aria-pressed={selected}
+                    className="min-h-10 w-full justify-start px-3 py-2 text-left"
+                    onClick={() => setSelectedLandmarkId(landmark.id)}
+                    size="sm"
+                    variant={selected ? 'secondary' : 'ghost'}
+                  >
+                    <span>
+                      <span className="block">{landmark.name}</span>
+                      <span className="block font-normal capitalize text-muted">
+                        {state} / {formatWholeNumber(landmark.distance)} mi
+                      </span>
+                    </span>
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+          <div
+            className="mt-3 border border-border bg-canvas p-3"
+            data-testid="trail-landmark-details"
+          >
+            <p className="text-xl font-bold">{selectedLandmark.name}</p>
+            <p className="mt-1 font-mono text-base capitalize text-highlight">
+              {selectedLandmark.kind} / {formatWholeNumber(selectedLandmark.distance)} mi
+            </p>
+            <p className="mt-2 text-base text-muted">{selectedLandmark.description}</p>
+          </div>
+        </div>
+      ) : null}
     </Card>
   );
 }

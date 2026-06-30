@@ -65,18 +65,17 @@ export function PartyPanel() {
       {party.length === 0 ? (
         <p className="mt-4 font-mono text-base text-muted">No party assembled</p>
       ) : expanded ? (
-        <div
+        <ul
           id={partyListId}
           className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1"
           data-testid="caravan-party-list"
         >
           {party.map((character) => (
-            <CharacterCard
-              key={character.id}
-              character={character}
-            />
+            <li key={character.id}>
+              <CharacterCard character={character} />
+            </li>
           ))}
-        </div>
+        </ul>
       ) : null}
     </Card>
   );
@@ -110,8 +109,7 @@ function CharacterCard({ character }: { character: Character }) {
 
       {isDead ? (
         <p className="sr-only">
-          {character.name} has died. Their record remains visible in the party
-          roster.
+          {character.name} has died. Their record remains visible in the party roster.
         </p>
       ) : null}
 
@@ -119,12 +117,24 @@ function CharacterCard({ character }: { character: Character }) {
         <ConditionBar
           label={`${character.name} health`}
           value={character.health}
-          tone={character.health <= 35 ? 'danger' : character.health <= 65 ? 'warning' : 'success'}
+          tone={
+            character.health <= 35
+              ? 'danger'
+              : character.health <= 65
+                ? 'warning'
+                : 'success'
+          }
         />
         <ConditionBar
           label={`${character.name} morale`}
           value={character.morale}
-          tone={character.morale <= 35 ? 'danger' : character.morale <= 65 ? 'warning' : 'info'}
+          tone={
+            character.morale <= 35
+              ? 'danger'
+              : character.morale <= 65
+                ? 'warning'
+                : 'info'
+          }
         />
       </div>
     </article>

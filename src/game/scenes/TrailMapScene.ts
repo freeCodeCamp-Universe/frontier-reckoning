@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-import { riverCrossings } from '@game/data/riverCrossings';
-import { towns } from '@game/data/towns';
+import { getTrailMapLandmarks, type MapLandmark } from '@game/data/mapLandmarks';
 import {
   calculateCurvedTrailPosition,
   getLandmarkState,
@@ -28,6 +27,7 @@ const TRAIL_START_X = 78;
 const TRAIL_END_X = 888;
 const WAGON_Y_OFFSET = -28;
 const WAGON_MOVE_DURATION_MS = 450;
+const LANDMARK_MARKER_RADIUS = 12;
 const TRAIL_PATH_POINTS: TrailPoint[] = [
   { x: TRAIL_START_X, y: 366 },
   { x: 172, y: 310 },
@@ -39,14 +39,6 @@ const TRAIL_PATH_POINTS: TrailPoint[] = [
   { x: TRAIL_END_X, y: 184 },
 ];
 
-type MapLandmark = {
-  id: string;
-  name: string;
-  distance: number;
-  kind: LandmarkKind;
-  description: string;
-};
-
 type MarkerView = {
   landmark: MapLandmark;
   connector: Phaser.GameObjects.Line;
@@ -56,30 +48,6 @@ type MarkerView = {
   status: Phaser.GameObjects.Text;
   pulseTween?: Phaser.Tweens.Tween;
 };
-
-const dangerZones: MapLandmark[] = [
-  {
-    id: 'bleached-flats',
-    name: 'Bleached Flats',
-    distance: 610,
-    kind: 'danger',
-    description: 'Heat and broken ground punish low supplies.',
-  },
-  {
-    id: 'wolf-ridge',
-    name: 'Wolf Ridge',
-    distance: 1390,
-    kind: 'danger',
-    description: 'A narrow ridge where bad weather turns mean quickly.',
-  },
-  {
-    id: 'deadfall-pass',
-    name: 'Deadfall Pass',
-    distance: 1880,
-    kind: 'danger',
-    description: 'The last pass is steep, cold, and short on mercy.',
-  },
-];
 
 export class TrailMapScene extends Phaser.Scene {
   private wagon?: Phaser.GameObjects.Container;
@@ -220,40 +188,7 @@ export class TrailMapScene extends Phaser.Scene {
   }
 
   private drawMilestoneMarkers() {
-    const baseLandmarks: MapLandmark[] = [
-      ...towns.map((town) => ({
-        id: town.id,
-        name: town.name,
-        distance: town.distance,
-        kind: 'town' as const,
-        description: town.description,
-      })),
-      ...riverCrossings.map((river) => ({
-        id: river.id,
-        name: river.name,
-        distance: river.distance,
-        kind: 'river' as const,
-        description: river.description,
-      })),
-      ...dangerZones,
-    ];
-    const hasLastLanternLandmark = baseLandmarks.some(
-      (landmark) => landmark.name === 'Last Lantern',
-    );
-    const landmarks: MapLandmark[] = [
-      ...baseLandmarks,
-      ...(hasLastLanternLandmark
-        ? []
-        : [
-            {
-              id: 'destination',
-              name: 'Last Lantern',
-              distance: this.mapState.totalDistance,
-              kind: 'destination' as const,
-              description: 'The far end of the frontier trail.',
-            },
-          ]),
-    ].sort((left, right) => left.distance - right.distance);
+    const landmarks = getTrailMapLandmarks(this.mapState.totalDistance);
     const labelPositions = calculateMapLabelPositions(
       landmarks.map((landmark) => {
         const pathPosition = calculateCurvedTrailPosition({
@@ -278,7 +213,9 @@ export class TrailMapScene extends Phaser.Scene {
     );
 
     for (const landmark of landmarks) {
-      this.markerViews.push(this.drawMarker(landmark, labelPositionById.get(landmark.id)));
+      this.markerViews.push(
+        this.drawMarker(landmark, labelPositionById.get(landmark.id)),
+      );
     }
   }
 
@@ -332,7 +269,12 @@ export class TrailMapScene extends Phaser.Scene {
       )
       .setOrigin(0, 0)
       .setVisible(resolvedLabelPosition.visible);
-    const marker = this.add.circle(pathPosition.x, markerY, 10, color);
+    const marker = this.add.circle(
+      pathPosition.x,
+      markerY,
+      LANDMARK_MARKER_RADIUS,
+      color,
+    );
     const labelBackground = this.add.graphics().setVisible(resolvedLabelPosition.visible);
     const label = this.add
       .text(labelX, labelY, resolvedLabelPosition.text, {
@@ -347,7 +289,10 @@ export class TrailMapScene extends Phaser.Scene {
       .setVisible(resolvedLabelPosition.visible);
     const measuredLabelWidth = getMeasuredLabelWidth(label, labelMetrics.textWidth);
     const chipWidth = Math.min(
-      Math.max(measuredLabelWidth + labelMetrics.horizontalPadding * 2, labelMetrics.chipWidth),
+      Math.max(
+        measuredLabelWidth + labelMetrics.horizontalPadding * 2,
+        labelMetrics.chipWidth,
+      ),
       labelMetrics.maxChipWidth,
     );
 
@@ -737,10 +682,7 @@ function getMapLabelMetrics(kind: LandmarkKind, text: string) {
   };
 }
 
-function getMeasuredLabelWidth(
-  label: Phaser.GameObjects.Text,
-  fallbackWidth: number,
-) {
+function getMeasuredLabelWidth(label: Phaser.GameObjects.Text, fallbackWidth: number) {
   const displayWidth = Number(label.displayWidth);
   const width = Number(label.width);
 

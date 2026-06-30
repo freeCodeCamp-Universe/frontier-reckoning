@@ -43,6 +43,7 @@ describe('core screens', () => {
     });
     const camp = render(<CampScreen />);
     expect(screen.getByRole('heading', { name: 'Camp' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('The caravan makes camp.');
     camp.unmount();
 
     useExpeditionStore.setState({
@@ -60,22 +61,29 @@ describe('core screens', () => {
       gameStatus: 'town',
       currentTown: towns[0],
       money: 104.80000000000008,
+      townOutcomeText: 'Bought supplies.',
     });
     const town = render(<TownScreen />);
     expect(screen.getByRole('heading', { name: 'Ash Hollow' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Bought supplies.');
     expect(screen.getByText('Money $105')).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent('104.80000000000008');
+    expect(screen.getByRole('table')).not.toHaveClass('min-w-[720px]');
+    expect(screen.getAllByRole('button', { name: 'Buy' })[0]).toHaveClass('flex-1');
     town.unmount();
 
     useExpeditionStore.setState({
       ...createStartingGameState(),
       gameStatus: 'river',
       currentRiver: riverCrossings[0],
+      riverResolved: true,
+      riverOutcomeText: 'The ferry crossing succeeds.',
     });
     const river = render(<RiverEventScreen />);
     expect(
       screen.getByRole('heading', { name: 'Blackwater Crossing' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('The ferry crossing succeeds.');
     river.unmount();
 
     useExpeditionStore.setState({
@@ -98,5 +106,4 @@ describe('core screens', () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText('Traveled to day 2.')).toHaveLength(1);
   });
-
 });

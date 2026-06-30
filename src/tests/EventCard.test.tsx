@@ -118,7 +118,7 @@ describe('EventCard', () => {
   it('falls back safely for unknown illustration categories', () => {
     expect(getEventIllustrationKind({ categories: ['mystery'] })).toBe('discovery');
 
-    render(
+    const { container } = render(
       <EventIllustration
         event={{
           categories: ['mystery' as never],
@@ -128,9 +128,8 @@ describe('EventCard', () => {
       />,
     );
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: discovery' }),
-    ).toBeInTheDocument();
+    expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it('covers every starter event with a cinematic scene config', () => {
@@ -150,6 +149,7 @@ describe('EventCard', () => {
       expect(
         container.querySelector(`[data-event-scene-id="${event.id}"]`),
       ).toBeInTheDocument();
+      expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
       expect(container.querySelector('svg image')).not.toBeInTheDocument();
       expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);
       expect(container.innerHTML).not.toMatch(/https?:\/\//i);
@@ -203,9 +203,7 @@ describe('EventCard', () => {
       'aria-modal',
       'true',
     );
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: trader' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByText(event?.description ?? '')).toBeInTheDocument();
   });
 
@@ -216,9 +214,7 @@ describe('EventCard', () => {
 
     const { container } = render(<EventIllustration event={event!} />);
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: ridge scouting' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('ridge-scouting-illustration')).toBeInTheDocument();
     expect(container.querySelector('svg image')).not.toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);
@@ -266,9 +262,7 @@ describe('EventCard', () => {
 
     const { container } = render(<EventIllustration event={event!} />);
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: bad water' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('bad-water-illustration')).toBeInTheDocument();
     expect(container.querySelector('svg image')).not.toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);
@@ -315,9 +309,7 @@ describe('EventCard', () => {
 
     const { container } = render(<EventIllustration event={event!} />);
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: predator hunt' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('predator-hunt-illustration')).toBeInTheDocument();
     expect(container.querySelector('svg image')).not.toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);
@@ -369,9 +361,7 @@ describe('EventCard', () => {
 
     const { container } = render(<EventIllustration event={event!} />);
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: stolen tack' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('stolen-tack-illustration')).toBeInTheDocument();
     expect(container.querySelector('svg image')).not.toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);
@@ -418,9 +408,7 @@ describe('EventCard', () => {
 
     const { container } = render(<EventIllustration event={event!} />);
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: night watch song' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('night-watch-song-illustration')).toBeInTheDocument();
     expect(container.querySelector('svg image')).not.toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);
@@ -469,9 +457,7 @@ describe('EventCard', () => {
 
     const { container } = render(<EventIllustration event={event!} />);
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: rattlesnake strike' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('rattlesnake-strike-illustration')).toBeInTheDocument();
     expect(container.querySelector('svg image')).not.toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);
@@ -518,9 +504,7 @@ describe('EventCard', () => {
 
     const { container } = render(<EventIllustration event={event!} />);
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: guide for ammo' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('guide-for-ammo-illustration')).toBeInTheDocument();
     expect(container.querySelector('svg image')).not.toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);
@@ -574,9 +558,7 @@ describe('EventCard', () => {
 
     const { container } = render(<EventIllustration event={event!} />);
 
-    expect(
-      screen.getByRole('img', { name: 'Event illustration: ration dispute' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('ration-dispute-illustration')).toBeInTheDocument();
     expect(container.querySelector('svg image')).not.toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/\.(png|jpe?g|webp|gif|avif|svg)/i);

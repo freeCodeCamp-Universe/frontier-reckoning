@@ -24,6 +24,9 @@ type NewExpeditionSetupProps = {
 type SetupStep = 'name' | 'party' | 'difficulty';
 
 const requiredPartySize = 4;
+const expeditionNameRequirementId = 'expedition-name-requirement';
+const partyRequirementId = 'party-selection-requirement';
+const difficultyRequirementId = 'difficulty-selection-requirement';
 
 export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps) {
   const [step, setStep] = useState<SetupStep>('name');
@@ -209,17 +212,28 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
             <CardHeader>
               <h2 className="text-3xl font-bold sm:text-4xl">Name the caravan</h2>
             </CardHeader>
-            <label htmlFor="expedition-name" className="mt-8 block font-mono text-base text-muted">
+            <label
+              htmlFor="expedition-name"
+              className="mt-8 block font-mono text-base text-muted"
+            >
               Expedition name
             </label>
             <input
               ref={nameInputRef}
               id="expedition-name"
-              className="mt-3 w-full border border-border bg-panel px-4 py-4 text-xl text-foreground outline-none focus:border-highlight focus:ring-2 focus:ring-highlight"
+              aria-describedby={expeditionNameRequirementId}
+              aria-invalid={canContinueFromName ? undefined : true}
+              className="mt-3 w-full border border-muted-ui bg-panel px-4 py-4 text-xl text-foreground focus:border-highlight focus:ring-2 focus:ring-highlight"
               value={expeditionName}
               onChange={(event) => setExpeditionName(event.target.value)}
               onKeyDown={handleNameKeyDown}
             />
+            <p
+              id={expeditionNameRequirementId}
+              className="mt-3 font-mono text-base text-muted"
+            >
+              Enter an expedition name before continuing.
+            </p>
             <SetupActions>
               <Button onClick={handleBack} variant="secondary">
                 Back
@@ -244,51 +258,59 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
               {uniqueSelectedIds.length} / {requiredPartySize}
             </Badge>
           </CardHeader>
-          <div className="mt-8 grid gap-4 lg:grid-cols-2">
-            {starterCharacters.map((character, index) => {
-              const selected = uniqueSelectedIds.includes(character.id);
-              const disabled = !selected && uniqueSelectedIds.length >= requiredPartySize;
+          <fieldset aria-describedby={partyRequirementId} className="mt-8">
+            <legend className="sr-only">Party member selection</legend>
+            <p id={partyRequirementId} className="mb-4 font-mono text-base text-muted">
+              Select exactly {requiredPartySize} party members before continuing.
+            </p>
+            <ul className="grid gap-4 lg:grid-cols-2">
+              {starterCharacters.map((character, index) => {
+                const selected = uniqueSelectedIds.includes(character.id);
+                const disabled =
+                  !selected && uniqueSelectedIds.length >= requiredPartySize;
 
-              return (
-                <button
-                  ref={(element) => {
-                    partyButtonRefs.current[index] = element;
-                  }}
-                  key={character.id}
-                  type="button"
-                  onClick={() => toggleCharacter(character.id)}
-                  onKeyDown={(event) => handlePartyKeyDown(event, index)}
-                  disabled={disabled}
-                  aria-pressed={selected}
-                  aria-label={`${selected ? 'Remove' : 'Select'} ${character.name}, ${character.role}`}
-                  className={`border p-5 text-left motion-safe:transition-colors focus:outline-none focus:ring-2 focus:ring-highlight disabled:cursor-not-allowed disabled:opacity-60 ${
-                    selected
-                      ? 'border-cta bg-panel text-foreground'
-                      : 'border-border bg-surface text-muted hover:border-highlight'
-                  }`}
-                >
-                  <span className="flex items-start gap-3">
-                    <CharacterPortrait character={character} selected={selected} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-bold text-foreground">
-                        {character.name}
+                return (
+                  <li key={character.id}>
+                    <button
+                      ref={(element) => {
+                        partyButtonRefs.current[index] = element;
+                      }}
+                      type="button"
+                      onClick={() => toggleCharacter(character.id)}
+                      onKeyDown={(event) => handlePartyKeyDown(event, index)}
+                      disabled={disabled}
+                      aria-pressed={selected}
+                      aria-label={`${selected ? 'Remove' : 'Select'} ${character.name}, ${character.role}`}
+                      className={`h-full w-full border p-5 text-left motion-safe:transition-colors focus:ring-2 focus:ring-highlight disabled:cursor-not-allowed disabled:opacity-60 ${
+                        selected
+                          ? 'border-cta bg-panel text-foreground'
+                          : 'border-muted-ui bg-surface text-muted hover:border-highlight'
+                      }`}
+                    >
+                      <span className="flex items-start gap-3">
+                        <CharacterPortrait character={character} selected={selected} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-bold text-foreground">
+                            {character.name}
+                          </span>
+                          <span className="mt-1 block font-mono text-base text-highlight">
+                            {character.role}
+                          </span>
+                        </span>
+                        <Badge variant={selected ? 'success' : 'muted'}>
+                          {selected ? 'Selected' : 'Available'}
+                        </Badge>
                       </span>
-                      <span className="mt-1 block font-mono text-base text-highlight">
-                        {character.role}
+                      <span className="mt-2 block text-base">
+                        Health {formatResourceValue('health', character.health)} / Morale{' '}
+                        {formatResourceValue('morale', character.morale)}
                       </span>
-                    </span>
-                    <Badge variant={selected ? 'success' : 'muted'}>
-                      {selected ? 'Selected' : 'Available'}
-                    </Badge>
-                  </span>
-                  <span className="mt-2 block text-base">
-                    Health {formatResourceValue('health', character.health)} / Morale{' '}
-                    {formatResourceValue('morale', character.morale)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </fieldset>
           <SetupActions>
             <Button onClick={handleBack} variant="secondary">
               Back
@@ -321,36 +343,46 @@ export function NewExpeditionSetup({ onBack, onStart }: NewExpeditionSetupProps)
             <CardHeader>
               <h2 className="text-3xl font-bold sm:text-4xl">Choose trail difficulty</h2>
             </CardHeader>
-            <div className="mt-8 grid gap-4 lg:grid-cols-3">
-              {difficultyOptions.map((option, index) => (
-                <label
-                  key={option.id}
-                  className="flex cursor-pointer gap-4 border border-border bg-panel p-5 focus-within:border-highlight"
-                >
-                  <input
-                    ref={(element) => {
-                      difficultyInputRefs.current[index] = element;
-                    }}
-                    type="radio"
-                    name="difficulty"
-                    value={option.id}
-                    checked={difficulty === option.id}
-                    onChange={() => setDifficulty(option.id)}
-                    onKeyDown={(event) => handleDifficultyKeyDown(event, index)}
-                    className="mt-1"
-                  />
-                  <span>
-                    <span className="block font-bold">{option.label}</span>
-                    <span className="block text-base text-muted">
-                      {option.description}
-                    </span>
-                    <span className="mt-1 block font-mono text-base text-highlight">
-                      ${option.startingMoney} start
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
+            <fieldset aria-describedby={difficultyRequirementId} className="mt-8">
+              <legend className="sr-only">Trail difficulty</legend>
+              <p
+                id={difficultyRequirementId}
+                className="mb-4 font-mono text-base text-muted"
+              >
+                Select a difficulty before starting.
+              </p>
+              <ul className="grid gap-4 lg:grid-cols-3">
+                {difficultyOptions.map((option, index) => (
+                  <li key={option.id}>
+                    <label className="flex h-full cursor-pointer gap-4 border border-muted-ui bg-panel p-5 focus-within:border-highlight">
+                      <input
+                        ref={(element) => {
+                          difficultyInputRefs.current[index] = element;
+                        }}
+                        type="radio"
+                        name="difficulty"
+                        value={option.id}
+                        aria-describedby={difficultyRequirementId}
+                        aria-invalid={difficulty === null ? true : undefined}
+                        checked={difficulty === option.id}
+                        onChange={() => setDifficulty(option.id)}
+                        onKeyDown={(event) => handleDifficultyKeyDown(event, index)}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="block font-bold">{option.label}</span>
+                        <span className="block text-base text-muted">
+                          {option.description}
+                        </span>
+                        <span className="mt-1 block font-mono text-base text-highlight">
+                          ${option.startingMoney} start
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
             <SetupActions>
               <Button onClick={handleBack} variant="secondary">
                 Back

@@ -15,7 +15,9 @@ export function GameLogPanel() {
           <div>
             <p className="font-mono text-sm uppercase text-highlight">trail dispatch</p>
             <h2 className="mt-1 text-xl font-bold">Game Log</h2>
-            <p className="mt-1 font-mono text-base text-muted">{gameLog.length} entries</p>
+            <p className="mt-1 font-mono text-base text-muted">
+              {gameLog.length} entries
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {gameLog.length > 5 ? (
@@ -32,9 +34,17 @@ export function GameLogPanel() {
           </div>
         </div>
 
-        <ol id="game-log-entries" className="mt-3 max-h-72 space-y-2 overflow-y-auto">
+        <ol
+          id="game-log-entries"
+          className="mt-3 max-h-72 space-y-2 overflow-y-auto"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions text"
+        >
           {gameLog.length === 0 ? (
-            <li className="font-mono text-base text-muted">No trail events recorded yet</li>
+            <li className="font-mono text-base text-muted">
+              No trail events recorded yet
+            </li>
           ) : (
             visibleEntries.map((entry, index) => (
               <li

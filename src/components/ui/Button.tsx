@@ -16,13 +16,13 @@ type ButtonProps = PropsWithChildren<
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'border-cta bg-cta text-canvas hover:bg-transparent hover:text-cta disabled:border-border disabled:bg-panel disabled:text-muted disabled:hover:bg-panel disabled:hover:text-muted',
+    'border-cta bg-cta text-canvas hover:bg-transparent hover:text-cta disabled:border-muted-ui disabled:bg-panel disabled:text-muted disabled:hover:bg-panel disabled:hover:text-muted',
   secondary:
-    'border-highlight bg-transparent text-highlight hover:bg-highlight hover:text-canvas disabled:border-border disabled:bg-panel disabled:text-muted disabled:hover:bg-panel disabled:hover:text-muted',
+    'border-highlight bg-transparent text-highlight hover:bg-highlight hover:text-canvas disabled:border-muted-ui disabled:bg-panel disabled:text-muted disabled:hover:bg-panel disabled:hover:text-muted',
   danger:
-    'border-danger bg-danger text-canvas hover:bg-transparent hover:text-danger disabled:border-border disabled:bg-panel disabled:text-muted disabled:hover:bg-panel disabled:hover:text-muted',
+    'border-danger bg-danger text-canvas hover:bg-transparent hover:text-danger disabled:border-muted-ui disabled:bg-panel disabled:text-muted disabled:hover:bg-panel disabled:hover:text-muted',
   ghost:
-    'border-border bg-panel text-foreground hover:border-highlight hover:text-highlight disabled:border-border disabled:bg-panel disabled:text-muted disabled:hover:text-muted',
+    'border-muted-ui bg-panel text-foreground hover:border-highlight hover:text-highlight disabled:border-muted-ui disabled:bg-panel disabled:text-muted disabled:hover:text-muted',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

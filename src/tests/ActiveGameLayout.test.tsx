@@ -35,9 +35,15 @@ describe('ActiveGameLayout', () => {
     expect(header).not.toHaveClass('fixed');
     expect(header.className).not.toContain('top-');
     expect(header.className).not.toContain('z-');
+    expect(screen.getByLabelText('Expedition status')).toHaveAttribute(
+      'aria-atomic',
+      'true',
+    );
     expect(screen.getByRole('region', { name: 'Current situation' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Trail Dashboard' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Resource dashboard' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Resource dashboard' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Trail Map' })).toBeInTheDocument();
     expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
   });
@@ -80,8 +86,7 @@ describe('ActiveGameLayout', () => {
     const trailMap = screen.getByRole('region', { name: 'Trail Map' });
 
     expect(
-      trailDashboard.compareDocumentPosition(trailMap) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
+      trailDashboard.compareDocumentPosition(trailMap) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(within(trailDashboard).getByText('Trail Dashboard')).toBeInTheDocument();
     expect(
@@ -90,8 +95,12 @@ describe('ActiveGameLayout', () => {
     expect(within(trailDashboard).queryByText(/Day 1/)).not.toBeInTheDocument();
     expect(within(trailDashboard).queryByText(/0 of 2000/)).not.toBeInTheDocument();
     expect(within(trailDashboard).queryByText('traveling')).not.toBeInTheDocument();
-    expect(within(trailDashboard).getByRole('button', { name: 'Travel One Day' })).toBeEnabled();
-    expect(within(trailDashboard).getByRole('button', { name: 'Make Camp' })).toBeEnabled();
+    expect(
+      within(trailDashboard).getByRole('button', { name: 'Travel One Day' }),
+    ).toBeEnabled();
+    expect(
+      within(trailDashboard).getByRole('button', { name: 'Make Camp' }),
+    ).toBeEnabled();
   });
 
   it('places resource summary between trail dashboard and trail map', () => {
@@ -124,6 +133,40 @@ describe('ActiveGameLayout', () => {
     expect(
       within(resourceSummary).getByRole('button', { name: 'Expand resource summary' }),
     ).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('provides touch-sized trail landmark controls outside the canvas', () => {
+    useExpeditionStore.setState({
+      ...createStartingGameState(),
+      distanceTraveled: 640,
+      visitedTownIds: ['ash-hollow'],
+      crossedRiverIds: ['blackwater-crossing'],
+    });
+
+    render(
+      <ActiveGameLayout
+        onNewGame={() => undefined}
+        onReturnToMenu={() => undefined}
+        onSaveExistsChange={() => undefined}
+        onSettings={() => undefined}
+      />,
+    );
+
+    const trailMap = screen.getByRole('region', { name: 'Trail Map' });
+    const landmarks = within(trailMap).getByLabelText('Trail landmarks');
+    const wolfRidgeButton = within(landmarks).getByRole('button', {
+      name: /Wolf Ridge/,
+    });
+
+    expect(wolfRidgeButton).toHaveClass('min-h-10', 'w-full');
+
+    fireEvent.click(wolfRidgeButton);
+
+    expect(wolfRidgeButton).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('trail-landmark-details')).toHaveTextContent('Wolf Ridge');
+    expect(screen.getByTestId('trail-landmark-details')).toHaveTextContent(
+      'A narrow ridge where bad weather turns mean quickly.',
+    );
   });
 
   it('does not expose trail dashboard collapse controls or aria-expanded', () => {
@@ -227,7 +270,9 @@ describe('ActiveGameLayout', () => {
     for (const label of ['Day', 'Distance', 'Status', 'Location']) {
       const stat = within(status).getByRole('group', { name: `${label} status` });
 
-      expect(within(status).queryByRole('button', { name: label })).not.toBeInTheDocument();
+      expect(
+        within(status).queryByRole('button', { name: label }),
+      ).not.toBeInTheDocument();
       expect(stat).not.toHaveAttribute('tabindex');
       stat.focus();
       expect(stat).not.toHaveFocus();
@@ -256,7 +301,9 @@ describe('ActiveGameLayout', () => {
     const saveButton = within(header).getByRole('button', { name: 'Save game' });
 
     expect(menuButton).toBeInTheDocument();
-    expect(within(header).queryByRole('button', { name: /Reset save/i })).not.toBeInTheDocument();
+    expect(
+      within(header).queryByRole('button', { name: /Reset save/i }),
+    ).not.toBeInTheDocument();
     expect(within(header).queryByText('Save ready.')).not.toBeInTheDocument();
     expect(within(header).queryByText('No save yet.')).not.toBeInTheDocument();
     expect(
@@ -264,8 +311,7 @@ describe('ActiveGameLayout', () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      menuButton.compareDocumentPosition(saveButton) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
+      menuButton.compareDocumentPosition(saveButton) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
     fireEvent.click(menuButton);

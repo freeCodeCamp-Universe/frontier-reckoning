@@ -37,14 +37,16 @@ export function RiverEventScreen() {
 
       {riverResolved ? (
         <Card as="div" variant="success" className="mt-4">
-          <Badge variant="success">Outcome summary</Badge>
-          <p className="mt-3 font-mono text-base text-success">{riverOutcomeText}</p>
+          <div role="status" aria-atomic="true">
+            <Badge variant="success">Outcome summary</Badge>
+            <p className="mt-3 font-mono text-base text-success">{riverOutcomeText}</p>
+          </div>
           <Button onClick={continueFromRiver} className="mt-4">
             Continue
           </Button>
         </Card>
       ) : (
-        <div className="mt-4 grid gap-3">
+        <ul className="mt-4 grid gap-3">
           {currentRiver.options.map((option) => {
             const availability = getRiverOptionAvailability(
               gameState,
@@ -57,38 +59,40 @@ export function RiverEventScreen() {
             const cost = getRiverCostPreview(option);
 
             return (
-              <Card as="div" variant="panel" key={option.id} className="p-3">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold">{option.label}</h3>
-                    <p className="mt-2 text-muted">{option.description}</p>
-                    <p className="mt-2 font-mono text-base text-highlight">
-                      {option.riskDescription}
-                    </p>
+              <li key={option.id}>
+                <Card as="div" variant="panel" className="p-3">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold">{option.label}</h3>
+                      <p className="mt-2 text-muted">{option.description}</p>
+                      <p className="mt-2 font-mono text-base text-highlight">
+                        {option.riskDescription}
+                      </p>
+                    </div>
+                    <div className="min-w-48">
+                      <RiskMeter value={risk} />
+                      <p className="mt-2 font-mono text-base text-muted">
+                        Cost: {formatCost(cost)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-48">
-                    <RiskMeter value={risk} />
-                    <p className="mt-2 font-mono text-base text-muted">
-                      Cost: {formatCost(cost)}
+                  {!availability.available ? (
+                    <p className="mt-3 font-mono text-base text-danger">
+                      {availability.reasons.join(' ')}
                     </p>
-                  </div>
-                </div>
-                {!availability.available ? (
-                  <p className="mt-3 font-mono text-base text-danger">
-                    {availability.reasons.join(' ')}
-                  </p>
-                ) : null}
-                <Button
-                  onClick={() => resolveRiverCrossing(option.id)}
-                  disabled={!availability.available}
-                  className="mt-3 w-full justify-start text-left"
-                >
-                  Choose {option.label}
-                </Button>
-              </Card>
+                  ) : null}
+                  <Button
+                    onClick={() => resolveRiverCrossing(option.id)}
+                    disabled={!availability.available}
+                    className="mt-3 w-full justify-start text-left"
+                  >
+                    Choose {option.label}
+                  </Button>
+                </Card>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </Card>
   );
@@ -98,7 +102,7 @@ function RiverDetailPanel() {
   const river = useExpeditionStore((state) => state.currentRiver)!;
 
   return (
-    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <RiverStat label="Width" value={`${river.width} ft`} />
       <RiverStat label="Depth" value={`${river.depth.toFixed(1)} ft`} />
       <RiverStat label="Current" value={`${Math.round(river.currentStrength * 100)}%`} />
@@ -106,7 +110,7 @@ function RiverDetailPanel() {
       <RiverStat label="Ferry" value={river.ferryAvailable ? 'Available' : 'None'} />
       <RiverStat label="Bridge" value={river.bridgeAvailable ? 'Known' : 'Unknown'} />
       <RiverStat label="Danger" value={`${Math.round(river.dangerRating * 100)}%`} />
-    </div>
+    </dl>
   );
 }
 

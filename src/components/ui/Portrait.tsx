@@ -19,21 +19,18 @@ export function CharacterPortrait({
     <div
       className={cx(
         'relative grid size-20 shrink-0 place-items-center overflow-hidden border-2 bg-surface font-mono font-bold',
-        selected
-          ? 'border-cta bg-bark text-cta'
-          : 'border-border text-highlight',
+        selected ? 'border-cta bg-bark text-cta' : 'border-border text-highlight',
         character.status === 'sick' && 'grayscale',
         character.status === 'injured' && 'border-cta bg-bark/40',
         character.status === 'dead' && 'border-danger bg-danger-deep grayscale',
       )}
       aria-hidden="true"
-      title={`${character.name}, ${character.role}`}
     >
       <svg
         className="absolute inset-0 size-full"
         viewBox="0 0 80 80"
-        role="img"
-        aria-label=""
+        aria-hidden="true"
+        focusable="false"
       >
         <rect width="80" height="80" fill="currentColor" opacity="0.1" />
         <circle cx="40" cy="30" r="17" fill="rgb(var(--color-parchment-dark))" />

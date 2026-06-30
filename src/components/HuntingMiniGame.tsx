@@ -1,4 +1,9 @@
-import { useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import Phaser from 'phaser';
 import {
   chooseHuntingAnimalType,
@@ -13,6 +18,7 @@ import { audioSystem } from '@game/systems/audioSystem';
 import { getHuntingAnimalHitRadius } from '@game/systems/huntingSpriteProfiles';
 import type { FrontierReckoningData } from '@stores/expeditionStore';
 import { formatWholeNumber } from '@utils/formatResourceValue';
+import { isTextEntryTarget } from '@utils/keyboard';
 
 type HuntingMiniGameProps = {
   ammoAvailable: number;
@@ -31,9 +37,11 @@ export function HuntingMiniGame({
   reducedMotion,
   onComplete,
 }: HuntingMiniGameProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLButtonElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
+  const sceneRef = useRef<HuntingScene | null>(null);
   const completionRef = useRef(onComplete);
+  const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
     completionRef.current = onComplete;
@@ -48,8 +56,10 @@ export function HuntingMiniGame({
       ammoAvailable: Math.min(ammoAvailable, maxHuntAmmo),
       gameState,
       reducedMotion,
+      onAnnounce: setAnnouncement,
       onComplete: (result) => completionRef.current(result),
     });
+    sceneRef.current = scene;
 
     gameRef.current = new Phaser.Game({
       type: Phaser.AUTO,
@@ -67,8 +77,15 @@ export function HuntingMiniGame({
     return () => {
       gameRef.current?.destroy(true);
       gameRef.current = null;
+      sceneRef.current = null;
     };
   }, [ammoAvailable, gameState, reducedMotion]);
+
+  const handleHuntingKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (sceneRef.current?.handleKeyboardControl(event.nativeEvent)) {
+      event.preventDefault();
+    }
+  };
 
   return (
     <section
@@ -77,11 +94,21 @@ export function HuntingMiniGame({
     >
       <div className="border-b border-border bg-surface p-3">
         <p className="font-mono text-base text-highlight">hunting range</p>
-        <p className="mt-1 text-base text-muted">
-          Move the reticle, then click, tap, or press Space to shoot.
+        <p id="hunting-controls-help" className="mt-1 text-base text-muted">
+          Move the reticle, then click, tap, or use Arrow keys and Space to shoot.
         </p>
       </div>
-      <div ref={containerRef} className="min-h-[320px] w-full" />
+      <button
+        ref={containerRef}
+        aria-describedby="hunting-controls-help"
+        aria-label="Hunting range. Use Arrow keys to move the reticle and Space or Enter to shoot."
+        className="block min-h-[320px] w-full border-0 bg-transparent p-0 text-left text-inherit outline-offset-4"
+        onKeyDown={handleHuntingKeyDown}
+        type="button"
+      />
+      <p className="sr-only" role="status" aria-atomic="true">
+        {announcement}
+      </p>
     </section>
   );
 }
@@ -90,6 +117,7 @@ type HuntingSceneOptions = {
   ammoAvailable: number;
   gameState: FrontierReckoningData;
   reducedMotion: boolean;
+  onAnnounce: (message: string) => void;
   onComplete: (result: HuntingMiniGameResult) => void;
 };
 
@@ -127,7 +155,11 @@ class HuntingScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.shoot(pointer.x, pointer.y);
     });
-    this.input.keyboard?.on('keydown-SPACE', () => {
+    this.input.keyboard?.on('keydown-SPACE', (event: globalThis.KeyboardEvent) => {
+      if (isTextEntryTarget(event.target)) {
+        return;
+      }
+
       const position = this.crosshair ?? { x: sceneWidth / 2, y: sceneHeight / 2 };
       this.shoot(position.x, position.y);
     });
@@ -150,6 +182,43 @@ class HuntingScene extends Phaser.Scene {
       },
     });
     this.spawnAnimal();
+  }
+
+  handleKeyboardControl(event: globalThis.KeyboardEvent) {
+    if (isTextEntryTarget(event.target)) {
+      return false;
+    }
+
+    const step = event.shiftKey ? 48 : 24;
+
+    if (event.key === 'ArrowUp') {
+      this.moveCrosshairBy(0, -step);
+      return true;
+    }
+
+    if (event.key === 'ArrowDown') {
+      this.moveCrosshairBy(0, step);
+      return true;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      this.moveCrosshairBy(-step, 0);
+      return true;
+    }
+
+    if (event.key === 'ArrowRight') {
+      this.moveCrosshairBy(step, 0);
+      return true;
+    }
+
+    if (event.key === ' ' || event.key === 'Enter') {
+      const position = this.crosshair ?? { x: sceneWidth / 2, y: sceneHeight / 2 };
+
+      this.shoot(position.x, position.y);
+      return true;
+    }
+
+    return false;
   }
 
   private drawRange() {
@@ -186,6 +255,15 @@ class HuntingScene extends Phaser.Scene {
     return crosshair;
   }
 
+  private moveCrosshairBy(deltaX: number, deltaY: number) {
+    const position = this.crosshair ?? this.createCrosshair();
+    const nextX = Phaser.Math.Clamp(position.x + deltaX, 0, sceneWidth);
+    const nextY = Phaser.Math.Clamp(position.y + deltaY, 0, sceneHeight);
+
+    this.crosshair = position;
+    position.setPosition(nextX, nextY);
+  }
+
   private spawnAnimal() {
     if (this.completed) {
       return;
@@ -212,12 +290,11 @@ class HuntingScene extends Phaser.Scene {
       gameObject: animal,
     };
     this.animals.push(huntingAnimal);
-    animateAnimalSprite(
-      this,
-      sprite,
-      type,
-      fromLeft,
-      this.options.reducedMotion,
+    animateAnimalSprite(this, sprite, type, fromLeft, this.options.reducedMotion);
+
+    const travelDuration = Math.min(
+      4800,
+      this.options.reducedMotion ? 4800 : (sceneWidth / config.speed) * 1000,
     );
 
     this.tweens.add({
@@ -225,8 +302,9 @@ class HuntingScene extends Phaser.Scene {
       x: endX,
       y: this.options.reducedMotion
         ? y
-        : y + Phaser.Math.Between(type === 'rabbit' ? -12 : -24, type === 'rabbit' ? 10 : 24),
-      duration: this.options.reducedMotion ? 5200 : (sceneWidth / config.speed) * 1000,
+        : y +
+          Phaser.Math.Between(type === 'rabbit' ? -12 : -24, type === 'rabbit' ? 10 : 24),
+      duration: travelDuration,
       ease: 'Linear',
       onUpdate: () => {
         huntingAnimal.x = animal.x;
@@ -262,16 +340,23 @@ class HuntingScene extends Phaser.Scene {
       this.hits += 1;
       this.foodGained += shot.foodGained;
       this.resultText?.setText(`${shot.hitAnimal.type} hit +${shot.foodGained} food`);
+      this.options.onAnnounce(
+        `${shot.hitAnimal.type} hit. ${shot.foodGained} food gained. Ammo ${this.ammoRemaining}.`,
+      );
       hitAnimal?.gameObject.destroy();
       this.animals = this.animals.filter((animal) => animal.id !== shot.hitAnimal?.id);
 
       if (shot.predatorEncountered) {
         this.predatorEncountered = true;
         this.resultText?.setText('Wolf hit, but it injures a traveler.');
+        this.options.onAnnounce(
+          `Wolf hit, but it injures a traveler. Ammo ${this.ammoRemaining}.`,
+        );
       }
     } else {
       this.misses += 1;
       this.resultText?.setText('Miss. Ammo spent.');
+      this.options.onAnnounce(`Miss. Ammo ${this.ammoRemaining}.`);
     }
 
     this.updateHud();
@@ -294,6 +379,9 @@ class HuntingScene extends Phaser.Scene {
     }
 
     this.completed = true;
+    this.options.onAnnounce(
+      `Hunting complete. ${this.foodGained} food gained, ${this.hits} hits, ${this.misses} misses.`,
+    );
     this.options.onComplete({
       ammoSpent: this.options.ammoAvailable - this.ammoRemaining,
       foodGained: this.foodGained,
@@ -335,10 +423,7 @@ function renderHuntingAnimalSprite(
   }
 }
 
-function renderElkSprite(
-  scene: Phaser.Scene,
-  fromLeft: boolean,
-): AnimalSprite {
+function renderElkSprite(scene: Phaser.Scene, fromLeft: boolean): AnimalSprite {
   const container = scene.add.container(0, 0).setScale(fromLeft ? 1 : -1, 1);
   const body = scene.add.container(0, 0);
   const shadow = scene.add.graphics();
@@ -401,10 +486,7 @@ function renderElkSprite(
   return { container, body };
 }
 
-function renderDeerSprite(
-  scene: Phaser.Scene,
-  fromLeft: boolean,
-): AnimalSprite {
+function renderDeerSprite(scene: Phaser.Scene, fromLeft: boolean): AnimalSprite {
   const container = scene.add.container(0, 0).setScale(fromLeft ? 1 : -1, 1);
   const body = scene.add.container(0, 0);
   const shadow = scene.add.graphics();
@@ -460,10 +542,7 @@ function renderDeerSprite(
   return { container, body };
 }
 
-function renderRabbitSprite(
-  scene: Phaser.Scene,
-  fromLeft: boolean,
-): AnimalSprite {
+function renderRabbitSprite(scene: Phaser.Scene, fromLeft: boolean): AnimalSprite {
   const container = scene.add.container(0, 0).setScale(fromLeft ? 1 : -1, 1);
   const body = scene.add.container(0, 0);
   const dust = scene.add.graphics();

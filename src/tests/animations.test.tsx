@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventCard } from '@components/EventCard';
+import { EventIllustration } from '@components/EventIllustration';
 import { ResourceDashboard } from '@components/ResourceDashboard';
 import { starterEvents } from '@game/data/starterEvents';
 import { updateStoredSettings } from '@game/systems/settingsSystem';
@@ -62,12 +63,29 @@ describe('animation layer', () => {
 
     const dialog = screen.getByRole('dialog', { name: starterEvents[0].title });
 
-    expect(dialog).toHaveClass('fr-event-card-enter');
+    expect(dialog.tagName).toBe('DIALOG');
+    expect(dialog.querySelector('.fr-event-card-enter')).toBeInTheDocument();
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(screen.getByText(starterEvents[0].description)).toBeInTheDocument();
 
     fireEvent.keyDown(dialog, { key: 'Tab' });
+    fireEvent(dialog, new Event('cancel', { cancelable: true }));
 
     expect(dialog).toBeInTheDocument();
+  });
+
+  it('keeps decorative SVG animation cycles at five seconds or less', () => {
+    const longAnimationDurationPattern =
+      /animation:[^;]*\s(?:5\.\d+|[6-9](?:\.\d+)?|[1-9]\d+(?:\.\d+)?)s/;
+
+    for (const event of starterEvents) {
+      const { container, unmount } = render(<EventIllustration event={event} />);
+
+      for (const style of container.querySelectorAll('style')) {
+        expect(style.textContent).not.toMatch(longAnimationDurationPattern);
+      }
+
+      unmount();
+    }
   });
 });

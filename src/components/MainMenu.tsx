@@ -53,7 +53,7 @@ export function MainMenu({
         </header>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <ul className="grid gap-4 md:grid-cols-3">
         <FeatureCard
           icon={Package}
           title="Manage Supplies"
@@ -69,7 +69,7 @@ export function MainMenu({
           title="Cross Rivers"
           description="Weigh risk, cost, and timing when the road ends at deep water."
         />
-      </div>
+      </ul>
     </section>
   );
 }
@@ -84,10 +84,12 @@ function FeatureCard({
   title: string;
 }) {
   return (
-    <Card as="article" variant="panel" className="p-4">
-      <Icon aria-hidden="true" className="size-6 text-cta" />
-      <h2 className="mt-3 text-2xl font-bold">{title}</h2>
-      <p className="mt-2 text-base text-muted">{description}</p>
-    </Card>
+    <li>
+      <Card as="article" variant="panel" className="h-full p-4">
+        <Icon aria-hidden="true" className="size-6 text-cta" />
+        <h2 className="mt-3 text-2xl font-bold">{title}</h2>
+        <p className="mt-2 text-base text-muted">{description}</p>
+      </Card>
+    </li>
   );
 }

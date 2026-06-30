@@ -21,7 +21,12 @@ describe('PartyPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand caravan party' }));
 
-    expect(screen.getByTestId('caravan-party-list')).toBeInTheDocument();
+    expect(screen.getByTestId('caravan-party-list')).toHaveAttribute(
+      'id',
+      expect.any(String),
+    );
+    expect(screen.getByRole('list')).toBe(screen.getByTestId('caravan-party-list'));
+    expect(screen.getAllByRole('listitem')).toHaveLength(4);
     expect(screen.getByText('Elias Reed')).toBeInTheDocument();
     expect(screen.getByText('Mara Bell')).toBeInTheDocument();
     expect(screen.getByText('Jonah Vale')).toBeInTheDocument();
@@ -37,10 +42,18 @@ describe('PartyPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand caravan party' }));
 
-    expect(screen.getByRole('article', { name: /Hazel Green, Scout, Healthy/i })).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: /Otto Gray, Doctor, Sick/i })).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: /Pearl Fox, Hunter, Injured/i })).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: /Cal Moss, Mechanic, Dead/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('article', { name: /Hazel Green, Scout, Healthy/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('article', { name: /Otto Gray, Doctor, Sick/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('article', { name: /Pearl Fox, Hunter, Injured/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('article', { name: /Cal Moss, Mechanic, Dead/i }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('Healthy')).toBeInTheDocument();
     expect(screen.getByLabelText('Sick')).toBeInTheDocument();
     expect(screen.getByLabelText('Injured')).toBeInTheDocument();
@@ -51,7 +64,9 @@ describe('PartyPanel', () => {
 
   it('announces dead characters to screen readers', () => {
     useExpeditionStore.setState({
-      party: [createCharacter({ name: 'Cal Moss', status: 'dead', health: 0, morale: 0 })],
+      party: [
+        createCharacter({ name: 'Cal Moss', status: 'dead', health: 0, morale: 0 }),
+      ],
     });
 
     render(<PartyPanel />);
@@ -106,7 +121,9 @@ describe('PartyPanel', () => {
       'false',
     );
     expect(screen.queryByTestId('caravan-party-list')).not.toBeInTheDocument();
-    expect(screen.queryByRole('article', { name: /Hazel Green/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('article', { name: /Hazel Green/ }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Caravan party summary')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Living summary')).not.toBeInTheDocument();
@@ -116,12 +133,13 @@ describe('PartyPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand caravan party' }));
 
-    expect(screen.getByRole('button', { name: 'Collapse caravan party' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Collapse caravan party' }),
+    ).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByTestId('caravan-party-list')).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: /Hazel Green, Scout, Healthy/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('article', { name: /Hazel Green, Scout, Healthy/i }),
+    ).toBeInTheDocument();
   });
 });
 

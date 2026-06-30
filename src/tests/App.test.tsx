@@ -43,9 +43,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Frontier Reckoning' }),
     ).toBeInTheDocument();
     expect(screen.queryByText('Main Menu')).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Start Expedition' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start Expedition' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
     expect(phaserGameModuleLoadMock).not.toHaveBeenCalled();
   });
@@ -62,8 +60,12 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Travel One Day' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Make Camp' })).toBeEnabled();
     const trailMap = screen.getByRole('region', { name: 'Trail Map' });
-    expect(within(trailMap).getByRole('heading', { name: 'Trail Map' })).toBeInTheDocument();
-    expect(within(trailMap).getByRole('status')).toHaveTextContent('Loading trail map...');
+    expect(
+      within(trailMap).getByRole('heading', { name: 'Trail Map' }),
+    ).toBeInTheDocument();
+    expect(within(trailMap).getByRole('status')).toHaveTextContent(
+      'Loading trail map...',
+    );
     expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
     expect(phaserGameModuleLoadMock).toHaveBeenCalledTimes(1);
     expect(phaserGameRenderMock).toHaveBeenCalledTimes(1);
@@ -98,7 +100,9 @@ describe('App', () => {
     expect(
       within(statusBar).getByRole('region', { name: 'Save controls' }),
     ).toBeInTheDocument();
-    expect(within(statusBar).getByRole('button', { name: 'Save game' })).toBeInTheDocument();
+    expect(
+      within(statusBar).getByRole('button', { name: 'Save game' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Trail Dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Trail Map' })).toBeInTheDocument();
     expect(
@@ -110,6 +114,37 @@ describe('App', () => {
       screen.getByRole('complementary', { name: 'Secondary expedition panels' }),
     ).toBeInTheDocument();
     expect(await screen.findByTestId('phaser-game')).toBeInTheDocument();
+  });
+
+  it('traps focus inside the return-to-menu confirmation and restores focus on cancel', () => {
+    useExpeditionStore.setState(createStartingGameState());
+
+    render(<App />);
+
+    const returnToMenuButton = screen.getByRole('button', { name: 'Return to Menu' });
+    returnToMenuButton.focus();
+    fireEvent.click(returnToMenuButton);
+
+    const dialog = screen.getByRole('dialog', { name: 'Return to menu confirmation' });
+    const cancelButton = within(dialog).getByRole('button', { name: 'Cancel' });
+    const confirmButton = within(dialog).getByRole('button', { name: 'Return to Menu' });
+
+    expect(dialog.tagName).toBe('DIALOG');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(cancelButton).toHaveFocus();
+
+    fireEvent.keyDown(cancelButton, { key: 'Tab', shiftKey: true });
+    expect(confirmButton).toHaveFocus();
+
+    fireEvent.keyDown(confirmButton, { key: 'Tab' });
+    expect(cancelButton).toHaveFocus();
+
+    fireEvent.click(cancelButton);
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Return to menu confirmation' }),
+    ).not.toBeInTheDocument();
+    expect(returnToMenuButton).toHaveFocus();
   });
 
   it('keeps right rail panels available in the responsive active game layout', () => {
@@ -124,10 +159,16 @@ describe('App', () => {
       name: 'Secondary expedition panels',
     });
 
-    expect(within(rightRail).getByRole('heading', { name: 'Caravan Party' })).toBeInTheDocument();
-    expect(within(rightRail).getByRole('heading', { name: 'Game Log' })).toBeInTheDocument();
+    expect(
+      within(rightRail).getByRole('heading', { name: 'Caravan Party' }),
+    ).toBeInTheDocument();
+    expect(
+      within(rightRail).getByRole('heading', { name: 'Game Log' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Current situation' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Resource dashboard' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Resource dashboard' }),
+    ).toBeInTheDocument();
   });
 
   it('does not repeat the large homepage title in the active game header', () => {
@@ -162,6 +203,9 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close settings' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save game' }));
 
+    expect(
+      within(screen.getByRole('region', { name: 'Save controls' })).getByRole('status'),
+    ).toHaveTextContent('Game saved.');
     expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).not.toBeNull();
     expect(screen.getByText('Game saved.')).toBeInTheDocument();
   });
@@ -199,8 +243,12 @@ describe('App', () => {
     expect(saveControls).toBeInTheDocument();
     expect(saveControls).not.toHaveClass('bg-surface');
     expect(saveControls).not.toHaveClass('p-4');
-    expect(within(statusBar).queryByRole('button', { name: /Reset save/i })).not.toBeInTheDocument();
-    expect(within(statusBar).getByRole('button', { name: 'Return to Menu' })).toBeInTheDocument();
+    expect(
+      within(statusBar).queryByRole('button', { name: /Reset save/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(statusBar).getByRole('button', { name: 'Return to Menu' }),
+    ).toBeInTheDocument();
   });
 
   it('opens and cancels the return to menu confirmation', () => {
@@ -226,7 +274,9 @@ describe('App', () => {
     expect(
       screen.queryByRole('dialog', { name: 'Return to menu confirmation' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Active game layout' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Active game layout' }),
+    ).toBeInTheDocument();
   });
 
   it('closes return to menu confirmation from outside click and Escape', () => {
@@ -243,7 +293,9 @@ describe('App', () => {
     expect(
       screen.queryByRole('dialog', { name: 'Return to menu confirmation' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Active game layout' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Active game layout' }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to Menu' }));
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -251,7 +303,9 @@ describe('App', () => {
     expect(
       screen.queryByRole('dialog', { name: 'Return to menu confirmation' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Active game layout' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Active game layout' }),
+    ).toBeInTheDocument();
   });
 
   it('returns to the main menu and preserves continue from saved data', () => {
@@ -273,13 +327,17 @@ describe('App', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Return to Menu' }));
 
-    expect(screen.getByRole('heading', { name: 'Frontier Reckoning' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Frontier Reckoning' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
     expect(window.localStorage.getItem(SAVE_STORAGE_KEY)).not.toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    expect(screen.getByRole('region', { name: 'Active game layout' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Active game layout' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Saved Trail Crew' })).toBeInTheDocument();
   });
 
@@ -314,12 +372,13 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    expect(screen.getByRole('heading', { name: 'Choose party members' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Choose party members' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('0 / 4')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select Elias Reed, Scout' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Select Elias Reed, Scout' }),
+    ).toHaveAttribute('aria-pressed', 'false');
 
     fireEvent.click(screen.getByRole('button', { name: 'Select Elias Reed, Scout' }));
     fireEvent.click(screen.getByRole('button', { name: 'Select Mara Bell, Doctor' }));
@@ -327,7 +386,9 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Select Ada Flint, Mechanic' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    expect(screen.getByRole('heading', { name: 'Choose trail difficulty' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Choose trail difficulty' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Greenhorn/ })).not.toBeChecked();
     expect(screen.getByRole('radio', { name: /Trailwise/ })).not.toBeChecked();
     expect(screen.getByDisplayValue('reckoning')).not.toBeChecked();
@@ -358,12 +419,10 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    expect(
-      screen.getByRole('button', { name: 'Continue' }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole('button', { name: 'Continue' }),
-    ).toHaveAccessibleDescription('Select exactly 4 party members before continuing.');
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveAccessibleDescription(
+      'Select exactly 4 party members before continuing.',
+    );
   });
 
   it('exposes important setup controls with accessible names', () => {
@@ -379,7 +438,9 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'Select Elias Reed, Scout' }),
     ).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('button', { name: 'Select Nell Carter, Child' })).toBeEnabled();
+    expect(
+      screen.getByRole('button', { name: 'Select Nell Carter, Child' }),
+    ).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Select Elias Reed, Scout' }));
     fireEvent.click(screen.getByRole('button', { name: 'Select Mara Bell, Doctor' }));
     fireEvent.click(screen.getByRole('button', { name: 'Select Jonah Vale, Hunter' }));

@@ -65,7 +65,9 @@ export function ResourceDashboard() {
           <Button
             aria-controls={resourceGridId}
             aria-expanded={expanded}
-            aria-label={expanded ? 'Collapse resource summary' : 'Expand resource summary'}
+            aria-label={
+              expanded ? 'Collapse resource summary' : 'Expand resource summary'
+            }
             className="w-full justify-between lg:w-auto"
             onClick={() => setExpanded((currentExpanded) => !currentExpanded)}
             size="sm"
@@ -87,7 +89,8 @@ export function ResourceDashboard() {
           <div className="mb-1 flex items-center justify-between gap-3 font-mono text-base">
             <span className="text-muted">Trail progress</span>
             <span className="font-bold text-foreground">
-              {formatWholeNumber(distanceTraveled)} / {formatWholeNumber(totalDistance)} mi
+              {formatWholeNumber(distanceTraveled)} / {formatWholeNumber(totalDistance)}{' '}
+              mi
             </span>
           </div>
           <div
@@ -176,8 +179,7 @@ function Stat({
   const previousValueRef = useRef(numericValue);
   const [changeAmount, setChangeAmount] = useState<number | null>(null);
   const changed = changeAmount !== null;
-  const roundedChangeAmount =
-    changeAmount === null ? null : Math.round(changeAmount);
+  const roundedChangeAmount = changeAmount === null ? null : Math.round(changeAmount);
 
   useEffect(() => {
     const previousValue = previousValueRef.current;
@@ -198,9 +200,7 @@ function Stat({
       aria-label={`${label} resource`}
       className={cx(
         'min-w-0 border bg-panel p-2.5',
-        warning
-          ? 'border-cta bg-bark/30'
-          : 'border-border',
+        warning ? 'border-cta bg-bark/30' : 'border-border',
         emphasizeChange ? 'fr-vital-change' : null,
         changed && !reducedMotion ? 'fr-resource-pulse' : null,
         changed && emphasizeChange ? 'border-cta bg-bark/40' : null,
@@ -215,14 +215,18 @@ function Stat({
       <dd className="mt-1 flex min-h-8 items-baseline justify-between gap-2 text-xl font-bold capitalize text-foreground">
         <span>{value}</span>
         {roundedChangeAmount !== null ? (
-          <span className="font-mono text-base text-cta" aria-live="polite">
+          <span className="font-mono text-base text-cta" role="status" aria-atomic="true">
             {roundedChangeAmount > 0 ? '+' : ''}
             {roundedChangeAmount}
           </span>
         ) : null}
       </dd>
       {warning ? (
-        <p className="mt-1 font-mono text-sm text-cta" aria-label={`${label} warning`}>
+        <p
+          className="mt-1 font-mono text-sm text-cta"
+          aria-label={`${label} warning`}
+          role="status"
+        >
           {warning} supply
         </p>
       ) : (

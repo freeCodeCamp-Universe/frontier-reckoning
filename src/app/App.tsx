@@ -1,4 +1,10 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import { ActiveGameLayout } from '@components/ActiveGameLayout';
 import { AudioEffects } from '@components/AudioEffects';
 import { EventCard } from '@components/EventCard';
@@ -13,6 +19,12 @@ import {
   loadGameFromStorage,
 } from '@game/systems/saveSystem';
 import { useExpeditionStore, type StartExpeditionOptions } from '@stores/expeditionStore';
+import {
+  closeModalDialog,
+  openModalDialog,
+  supportsNativeModalDialog,
+  trapFocus,
+} from '@utils/dialog';
 
 type AppScreen = 'main_menu' | 'setup' | 'active_game';
 
@@ -133,15 +145,24 @@ function ReturnToMenuConfirmationModal({
 }) {
   const descriptionId = useId();
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+
+    if (dialog) {
+      openModalDialog(dialog);
+    }
     cancelButtonRef.current?.focus();
 
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') {
         onCancel();
       }
@@ -149,47 +170,74 @@ function ReturnToMenuConfirmationModal({
 
     window.addEventListener('keydown', handleKeyDown);
 
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (dialog) {
+        closeModalDialog(dialog);
+      }
+      restoreFocusRef.current?.focus();
+      restoreFocusRef.current = null;
+    };
   }, [isOpen, onCancel]);
 
   if (!isOpen) {
     return null;
   }
 
+  const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>) => {
+    if (event.key !== 'Tab' || !dialogRef.current) {
+      return;
+    }
+
+    trapFocus(event, dialogRef.current);
+  };
+
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-canvas/90 px-4 py-6"
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <dialog
+      ref={dialogRef}
+      open={supportsNativeModalDialog() ? undefined : true}
+      aria-label="Return to menu confirmation"
+      aria-describedby={descriptionId}
+      aria-modal="true"
+      className="fixed inset-0 z-[60] m-0 h-auto max-h-none w-auto max-w-none overflow-visible border-0 bg-transparent p-0 text-foreground backdrop:bg-canvas/90"
       data-testid="return-to-menu-confirmation-backdrop"
-      role="presentation"
+      onCancel={(event) => {
+        event.preventDefault();
+        onCancel();
+      }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onCancel();
         }
       }}
+      onKeyDown={handleDialogKeyDown}
     >
       <Card
         as="div"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Return to menu confirmation"
-        aria-describedby={descriptionId}
-        className="w-full max-w-md p-5"
+        className="flex min-h-screen items-center justify-center border-0 bg-transparent p-4"
       >
-        <div className="border-b border-border pb-4">
-          <h2 className="text-2xl font-bold">Return to Menu?</h2>
-          <p id={descriptionId} className="mt-2 text-base text-muted">
-            The current expedition can be continued later if saves exist.
-          </p>
-        </div>
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button ref={cancelButtonRef} onClick={onCancel} variant="secondary">
-            Cancel
-          </Button>
-          <Button onClick={onConfirm} variant="ghost">
-            Return to Menu
-          </Button>
-        </div>
+        <Card
+          as="div"
+          className="w-full max-w-md p-5"
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <div className="border-b border-border pb-4">
+            <h2 className="text-2xl font-bold">Return to Menu?</h2>
+            <p id={descriptionId} className="mt-2 text-base text-muted">
+              The current expedition can be continued later if saves exist.
+            </p>
+          </div>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Button ref={cancelButtonRef} onClick={onCancel} variant="secondary">
+              Cancel
+            </Button>
+            <Button onClick={onConfirm} variant="ghost">
+              Return to Menu
+            </Button>
+          </div>
+        </Card>
       </Card>
-    </div>
+    </dialog>
   );
 }

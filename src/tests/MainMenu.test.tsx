@@ -25,6 +25,7 @@ describe('MainMenu', () => {
     expect(screen.getByRole('heading', { name: 'Manage Supplies' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Survive Events' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cross Rivers' })).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
   });
 
   it('does not render decorative caravan status content', () => {
